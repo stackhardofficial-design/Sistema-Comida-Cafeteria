@@ -9,10 +9,7 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 py-12 sm:px-6 lg:px-8 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80&w=2047&auto=format&fit=crop')" }}>
-      {/* Overlay oscuro para la imagen de fondo */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-      
+    <div className="flex min-h-screen flex-col items-center justify-center bg-white py-12 sm:px-6 lg:px-8">
       <div className="relative sm:mx-auto sm:w-full sm:max-w-md z-10">
         <div className="flex justify-center">
             <Image 
@@ -24,14 +21,14 @@ export default function LoginPage() {
               priority
             />
         </div>
-        <h2 className="mt-2 text-center text-3xl font-extrabold tracking-tight text-white drop-shadow-md">
+        <h2 className="mt-4 text-center text-3xl font-extrabold tracking-tight text-slate-900">
           Sistema Operativo
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-200">Ingresa con tus credenciales de empleado</p>
+        <p className="mt-2 text-center text-sm text-slate-600">Ingresa con tus credenciales de empleado</p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white px-4 py-8 shadow sm:rounded-lg sm:px-10">
+        <div className="bg-white px-4 py-8 shadow-xl border border-slate-100 sm:rounded-lg sm:px-10">
           <LoginForm />
         </div>
       </div>

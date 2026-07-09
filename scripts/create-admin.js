@@ -9,22 +9,22 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
 });
 
 async function main() {
-  const email = 'admin@stackhard.com';
-  const password = 'Password123!';
-  const tenantName = 'StackHard Central';
+  const email = 'tomas@stackhard.com';
+  const password = 'Tomas2812#';
+  const tenantSlug = 'stackhard-central';
 
-  console.log('1. Creating Tenant...');
+  console.log('1. Getting Tenant...');
   const { data: tenant, error: tenantError } = await supabase
     .from('tenants')
-    .insert({ name: tenantName, slug: 'stackhard-central', currency: 'USD' })
-    .select()
+    .select('id')
+    .eq('slug', tenantSlug)
     .single();
 
   if (tenantError) {
-    console.error('Error creating tenant:', tenantError);
+    console.error('Error finding tenant:', tenantError);
     return;
   }
-  console.log('Tenant created:', tenant.id);
+  console.log('Tenant found:', tenant.id);
 
   console.log('2. Creating User in Auth...');
   const { data: userAuth, error: authError } = await supabase.auth.admin.createUser({
@@ -46,8 +46,8 @@ async function main() {
       id: userAuth.user.id,
       tenant_id: tenant.id,
       role: 'owner',
-      first_name: 'Admin',
-      last_name: 'StackHard'
+      first_name: 'Tomas',
+      last_name: ''
     });
 
   if (profileError) {
