@@ -18,7 +18,7 @@ interface Props {
   tenantId: string
 }
 
-export default function POSClient({ categories, products, tables, hasActiveCashSession }: Props) {
+export default function POSClient({ categories, products, tables, hasActiveCashSession, cashSessionId }: Props) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [orderType, setOrderType] = useState<'dine_in' | 'takeout' | 'delivery'>('dine_in')
   const [selectedTableId, setSelectedTableId] = useState<string>('')
