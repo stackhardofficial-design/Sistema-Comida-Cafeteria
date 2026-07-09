@@ -51,7 +51,7 @@ export async function getRedirectByRole(role: string): Promise<string> {
     case 'manager':   return '/admin'
     case 'cashier':   return '/admin/caja'
     case 'kitchen':   return '/kitchen'
-    case 'delivery':  return '/delivery'
+    case 'delivery':  return '/admin/delivery'
     case 'waiter':
     default:          return '/pos'
   }

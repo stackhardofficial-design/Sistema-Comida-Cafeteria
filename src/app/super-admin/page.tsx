@@ -64,7 +64,7 @@ export default async function SuperAdminPage() {
           <a href="/kitchen" className="btn btn-secondary">
             Pantalla Cocina
           </a>
-          <a href="/delivery" className="btn btn-secondary">
+          <a href="/admin/delivery" className="btn btn-secondary">
             Pantalla Delivery
           </a>
         </div>
