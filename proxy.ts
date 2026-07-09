@@ -28,8 +28,19 @@ export async function proxy(request: NextRequest) {
   const publicRoutes = ['/login', '/auth']
   if (publicRoutes.some(r => pathname.startsWith(r))) {
     if (user) {
-      // If logged in and trying to access login, redirect to dashboard
-      return NextResponse.redirect(new URL('/admin', request.url))
+      // Si ya está logueado, obtener rol y redirigir al dashboard correcto
+      const { data: profile } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle()
+      const roleRedirectMap: Record<string, string> = {
+        super_admin: '/super-admin',
+        owner: '/admin', admin: '/admin', manager: '/admin', cashier: '/admin/caja',
+        waiter: '/pos', kitchen: '/kitchen', delivery: '/delivery',
+      }
+      const target = roleRedirectMap[profile?.role ?? ''] ?? '/admin'
+      return NextResponse.redirect(new URL(target, request.url))
     }
     return supabaseResponse
   }

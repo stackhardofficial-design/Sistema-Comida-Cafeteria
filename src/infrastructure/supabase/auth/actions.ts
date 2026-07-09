@@ -23,8 +23,9 @@ export async function loginUser(prevState: any, formData: FormData) {
     return { error: 'Credenciales incorrectas. Verifica tu email y contraseña.' }
   }
 
-  // Verificar el rol del usuario para redirigir
-  const { data: userProfile } = await supabase
+  // Usar adminClient para bypassar RLS (necesario para super_admin con tenant_id=null)
+  const adminClient = createAdminClient()
+  const { data: userProfile } = await adminClient
     .from('users')
     .select('role')
     .eq('id', data.user.id)

@@ -162,6 +162,7 @@ CREATE POLICY tenant_isolation_policy ON tenants
 
 -- Generic Isolation Policy for all other tables
 CREATE POLICY tenant_isolation_policy ON users FOR ALL USING (tenant_id = get_current_tenant_id());
+CREATE POLICY self_read_policy ON users FOR SELECT USING (auth.uid() = id);
 CREATE POLICY tenant_isolation_policy ON categories FOR ALL USING (tenant_id = get_current_tenant_id());
 CREATE POLICY tenant_isolation_policy ON products FOR ALL USING (tenant_id = get_current_tenant_id());
 CREATE POLICY tenant_isolation_policy ON product_modifiers FOR ALL USING (tenant_id = get_current_tenant_id());
