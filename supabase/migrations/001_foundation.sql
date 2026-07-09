@@ -35,8 +35,8 @@ CREATE TABLE tenants (
 -- Users (Staff & Admin)
 CREATE TABLE users (
     id UUID PRIMARY KEY REFERENCES auth.users(id),
-    tenant_id UUID NOT NULL REFERENCES tenants(id),
-    role VARCHAR(50) NOT NULL CHECK (role IN ('owner', 'admin', 'manager', 'cashier', 'kitchen', 'waiter')),
+    tenant_id UUID REFERENCES tenants(id),
+    role VARCHAR(50) NOT NULL CHECK (role IN ('super_admin', 'owner', 'admin', 'manager', 'cashier', 'kitchen', 'waiter', 'delivery')),
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100),
     is_active BOOLEAN DEFAULT true,
