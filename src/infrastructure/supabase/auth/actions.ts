@@ -43,7 +43,13 @@ export async function loginUser(prevState: any, formData: FormData) {
  * SOLO puede ser ejecutada por dueños o administradores.
  * Utiliza el SERVICE_ROLE_KEY de Supabase para poder crear usuarios desde el servidor.
  */
-export async function createUserAccount(prevState: any, formData: FormData) {
+export type AuthActionState = {
+  success?: boolean
+  message?: string
+  error?: string
+}
+
+export async function createUserAccount(prevState: any, formData: FormData): Promise<AuthActionState> {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const firstName = formData.get('firstName') as string
@@ -87,24 +93,25 @@ export async function createUserAccount(prevState: any, formData: FormData) {
   }
 
   // 4. Insertar el perfil del usuario en la tabla pública `users`
-  // Usamos el adminClient también aquí para asegurar que la inserción se haga
-  // (aunque el RLS normal no permitiría a un usuario insertar el tenant_id a la fuerza
-  // sin cuidado, el admin client lo bypassea, y nosotros le asignamos el del executor)
   const { error: dbError } = await adminClient
     .from('users')
     .insert({
       id: newUser.user.id,
-      tenant_id: executorProfile.tenant_id, // Forzar que sea del mismo tenant
+      tenant_id: executorProfile.tenant_id, 
       role: role,
       first_name: firstName,
       last_name: lastName || null,
     })
     
   if (dbError) {
-    // Si falla al guardar en DB, idealmente deberíamos borrar el usuario en auth (rollback)
+    // Rollback
     await adminClient.auth.admin.deleteUser(newUser.user.id)
     return { error: `Error guardando en base de datos: ${dbError.message}` }
   }
+
+  // REFRESCAR LA PÁGINA DE PERSONAL
+  const { revalidatePath } = await import('next/cache')
+  revalidatePath('/admin/personal')
 
   return { success: true, message: 'Usuario creado exitosamente' }
 }
