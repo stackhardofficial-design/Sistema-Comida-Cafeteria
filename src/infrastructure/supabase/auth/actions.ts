@@ -25,13 +25,18 @@ export async function loginUser(prevState: any, formData: FormData) {
 
   // Usar adminClient para bypassar RLS (necesario para super_admin con tenant_id=null)
   const adminClient = createAdminClient()
-  const { data: userProfile } = await adminClient
+  const { data: userProfile, error: profileError } = await adminClient
     .from('users')
     .select('role')
     .eq('id', data.user.id)
     .single()
 
-  const role = userProfile?.role ?? 'waiter'
+  if (profileError || !userProfile) {
+    await supabase.auth.signOut()
+    return { error: 'Perfil de usuario no encontrado en la base de datos.' }
+  }
+
+  const role = userProfile.role
   const redirectTo = await getRedirectByRole(role)
   redirect(redirectTo)
 }
@@ -168,8 +173,8 @@ export async function createTenantWithOwner(prevState: any, formData: FormData):
   const ownerPassword = formData.get('ownerPassword') as string
   const ownerFirstName = formData.get('ownerFirstName') as string
   const ownerLastName = formData.get('ownerLastName') as string
-  const currency = formData.get('currency') as string || 'USD'
-  const timezone = formData.get('timezone') as string || 'America/New_York'
+  const currency = formData.get('currency') as string || 'ARS'
+  const timezone = formData.get('timezone') as string || 'America/Argentina/Buenos_Aires'
 
   if (!restaurantName || !slug || !ownerEmail || !ownerPassword || !ownerFirstName) {
     return { error: 'Faltan campos requeridos' }

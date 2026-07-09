@@ -48,12 +48,24 @@ export default async function SuperAdminPage() {
       {/* Quick link */}
       <div className="card">
         <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-          Accesos Rápidos
+          Accesos Rápidos (Entorno Demo)
         </h2>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <a href="/super-admin/restaurantes" className="btn btn-primary">
             <Store className="h-4 w-4" />
             Gestionar Restaurantes
+          </a>
+          <a href="/admin" className="btn btn-secondary">
+            Panel de Jefe (Admin)
+          </a>
+          <a href="/pos" className="btn btn-secondary">
+            Interfaz POS (Caja)
+          </a>
+          <a href="/kitchen" className="btn btn-secondary">
+            Pantalla Cocina
+          </a>
+          <a href="/delivery" className="btn btn-secondary">
+            Pantalla Delivery
           </a>
         </div>
       </div>
