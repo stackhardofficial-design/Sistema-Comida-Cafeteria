@@ -43,7 +43,7 @@ export async function requireRole(allowedRoles: string[]) {
 /**
  * Redirige al usuario a su panel según su rol
  */
-export function getRedirectByRole(role: string): string {
+export async function getRedirectByRole(role: string): Promise<string> {
   switch (role) {
     case 'super_admin': return '/super-admin'
     case 'owner':

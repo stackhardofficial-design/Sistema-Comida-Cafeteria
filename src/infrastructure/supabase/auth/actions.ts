@@ -31,7 +31,7 @@ export async function loginUser(prevState: any, formData: FormData) {
     .single()
 
   const role = userProfile?.role ?? 'waiter'
-  const redirectTo = getRedirectByRole(role)
+  const redirectTo = await getRedirectByRole(role)
   redirect(redirectTo)
 }
 
