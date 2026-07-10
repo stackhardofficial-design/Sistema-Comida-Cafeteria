@@ -13,20 +13,30 @@ export default async function PersonalPage() {
 
   const { data: profile } = await supabase
     .from('users')
-    .select('tenant_id, role, tenants(slug)')
+    .select('tenant_id, role')
     .eq('id', user.id)
     .single()
 
   if (!profile?.tenant_id) redirect('/login')
 
-  const { data: employees } = await supabase
+  // Usar adminClient para bypassar RLS y obtener el slug del tenant correctamente
+  const { createAdminClient } = await import('@/infrastructure/supabase/server')
+  const adminClient = createAdminClient()
+
+  const { data: tenant } = await adminClient
+    .from('tenants')
+    .select('slug')
+    .eq('id', profile.tenant_id)
+    .single()
+
+  const { data: employees } = await adminClient
     .from('users')
     .select('*')
     .eq('tenant_id', profile.tenant_id)
     .order('created_at', { ascending: false })
 
   const isManagerOrAdmin = ['owner', 'admin', 'manager'].includes(profile.role)
-  const tenantSlug = (profile.tenants as any)?.slug || 'restaurante'
+  const tenantSlug = tenant?.slug || profile.tenant_id
 
   return (
     <div className="space-y-6">
