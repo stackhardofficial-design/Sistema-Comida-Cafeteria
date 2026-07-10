@@ -33,7 +33,17 @@ export async function requireRole(allowedRoles: string[]) {
     redirect('/login')
   }
 
-  if (!allowedRoles.includes(user.role)) {
+  // Jefes tienen acceso total a todas las secciones
+  const isJefe = ['owner', 'admin', 'manager', 'super_admin'].includes(user.role)
+  if (isJefe) {
+    return user
+  }
+
+  // De lo contrario, check si tiene alguno de los roles permitidos en roles
+  const userRoles = user.roles || [user.role]
+  const hasAccess = userRoles.some((r: string) => allowedRoles.includes(r))
+
+  if (!hasAccess) {
     redirect('/login')
   }
 

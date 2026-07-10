@@ -25,12 +25,32 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const { data: profile } = await supabase
     .from('users')
-    .select('role, first_name, last_name, tenants(name, currency)')
+    .select('role, roles, first_name, last_name, tenants(name, currency)')
     .eq('id', user.id)
     .single()
 
   const tenant = (profile?.tenants as any)
   const groups = ['Principal', 'Operación', 'Sistema']
+
+  const isJefe = ['owner', 'admin', 'manager', 'super_admin'].includes(profile?.role || '')
+  const userRoles = profile?.roles || [profile?.role]
+
+  const allowedNavItems = navItems.filter(item => {
+    if (isJefe) return true
+    if (item.href === '/admin/caja') {
+      return userRoles.includes('cashier')
+    }
+    if (item.href === '/admin/delivery') {
+      return userRoles.includes('delivery')
+    }
+    if (item.href === '/admin/pedidos') {
+      return userRoles.includes('cashier') || userRoles.includes('delivery')
+    }
+    return false
+  })
+
+  const showPOS = isJefe || userRoles.includes('waiter')
+  const showKitchen = isJefe || userRoles.includes('kitchen')
 
   return (
     <div className="flex h-screen" style={{ background: 'var(--bg-base)' }}>
@@ -62,7 +82,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         {/* Navigation */}
         <nav className="flex-1 px-3 py-2 overflow-y-auto">
           {groups.map(group => {
-            const items = navItems.filter(i => i.group === group)
+            const items = allowedNavItems.filter(i => i.group === group)
+            if (items.length === 0) return null
             return (
               <div key={group} className="mb-4">
                 <p
@@ -82,19 +103,25 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           })}
 
           {/* Quick access to operational views */}
-          <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-            <p className="px-3 text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>
-              Vistas Operativas
-            </p>
-            <Link href="/pos" className="nav-link">
-              <Coffee className="nav-icon h-4 w-4" style={{ color: 'var(--brand-orange)' }} />
-              <span style={{ color: 'var(--brand-orange)' }}>Abrir POS</span>
-            </Link>
-            <Link href="/kitchen" className="nav-link">
-              <Store className="nav-icon h-4 w-4" style={{ color: 'var(--info)' }} />
-              <span style={{ color: 'var(--info)' }}>Pantalla Cocina</span>
-            </Link>
-          </div>
+          {(showPOS || showKitchen) && (
+            <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+              <p className="px-3 text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>
+                Vistas Operativas
+              </p>
+              {showPOS && (
+                <Link href="/pos" className="nav-link">
+                  <Coffee className="nav-icon h-4 w-4" style={{ color: 'var(--brand-orange)' }} />
+                  <span style={{ color: 'var(--brand-orange)' }}>Abrir POS</span>
+                </Link>
+              )}
+              {showKitchen && (
+                <Link href="/kitchen" className="nav-link">
+                  <Store className="nav-icon h-4 w-4" style={{ color: 'var(--info)' }} />
+                  <span style={{ color: 'var(--info)' }}>Pantalla Cocina</span>
+                </Link>
+              )}
+            </div>
+          )}
         </nav>
 
         {/* User footer */}

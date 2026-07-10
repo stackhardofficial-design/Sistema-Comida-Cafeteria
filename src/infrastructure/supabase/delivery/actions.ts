@@ -10,7 +10,9 @@ export type ActionState = {
 }
 
 async function getExecutor() {
+  const { createClientServer } = await import('../server')
   const supabase = await createClientServer()
+
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
@@ -34,7 +36,8 @@ export async function assignDelivery(
     return { error: 'Sin permisos' }
   }
 
-  const supabase = await createClientServer()
+  const { createAdminClient } = await import('../server')
+  const supabase = createAdminClient()
   const { error } = await supabase.from('delivery_assignments').insert({
     tenant_id: executor.tenant_id,
     order_id: orderId,
@@ -58,7 +61,8 @@ export async function updateDeliveryStatus(
   const executor = await getExecutor()
   if (!executor) return { error: 'No autenticado' }
 
-  const supabase = await createClientServer()
+  const { createAdminClient } = await import('../server')
+  const supabase = createAdminClient()
   const updateData: Record<string, any> = { status }
 
   if (status === 'picked_up') updateData.picked_up_at = new Date().toISOString()
@@ -110,7 +114,8 @@ export async function createDeliveryAddress(
     return { error: 'Faltan campos requeridos' }
   }
 
-  const supabase = await createClientServer()
+  const { createAdminClient } = await import('../server')
+  const supabase = createAdminClient()
   const { error } = await supabase.from('delivery_addresses').insert({
     tenant_id: executor.tenant_id,
     customer_name: customerName,

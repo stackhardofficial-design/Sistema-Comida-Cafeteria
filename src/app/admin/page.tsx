@@ -21,13 +21,16 @@ export default async function AdminDashboardPage() {
 
   if (!profile?.tenant_id) redirect('/login')
 
-  // Get stats via RPC
-  const { data: stats } = await supabase.rpc('get_dashboard_stats', {
+  const { createAdminClient } = await import('@/infrastructure/supabase/server')
+  const adminClient = createAdminClient()
+
+  // Get stats via RPC (it might be SECURITY DEFINER, but using adminClient ensures it works regardless)
+  const { data: stats } = await adminClient.rpc('get_dashboard_stats', {
     p_tenant_id: profile.tenant_id
   })
 
   // Get recent orders
-  const { data: recentOrders } = await supabase
+  const { data: recentOrders } = await adminClient
     .from('orders')
     .select('id, status, order_type, total_amount, created_at, restaurant_tables(name), users(first_name)')
     .eq('tenant_id', profile.tenant_id)
@@ -35,7 +38,7 @@ export default async function AdminDashboardPage() {
     .limit(5)
 
   // Get top products
-  const { data: topProducts } = await supabase
+  const { data: topProducts } = await adminClient
     .from('order_items')
     .select('product_id, quantity, products(name)')
     .eq('tenant_id', profile.tenant_id)

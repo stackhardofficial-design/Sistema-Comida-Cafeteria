@@ -6,7 +6,7 @@ import { Plus, X, Loader2, UserPlus } from 'lucide-react'
 
 const initial = { error: '', success: false, message: '' }
 
-export default function CreateUserModal({ currentRole }: { currentRole: string }) {
+export default function CreateUserModal({ currentRole, tenantSlug }: { currentRole: string, tenantSlug: string }) {
   const [open, setOpen] = useState(false)
   const [state, formAction, pending] = useActionState(createUserAccount, initial)
   
@@ -30,7 +30,9 @@ export default function CreateUserModal({ currentRole }: { currentRole: string }
             </div>
 
             <form action={formAction} className="space-y-4">
-               <div className="grid grid-cols-2 gap-3">
+              <input type="hidden" name="tenantSlug" value={tenantSlug} />
+
+              <div className="grid grid-cols-2 gap-3">
                 <div className="form-group">
                   <label className="form-label">Nombre *</label>
                   <input name="firstName" required className="input-field" placeholder="Juan" />
@@ -40,29 +42,53 @@ export default function CreateUserModal({ currentRole }: { currentRole: string }
                   <input name="lastName" className="input-field" placeholder="Pérez" />
                 </div>
               </div>
+
               <div className="form-group">
-                <label className="form-label">Correo electrónico *</label>
-                <input name="email" type="email" required className="input-field" placeholder="juan@restaurante.com" />
+                <label className="form-label">Nombre de usuario (Para el correo) *</label>
+                <div className="flex items-center">
+                  <input 
+                    name="username" 
+                    type="text" 
+                    required 
+                    className="input-field rounded-r-none flex-1" 
+                    placeholder="juan" 
+                  />
+                  <span 
+                    className="bg-zinc-800 text-zinc-400 px-3 py-2 text-sm border border-l-0 rounded-r-lg truncate" 
+                    style={{ borderColor: 'var(--border-subtle)', height: '38px', display: 'flex', alignItems: 'center' }}
+                  >
+                    @{tenantSlug}.com
+                  </span>
+                </div>
               </div>
+
               <div className="form-group">
                 <label className="form-label">Contraseña (Mín. 6 caracteres) *</label>
                 <input name="password" type="password" required minLength={6} className="input-field" />
               </div>
+
               <div className="form-group">
-                <label className="form-label">Rol *</label>
-                <select name="role" required className="input-field">
-                  <option value="">Selecciona un rol</option>
-                  <option value="waiter">Mesero (POS)</option>
-                  <option value="kitchen">Cocina (KDS)</option>
-                  <option value="delivery">Repartidor (Delivery)</option>
-                  <option value="cashier">Cajero</option>
+                <label className="form-label">Roles del empleado (Selecciona uno o más) *</label>
+                <div className="space-y-2 mt-2 p-3 rounded-lg border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-base)' }}>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: 'var(--text-primary)' }}>
+                    <input type="checkbox" name="roles" value="waiter" defaultChecked />
+                    <span>Mozo (Acceso al POS)</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: 'var(--text-primary)' }}>
+                    <input type="checkbox" name="roles" value="cashier" />
+                    <span>Cajero (Acceso a Caja Central)</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: 'var(--text-primary)' }}>
+                    <input type="checkbox" name="roles" value="delivery" />
+                    <span>Repartidor (Acceso a Delivery)</span>
+                  </label>
                   {(currentRole === 'owner' || currentRole === 'admin') && (
-                     <option value="manager">Gerente (Admin)</option>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: 'var(--text-primary)' }}>
+                      <input type="checkbox" name="roles" value="manager" />
+                      <span>Gerente (Acceso Admin General)</span>
+                    </label>
                   )}
-                  {currentRole === 'owner' && (
-                     <option value="admin">Administrador</option>
-                  )}
-                </select>
+                </div>
               </div>
 
               {state.error && <div className="alert alert-error"><span>{state.error}</span></div>}

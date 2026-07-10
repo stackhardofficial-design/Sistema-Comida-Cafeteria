@@ -73,7 +73,8 @@ export async function updateOrderStatus(
   const executor = await getExecutor()
   if (!executor) return { error: 'No autenticado' }
 
-  const supabase = await createClientServer()
+  const { createAdminClient } = await import('../server')
+  const supabase = createAdminClient()
   const { error } = await supabase
     .from('orders')
     .update({ status })
@@ -89,7 +90,8 @@ export async function updateOrderStatus(
 }
 
 export async function getActiveOrders(tenantId: string) {
-  const supabase = await createClientServer()
+  const { createAdminClient } = await import('../server')
+  const supabase = createAdminClient()
   const { data, error } = await supabase
     .from('orders')
     .select(`
@@ -116,7 +118,8 @@ export async function cancelOrder(orderId: string): Promise<ActionState> {
     return { error: 'Sin permisos' }
   }
 
-  const supabase = await createClientServer()
+  const { createAdminClient } = await import('../server')
+  const supabase = createAdminClient()
 
   // Get table if any to free it
   const { data: order } = await supabase

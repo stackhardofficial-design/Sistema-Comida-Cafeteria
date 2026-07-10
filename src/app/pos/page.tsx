@@ -17,17 +17,20 @@ export default async function POSPage() {
 
   if (!profile?.tenant_id) redirect('/login')
 
-  // Obtener datos iniciales
+  const { createAdminClient } = await import('@/infrastructure/supabase/server')
+  const adminClient = createAdminClient()
+
+  // Ensure these queries use admin client to bypass the missing JWT tenant_id claim in RLS
   const [
     { data: categories },
     { data: products },
     { data: tables },
     { data: activeSession }
   ] = await Promise.all([
-    supabase.from('categories').select('*').eq('tenant_id', profile.tenant_id).order('sort_order'),
-    supabase.from('products').select('*, product_modifiers(*)').eq('tenant_id', profile.tenant_id).eq('is_active', true).order('name'),
-    supabase.from('restaurant_tables').select('*').eq('tenant_id', profile.tenant_id).order('name'),
-    supabase.from('cash_register_sessions').select('id').eq('tenant_id', profile.tenant_id).eq('status', 'open').single()
+    adminClient.from('categories').select('*').eq('tenant_id', profile.tenant_id).order('sort_order'),
+    adminClient.from('products').select('*, product_modifiers(*)').eq('tenant_id', profile.tenant_id).eq('is_active', true).order('name'),
+    adminClient.from('restaurant_tables').select('*').eq('tenant_id', profile.tenant_id).order('name'),
+    adminClient.from('cash_register_sessions').select('id').eq('tenant_id', profile.tenant_id).eq('status', 'open').single()
   ])
 
   return (

@@ -13,7 +13,7 @@ export default async function PersonalPage() {
 
   const { data: profile } = await supabase
     .from('users')
-    .select('tenant_id, role')
+    .select('tenant_id, role, tenants(slug)')
     .eq('id', user.id)
     .single()
 
@@ -26,6 +26,7 @@ export default async function PersonalPage() {
     .order('created_at', { ascending: false })
 
   const isManagerOrAdmin = ['owner', 'admin', 'manager'].includes(profile.role)
+  const tenantSlug = (profile.tenants as any)?.slug || 'restaurante'
 
   return (
     <div className="space-y-6">
@@ -34,7 +35,7 @@ export default async function PersonalPage() {
           <h1 className="page-title">Personal</h1>
           <p className="page-subtitle">Gestiona los accesos de tus empleados</p>
         </div>
-        {isManagerOrAdmin && <CreateUserModal currentRole={profile.role} />}
+        {isManagerOrAdmin && <CreateUserModal currentRole={profile.role} tenantSlug={tenantSlug} />}
       </div>
 
       {!employees?.length ? (
@@ -50,8 +51,8 @@ export default async function PersonalPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Nombre</th>
-                <th>Rol</th>
+                <th>Nombre / Email</th>
+                <th>Roles</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -64,12 +65,19 @@ export default async function PersonalPage() {
                       <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>
                         {emp.first_name} {emp.last_name || ''}
                       </p>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                        {/* email generado: usuario@slug.com */}
+                      </p>
                     </div>
                   </td>
                   <td>
-                    <span className={`badge badge-${emp.role}`}>
-                      {emp.role.toUpperCase()}
-                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {((emp.roles as string[]) || [emp.role]).map((r: string) => (
+                        <span key={r} className={`badge badge-${r}`} style={{ fontSize: '0.65rem' }}>
+                          {r === 'waiter' ? 'MOZO' : r === 'cashier' ? 'CAJERO' : r === 'delivery' ? 'DELIVERY' : r === 'kitchen' ? 'COCINA' : r === 'manager' ? 'GERENTE' : r === 'admin' ? 'ADMIN' : r === 'owner' ? 'DUEÑO' : r.toUpperCase()}
+                        </span>
+                      ))}
+                    </div>
                   </td>
                   <td>
                     {emp.is_active ? (

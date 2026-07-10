@@ -1,23 +1,19 @@
-import { createClientServer } from '@/infrastructure/supabase/server'
-import { redirect } from 'next/navigation'
+import { requireRole } from '@/infrastructure/supabase/auth/auth-helpers'
 import Link from 'next/link'
 import { ArrowLeft, Clock, ChefHat } from 'lucide-react'
 
 export default async function KitchenLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClientServer()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const profile = await requireRole(['kitchen'])
 
-  const { data: profile } = await supabase
-    .from('users')
-    .select('role, first_name, tenants(name)')
-    .eq('id', user.id)
-    .single()
+  const { createAdminClient } = await import('@/infrastructure/supabase/server')
+  const adminClient = createAdminClient()
+  const { data: tenant } = await adminClient.from('tenants').select('name').eq('id', profile.tenant_id).single()
 
-  if (!profile?.tenants) redirect('/login')
+  if (!tenant) { const { redirect } = await import('next/navigation'); redirect('/login') }
 
-  const tenantName = (profile.tenants as any).name
+  const tenantName = tenant!.name
   const isAdmin = ['owner', 'admin', 'manager'].includes(profile.role)
+
 
   return (
     <div className="flex flex-col h-screen overflow-hidden" style={{ background: '#0a0a0a' }}>

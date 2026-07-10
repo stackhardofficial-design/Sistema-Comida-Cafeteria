@@ -23,11 +23,10 @@ export async function loginUser(prevState: any, formData: FormData) {
     return { error: 'Credenciales incorrectas. Verifica tu email y contraseña.' }
   }
 
-  // Usar adminClient para bypassar RLS (necesario para super_admin con tenant_id=null)
   const adminClient = createAdminClient()
   const { data: userProfile, error: profileError } = await adminClient
     .from('users')
-    .select('role')
+    .select('role, roles')
     .eq('id', data.user.id)
     .single()
 
@@ -37,7 +36,19 @@ export async function loginUser(prevState: any, formData: FormData) {
   }
 
   const role = userProfile.role
-  const redirectTo = await getRedirectByRole(role)
+  const roles: string[] = userProfile.roles || []
+
+  // Si tiene múltiples roles => ir al panel admin (menú filtrado)
+  // Si tiene un solo rol => ir directo a su vista
+  let redirectTo: string
+  const isJefe = ['owner', 'admin', 'manager', 'super_admin'].includes(role)
+  if (isJefe) {
+    redirectTo = await getRedirectByRole(role)
+  } else if (roles.length > 1) {
+    redirectTo = '/admin'
+  } else {
+    redirectTo = await getRedirectByRole(role)
+  }
   redirect(redirectTo)
 }
 
@@ -58,20 +69,27 @@ export type AuthActionState = {
  * SOLO puede ser ejecutada por owner, admin o manager.
  */
 export async function createUserAccount(prevState: any, formData: FormData): Promise<AuthActionState> {
-  const email = formData.get('email') as string
+  const username = formData.get('username') as string
+  const tenantSlug = formData.get('tenantSlug') as string
   const password = formData.get('password') as string
   const firstName = formData.get('firstName') as string
   const lastName = formData.get('lastName') as string
-  const role = formData.get('role') as string
+  const roles = formData.getAll('roles') as string[]
 
-  if (!email || !password || !firstName || !role) {
-    return { error: 'Faltan campos requeridos' }
+  if (!username || !tenantSlug || !password || !firstName || !roles.length) {
+    return { error: 'Faltan campos requeridos. Debes seleccionar al menos un rol.' }
   }
+
+  const email = `${username.trim()}@${tenantSlug.trim()}.com`.toLowerCase()
 
   const validEmployeeRoles = ['admin', 'manager', 'cashier', 'kitchen', 'waiter', 'delivery']
-  if (!validEmployeeRoles.includes(role)) {
-    return { error: 'Rol no válido' }
+  for (const r of roles) {
+    if (!validEmployeeRoles.includes(r)) {
+      return { error: `Rol no válido: ${r}` }
+    }
   }
+
+  const role = roles[0] // Rol primario de compatibilidad
 
   const supabase = await createClientServer()
 
@@ -92,8 +110,8 @@ export async function createUserAccount(prevState: any, formData: FormData): Pro
   }
 
   // managers solo pueden crear waiter, kitchen, delivery
-  if (executorProfile.role === 'manager' && ['admin', 'owner'].includes(role)) {
-    return { error: 'Los managers no pueden crear administradores' }
+  if (executorProfile.role === 'manager' && roles.some(r => ['admin', 'owner', 'manager'].includes(r))) {
+    return { error: 'Los managers no pueden crear administradores, dueños o gerentes' }
   }
 
   // 3. Crear usuario en Supabase Auth
@@ -115,6 +133,7 @@ export async function createUserAccount(prevState: any, formData: FormData): Pro
       id: newUser.user.id,
       tenant_id: executorProfile.tenant_id,
       role,
+      roles,
       first_name: firstName,
       last_name: lastName || null,
     })
@@ -127,7 +146,7 @@ export async function createUserAccount(prevState: any, formData: FormData): Pro
   const { revalidatePath } = await import('next/cache')
   revalidatePath('/admin/personal')
 
-  return { success: true, message: `${firstName} ha sido creado exitosamente como ${role}` }
+  return { success: true, message: `${firstName} ha sido creado exitosamente` }
 }
 
 /**

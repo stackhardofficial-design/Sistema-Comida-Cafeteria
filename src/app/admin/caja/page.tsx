@@ -4,20 +4,13 @@ import { CreditCard, Lock, Unlock, DollarSign, Activity } from 'lucide-react'
 import OpenRegisterModal from './components/open-register-modal'
 import CloseRegisterModal from './components/close-register-modal'
 
+import { requireRole } from '@/infrastructure/supabase/auth/auth-helpers'
+
 export const metadata = { title: 'Caja' }
 
 export default async function CajaPage() {
+  const profile = await requireRole(['cashier'])
   const supabase = await createClientServer()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('users')
-    .select('tenant_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.tenant_id) redirect('/login')
 
   // Obtener la sesión de caja abierta
   const { data: activeSession } = await supabase

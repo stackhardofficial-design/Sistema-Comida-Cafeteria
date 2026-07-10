@@ -3,33 +3,28 @@ import { redirect } from 'next/navigation'
 import { Truck, MapPin } from 'lucide-react'
 import AssignDeliveryModal from './components/assign-delivery-modal'
 
+import { requireRole } from '@/infrastructure/supabase/auth/auth-helpers'
+
 export const metadata = { title: 'Gestión de Delivery' }
 
 export default async function AdminDeliveryPage() {
+  const profile = await requireRole(['delivery'])
   const supabase = await createClientServer()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('users')
-    .select('tenant_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.tenant_id) redirect('/login')
+  const { createAdminClient } = await import('@/infrastructure/supabase/server')
+  const adminClient = createAdminClient()
 
   // Obtener pedidos de delivery pendientes de asignación
-  const { data: unassignedOrders } = await supabase
+  const { data: unassignedOrders } = await adminClient
     .from('orders')
     .select('*, delivery_addresses(*)')
     .eq('tenant_id', profile.tenant_id)
     .eq('order_type', 'delivery')
     .in('status', ['ready', 'in_kitchen', 'pending'])
-    .is('delivery_assignments.id', null) // Filtrar los que no tienen asignación (requiere join o lo filtramos por query si no sirve IS NULL en relation)
+    .is('delivery_assignments.id', null) 
   
-  // Alternative para filtrar unassigned (como Supabase no siempre soporta IS NULL en foreign table de 1-to-many fácil)
   // Obtenemos todas las asignaciones activas:
-  const { data: activeAssignments } = await supabase
+  const { data: activeAssignments } = await adminClient
     .from('delivery_assignments')
     .select(`
       *,
@@ -42,7 +37,7 @@ export default async function AdminDeliveryPage() {
 
   const assignedOrderIds = activeAssignments?.map(a => a.order_id) || []
   
-  const { data: deliveryOrders } = await supabase
+  const { data: deliveryOrders } = await adminClient
     .from('orders')
     .select('*, delivery_addresses(*)')
     .eq('tenant_id', profile.tenant_id)
@@ -52,11 +47,11 @@ export default async function AdminDeliveryPage() {
   const pendingAssignment = deliveryOrders?.filter(o => !assignedOrderIds.includes(o.id)) || []
 
   // Obtener repartidores
-  const { data: deliveryUsers } = await supabase
+  const { data: deliveryUsers } = await adminClient
     .from('users')
     .select('id, first_name, last_name, is_active')
     .eq('tenant_id', profile.tenant_id)
-    .eq('role', 'delivery')
+    .contains('roles', ['delivery'])
     .eq('is_active', true)
 
   const statusLabel: Record<string, string> = {
