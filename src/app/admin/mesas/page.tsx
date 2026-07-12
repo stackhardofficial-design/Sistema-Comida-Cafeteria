@@ -40,15 +40,22 @@ export default async function MesasPage({
   const tableList = (tables || []) as any[]
   const orderList = (activeOrders || []) as any[]
 
-  const activeZoneId = params?.zoneId || zoneList[0]?.id || 'all'
+  const activeZoneId = params?.zoneId || 'all'
 
   const zoneTables = activeZoneId === 'all'
     ? tableList
+    : activeZoneId === 'nozone'
+    ? tableList.filter(t => !t.zone_id)
     : tableList.filter(t => t.zone_id === activeZoneId)
 
+  const hasUnzonedTables = tableList.some(t => !t.zone_id)
+
   // Counts for zone badges
-  const occupiedCount = (id: string) =>
-    tableList.filter(t => (id === 'all' || t.zone_id === id) && t.status !== 'free').length
+  const occupiedCount = (id: string) => {
+    if (id === 'all') return tableList.filter(t => t.status !== 'free').length
+    if (id === 'nozone') return tableList.filter(t => !t.zone_id && t.status !== 'free').length
+    return tableList.filter(t => t.zone_id === id && t.status !== 'free').length
+  }
 
   return (
     <div className="space-y-5">
@@ -76,28 +83,27 @@ export default async function MesasPage({
         <div className="space-y-5">
           {/* Zone Tabs — like Fudo */}
           <div
-            className="flex items-center gap-1 p-1 rounded-2xl"
+            className="flex items-center gap-1 p-1 rounded-2xl overflow-x-auto"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}
           >
-            {zoneList.length > 1 && (
-              <Link
-                href="/admin/mesas?zoneId=all"
-                className="relative px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
-                style={
-                  activeZoneId === 'all'
-                    ? { background: 'var(--brand-orange)', color: '#fff', boxShadow: '0 4px 12px rgba(229,107,37,0.35)' }
-                    : { color: 'var(--text-muted)' }
-                }
-              >
-                Todas
-                {occupiedCount('all') > 0 && (
-                  <span className="w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center"
-                    style={{ background: activeZoneId === 'all' ? 'rgba(255,255,255,0.25)' : 'var(--bg-elevated)', color: activeZoneId === 'all' ? '#fff' : 'var(--text-secondary)' }}>
-                    {occupiedCount('all')}
-                  </span>
-                )}
-              </Link>
-            )}
+            {/* Always show Todas */}
+            <Link
+              href="/admin/mesas"
+              className="relative px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap flex-shrink-0"
+              style={
+                activeZoneId === 'all'
+                  ? { background: 'var(--brand-orange)', color: '#fff', boxShadow: '0 4px 12px rgba(229,107,37,0.35)' }
+                  : { color: 'var(--text-muted)' }
+              }
+            >
+              Todas
+              {occupiedCount('all') > 0 && (
+                <span className="w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center"
+                  style={{ background: activeZoneId === 'all' ? 'rgba(255,255,255,0.25)' : 'var(--bg-elevated)', color: activeZoneId === 'all' ? '#fff' : 'var(--text-secondary)' }}>
+                  {occupiedCount('all')}
+                </span>
+              )}
+            </Link>
 
             {zoneList.map(zone => {
               const isActive = activeZoneId === zone.id
@@ -106,7 +112,7 @@ export default async function MesasPage({
                 <Link
                   key={zone.id}
                   href={`/admin/mesas?zoneId=${zone.id}`}
-                  className="relative px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
+                  className="relative px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap flex-shrink-0"
                   style={
                     isActive
                       ? { background: 'var(--brand-orange)', color: '#fff', boxShadow: '0 4px 12px rgba(229,107,37,0.35)' }
@@ -123,7 +129,22 @@ export default async function MesasPage({
                 </Link>
               )
             })}
+
+            {hasUnzonedTables && (
+              <Link
+                href="/admin/mesas?zoneId=nozone"
+                className="relative px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap flex-shrink-0"
+                style={
+                  activeZoneId === 'nozone'
+                    ? { background: 'var(--brand-orange)', color: '#fff', boxShadow: '0 4px 12px rgba(229,107,37,0.35)' }
+                    : { color: 'var(--text-muted)' }
+                }
+              >
+                Sin zona
+              </Link>
+            )}
           </div>
+
 
           {/* Stats bar */}
           <div className="grid grid-cols-4 gap-3">
