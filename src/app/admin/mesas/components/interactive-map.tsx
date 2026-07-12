@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   updateTableDetails,
@@ -10,7 +10,7 @@ import {
 } from '@/infrastructure/supabase/tables/actions'
 import {
   Users, X, Edit2, Trash2, ArrowRightLeft,
-  ShoppingCart, Coffee, Clock, Loader2, Settings
+  ShoppingCart, Clock, Loader2, Save, Move
 } from 'lucide-react'
 
 interface Table {
@@ -50,10 +50,10 @@ interface Props {
 }
 
 const STATUS_CONFIG = {
-  free:     { label: 'Libre',      bg: 'rgba(34,197,94,0.12)',  border: '#22c55e', text: '#22c55e',  dot: '#22c55e' },
-  occupied: { label: 'Ocupada',    bg: 'rgba(239,68,68,0.12)',  border: '#ef4444', text: '#ef4444',  dot: '#ef4444' },
-  reserved: { label: 'Reservada',  bg: 'rgba(245,158,11,0.12)', border: '#f59e0b', text: '#f59e0b',  dot: '#f59e0b' },
-  billing:  { label: 'Por cobrar', bg: 'rgba(59,130,246,0.12)', border: '#3b82f6', text: '#3b82f6',  dot: '#3b82f6' },
+  free:     { label: 'Libre',      bg: '#7ed957', border: '#6bc747', text: '#ffffff' },
+  occupied: { label: 'Ocupada',    bg: '#ff5757', border: '#e64949', text: '#ffffff' },
+  reserved: { label: 'Reservada',  bg: '#ffbd59', border: '#e6a849', text: '#ffffff' },
+  billing:  { label: 'Por cobrar', bg: '#5ce1e6', border: '#4ac8cc', text: '#ffffff' },
 }
 
 function timeAgo(isoDate: string) {
@@ -65,53 +65,57 @@ function timeAgo(isoDate: string) {
 export default function InteractiveMap({ zoneId, initialTables, activeOrders, allTables, zones }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  
+  // Selection & Forms
   const [selected, setSelected] = useState<Table | null>(null)
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditingTable, setIsEditingTable] = useState(false)
   const [transferTarget, setTransferTarget] = useState('')
-
-  // Edit form state
   const [editName, setEditName] = useState('')
   const [editCapacity, setEditCapacity] = useState(4)
   const [editShape, setEditShape] = useState('square')
   const [editZoneId, setEditZoneId] = useState('')
 
-  const tables = initialTables
-  const order = selected ? activeOrders.find(o => o.table_db_id === selected.id) : null
+  // Drag & Layout State
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [localTables, setLocalTables] = useState<Table[]>(initialTables)
+  const mapRef = useRef<HTMLDivElement>(null)
+  const [draggedTableId, setDraggedTableId] = useState<string | null>(null)
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
+
+  // Update local tables when props change (but not while dragging)
+  useEffect(() => {
+    if (!draggedTableId) setLocalTables(initialTables)
+  }, [initialTables, draggedTableId])
+
+  const activeOrder = selected ? activeOrders.find(o => o.table_db_id === selected.id) : null
   const freeTables = allTables.filter(t => t.status === 'free' && t.id !== selected?.id)
 
+  // -- Interaction Handlers --
   function openTable(table: Table) {
+    if (isEditMode) return // In edit mode, clicking selects for dragging only
     setSelected(table)
-    setIsEditing(false)
+    setIsEditingTable(false)
     setTransferTarget('')
   }
 
-  function startEdit() {
+  function startEditForm() {
     if (!selected) return
     setEditName(selected.name)
     setEditCapacity(selected.capacity)
     setEditShape(selected.shape || 'square')
-    setEditZoneId(selected.zone_id || zoneId)
-    setIsEditing(true)
+    setEditZoneId(selected.zone_id || zoneId || '')
+    setIsEditingTable(true)
   }
 
-  function saveEdit() {
+  function saveTableEdit() {
     if (!selected) return
     startTransition(async () => {
       const res = await updateTableDetails(selected.id, {
         name: editName, capacity: editCapacity,
-        shape: editShape, zone_id: editZoneId || null,
+        shape: editShape, zone_id: editZoneId === 'nozone' ? null : editZoneId || null,
       })
       if (res.error) return alert(res.error)
-      setIsEditing(false)
-      setSelected(null)
-      router.refresh()
-    })
-  }
-
-  function changeStatus(status: Table['status']) {
-    if (!selected) return
-    startTransition(async () => {
-      await updateTableDetails(selected.id, { status })
+      setIsEditingTable(false)
       setSelected(null)
       router.refresh()
     })
@@ -130,7 +134,7 @@ export default function InteractiveMap({ zoneId, initialTables, activeOrders, al
 
   function handleDelete() {
     if (!selected) return
-    if (!confirm(`¿Eliminar "${selected.name}"?`)) return
+    if (!confirm(`¿Eliminar la mesa "${selected.name}"?`)) return
     startTransition(async () => {
       await deleteTable(selected.id)
       setSelected(null)
@@ -138,291 +142,316 @@ export default function InteractiveMap({ zoneId, initialTables, activeOrders, al
     })
   }
 
-  function handleRelease() {
-    if (!selected) return
+  function saveLayout() {
     startTransition(async () => {
-      await updateTableDetails(selected.id, { status: 'free', current_order_id: null })
-      setSelected(null)
+      const positions = localTables.map(t => ({ id: t.id, pos_x: t.pos_x, pos_y: t.pos_y }))
+      const res = await updateTablePositions(positions)
+      if (res.error) alert(res.error)
+      else setIsEditMode(false)
       router.refresh()
     })
   }
 
+  // -- Drag & Drop Logic --
+  const handlePointerDown = (e: React.PointerEvent, table: Table) => {
+    if (!isEditMode) return
+    e.preventDefault()
+    e.stopPropagation()
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    setDragOffset({ x: e.clientX - rect.left, y: e.clientY - rect.top })
+    setDraggedTableId(table.id)
+  }
+
+  const handlePointerMove = useCallback((e: PointerEvent) => {
+    if (!draggedTableId || !mapRef.current) return
+    e.preventDefault()
+
+    const mapRect = mapRef.current.getBoundingClientRect()
+    // Calculate new position relative to map container
+    let newX = e.clientX - mapRect.left - dragOffset.x
+    let newY = e.clientY - mapRect.top - dragOffset.y
+
+    // Grid snapping (optional, e.g. snap to 10px)
+    newX = Math.round(newX / 10) * 10
+    newY = Math.round(newY / 10) * 10
+
+    // Boundaries
+    const tableSize = 80 // Max size
+    if (newX < 0) newX = 0
+    if (newY < 0) newY = 0
+    if (newX > mapRect.width - tableSize) newX = mapRect.width - tableSize
+    if (newY > mapRect.height - tableSize) newY = mapRect.height - tableSize
+
+    setLocalTables(prev => prev.map(t => 
+      t.id === draggedTableId ? { ...t, pos_x: newX, pos_y: newY } : t
+    ))
+  }, [draggedTableId, dragOffset])
+
+  const handlePointerUp = useCallback(() => {
+    setDraggedTableId(null)
+  }, [])
+
+  useEffect(() => {
+    if (draggedTableId) {
+      window.addEventListener('pointermove', handlePointerMove)
+      window.addEventListener('pointerup', handlePointerUp)
+    }
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', handlePointerUp)
+    }
+  }, [draggedTableId, handlePointerMove, handlePointerUp])
+
   return (
-    <div className="flex gap-5" style={{ minHeight: '420px' }}>
-
-      {/* ══ TABLE GRID ══ */}
-      <div className="flex-1">
-        {tables.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 text-center" style={{ color: 'var(--text-muted)' }}>
-            <Coffee className="h-10 w-10 mb-3 opacity-40" />
-            <p className="text-sm font-semibold">Sin mesas en esta zona</p>
-            <p className="text-xs mt-1">Crea mesas usando el botón "Nueva Mesa" arriba.</p>
-          </div>
-        ) : (
-          <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))' }}>
-            {tables.map(table => {
-              const cfg = STATUS_CONFIG[table.status]
-              const tableOrder = activeOrders.find(o => o.table_db_id === table.id)
-              const isSelected = selected?.id === table.id
-              const isCircle = table.shape === 'circle'
-
-              return (
-                <button
-                  key={table.id}
-                  onClick={() => openTable(table)}
-                  className="relative flex flex-col items-center justify-center text-center transition-all"
-                  style={{
-                    height: '120px',
-                    borderRadius: isCircle ? '50%' : '20px',
-                    background: cfg.bg,
-                    border: `2px solid ${isSelected ? '#e56b25' : cfg.border}`,
-                    boxShadow: isSelected
-                      ? '0 0 0 4px rgba(229,107,37,0.25), 0 8px 24px rgba(0,0,0,0.4)'
-                      : `0 4px 16px rgba(0,0,0,0.25)`,
-                    transform: isSelected ? 'scale(1.05)' : 'scale(1)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {/* Status dot */}
-                  <span
-                    className="absolute top-3 left-3 w-2.5 h-2.5 rounded-full"
-                    style={{ background: cfg.dot, boxShadow: `0 0 6px ${cfg.dot}` }}
-                  />
-
-                  {/* Table name */}
-                  <span className="font-black text-base" style={{ color: 'var(--text-primary)' }}>
-                    {table.name}
-                  </span>
-
-                  {/* Capacity */}
-                  <span className="flex items-center gap-1 text-[11px] mt-1 font-medium" style={{ color: 'var(--text-secondary)' }}>
-                    <Users className="h-3 w-3" />{table.capacity}
-                  </span>
-
-                  {/* Order total badge */}
-                  {tableOrder && (
-                    <span
-                      className="absolute bottom-2 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                      style={{ background: 'rgba(239,68,68,0.2)', color: '#ef4444' }}
-                    >
-                      ${Number(tableOrder.total_amount).toFixed(0)}
-                    </span>
-                  )}
-
-                  {/* Time badge for occupied */}
-                  {table.status === 'occupied' && tableOrder && (
-                    <span
-                      className="absolute top-2 right-2 text-[9px] font-bold flex items-center gap-0.5"
-                      style={{ color: cfg.text }}
-                    >
-                      <Clock className="h-2.5 w-2.5" />
-                      {timeAgo(tableOrder.created_at)}
-                    </span>
-                  )}
+    <div className="flex gap-4 h-[600px] select-none">
+      
+      {/* ══ MAP CANVAS ══ */}
+      <div className="flex-1 flex flex-col bg-[#f0f2f5] rounded-xl overflow-hidden shadow-inner relative border border-gray-300">
+        
+        {/* Map Header / Toolbar */}
+        <div className="bg-white p-3 border-b border-gray-200 flex justify-between items-center z-10">
+          <span className="text-gray-600 font-medium text-sm flex items-center gap-2">
+            {isEditMode ? (
+              <><Move className="h-4 w-4 text-orange-500" /> Arrastra las mesas para ubicarlas</>
+            ) : (
+              'Selecciona una mesa para gestionar'
+            )}
+          </span>
+          <div>
+            {isEditMode ? (
+              <div className="flex gap-2">
+                <button onClick={() => { setIsEditMode(false); setLocalTables(initialTables) }} className="px-4 py-1.5 text-sm font-semibold text-gray-500 hover:bg-gray-100 rounded-lg transition-colors">
+                  Cancelar
                 </button>
-              )
-            })}
+                <button onClick={saveLayout} disabled={isPending} className="px-4 py-1.5 text-sm font-bold bg-green-500 text-white rounded-lg shadow-sm shadow-green-500/30 flex items-center gap-2 hover:bg-green-600 transition-colors">
+                  {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Guardar Diseño
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setIsEditMode(true)} className="px-4 py-1.5 text-sm font-bold text-gray-600 border border-gray-300 bg-white hover:bg-gray-50 rounded-lg shadow-sm flex items-center gap-2 transition-colors">
+                <Edit2 className="h-4 w-4" /> Configurar Diseño
+              </button>
+            )}
           </div>
-        )}
+        </div>
 
-        {/* Legend */}
-        <div className="flex flex-wrap gap-4 mt-6 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-          {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-            <span key={key} className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
-              <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: cfg.dot }} />
-              {cfg.label}
-            </span>
-          ))}
+        {/* Canvas Area */}
+        <div 
+          ref={mapRef}
+          className="flex-1 relative bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-white"
+          style={{ touchAction: 'none' }} // Prevent scrolling while dragging on touch devices
+        >
+          {localTables.map(table => {
+            const cfg = STATUS_CONFIG[table.status]
+            const isCircle = table.shape === 'circle'
+            const isSel = selected?.id === table.id && !isEditMode
+
+            // Fallback grid positions if x,y are 0 and not edited yet
+            const idx = initialTables.findIndex(t => t.id === table.id)
+            const defaultX = 20 + (idx % 6) * 100
+            const defaultY = 20 + Math.floor(idx / 6) * 100
+
+            const posX = table.pos_x || defaultX
+            const posY = table.pos_y || defaultY
+
+            return (
+              <div
+                key={table.id}
+                onPointerDown={(e) => handlePointerDown(e, table)}
+                onClick={() => !isEditMode && openTable(table)}
+                className="absolute flex items-center justify-center transition-shadow"
+                style={{
+                  left: posX,
+                  top: posY,
+                  width: '70px',
+                  height: '70px',
+                  backgroundColor: cfg.bg,
+                  borderBottom: `4px solid ${cfg.border}`,
+                  borderRadius: isCircle ? '50%' : '12px',
+                  color: cfg.text,
+                  cursor: isEditMode ? (draggedTableId === table.id ? 'grabbing' : 'grab') : 'pointer',
+                  boxShadow: isSel ? '0 0 0 3px rgba(0,0,0,0.8)' : (isEditMode ? '0 4px 6px rgba(0,0,0,0.1)' : '0 2px 4px rgba(0,0,0,0.15)'),
+                  zIndex: draggedTableId === table.id ? 50 : 10,
+                  transform: isSel && !isEditMode ? 'scale(1.05)' : 'scale(1)',
+                }}
+              >
+                <span className="text-xl font-black">{table.name}</span>
+                
+                {/* Time Indicator */}
+                {table.status !== 'free' && !isEditMode && (
+                  <span className="absolute -top-2 -right-2 bg-white text-gray-800 text-[10px] font-bold px-1.5 py-0.5 rounded-md border border-gray-200 shadow-sm">
+                    {timeAgo(activeOrders.find(o => o.table_db_id === table.id)?.created_at || new Date().toISOString())}
+                  </span>
+                )}
+              </div>
+            )
+          })}
         </div>
       </div>
 
-      {/* ══ SIDE PANEL ══ */}
-      {selected && (
-        <div
-          className="flex flex-col gap-4 flex-shrink-0"
-          style={{
-            width: '300px',
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: '20px',
-            padding: '20px',
-          }}
-        >
-          {/* Header */}
-          <div className="flex items-start justify-between">
-            <div>
-              <h2 className="text-xl font-black" style={{ color: 'var(--text-primary)' }}>{selected.name}</h2>
-              <span
-                className="text-xs font-bold px-2 py-0.5 rounded-full mt-1 inline-block"
-                style={{
-                  background: STATUS_CONFIG[selected.status].bg,
-                  color: STATUS_CONFIG[selected.status].text,
-                  border: `1px solid ${STATUS_CONFIG[selected.status].border}20`,
-                }}
-              >
-                {STATUS_CONFIG[selected.status].label}
-              </span>
-            </div>
-            <button
-              onClick={() => { setSelected(null); setIsEditing(false) }}
-              className="p-1.5 rounded-lg hover:bg-white/5"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              <X className="h-4 w-4" />
-            </button>
+      {/* ══ SIDE PANEL (Fudo Style) ══ */}
+      <div className="w-[340px] bg-white rounded-xl shadow-md border border-gray-200 flex flex-col overflow-hidden">
+        
+        {!selected ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-gray-400">
+            <ShoppingCart className="h-12 w-12 mb-4 opacity-50" />
+            <h3 className="text-lg font-bold text-gray-600 mb-1">Ninguna mesa seleccionada</h3>
+            <p className="text-sm">Selecciona una mesa del mapa para abrirla, ver su consumo o editarla.</p>
           </div>
-
-          {isEditing ? (
-            /* ── EDIT FORM ── */
-            <div className="space-y-3 flex-1">
-              <div className="form-group">
-                <label className="form-label text-xs">Nombre / Número</label>
-                <input value={editName} onChange={e => setEditName(e.target.value)} className="input-field py-2 text-sm" />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="form-group">
-                  <label className="form-label text-xs">Sillas</label>
-                  <input type="number" value={editCapacity} onChange={e => setEditCapacity(+e.target.value)} className="input-field py-2 text-sm" />
+        ) : (
+          <div className="flex-1 flex flex-col">
+            {/* Header */}
+            <div className="bg-gray-50 border-b border-gray-200 p-4 relative">
+              <button 
+                onClick={() => { setSelected(null); setIsEditingTable(false) }}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 bg-gray-200 p-1 rounded-full"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <div className="flex items-center gap-3">
+                <div 
+                  className="w-12 h-12 flex items-center justify-center rounded-lg text-white font-black text-xl border-b-[3px]"
+                  style={{ background: STATUS_CONFIG[selected.status].bg, borderColor: STATUS_CONFIG[selected.status].border }}
+                >
+                  {selected.name}
                 </div>
-                <div className="form-group">
-                  <label className="form-label text-xs">Forma</label>
-                  <select value={editShape} onChange={e => setEditShape(e.target.value)} className="input-field py-2 text-sm">
-                    <option value="square">Rectangular</option>
-                    <option value="circle">Circular</option>
-                  </select>
+                <div>
+                  <h2 className="text-xl font-black text-gray-800">Mesa {selected.name}</h2>
+                  <span className="text-sm font-semibold flex items-center gap-1" style={{ color: STATUS_CONFIG[selected.status].bg }}>
+                    <span className="w-2 h-2 rounded-full" style={{ background: STATUS_CONFIG[selected.status].bg }}></span>
+                    {STATUS_CONFIG[selected.status].label}
+                  </span>
                 </div>
-              </div>
-              <div className="form-group">
-                <label className="form-label text-xs">Zona</label>
-                <select value={editZoneId} onChange={e => setEditZoneId(e.target.value)} className="input-field py-2 text-sm">
-                  {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
-                </select>
-              </div>
-              <div className="flex gap-2 pt-2">
-                <button onClick={() => setIsEditing(false)} className="btn btn-secondary btn-sm flex-1">Cancelar</button>
-                <button onClick={saveEdit} disabled={isPending} className="btn btn-primary btn-sm flex-1">
-                  {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Guardar'}
-                </button>
               </div>
             </div>
-          ) : (
-            <>
-              {/* ── ACTIVE ORDER ── */}
-              {order ? (
-                <div
-                  className="rounded-xl p-3 space-y-2"
-                  style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#ef4444' }}>
-                      Consumo activo
-                    </span>
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      <Clock className="h-3 w-3 inline mr-0.5" />{timeAgo(order.created_at)}
-                    </span>
+
+            <div className="flex-1 p-4 overflow-y-auto bg-white">
+              {isEditingTable ? (
+                /* ── EDIT FORM ── */
+                <div className="space-y-4">
+                  <h3 className="font-bold text-gray-800 border-b pb-2">Editar Mesa</h3>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Nombre / Número</label>
+                    <input value={editName} onChange={e => setEditName(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2.5 text-sm text-gray-800 outline-none focus:border-orange-500" />
                   </div>
-                  <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                    {order.order_items.map(item => (
-                      <div key={item.id} className="flex justify-between text-xs">
-                        <span style={{ color: 'var(--text-secondary)' }}>
-                          <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{item.quantity}×</span> {item.products?.name}
-                        </span>
-                        <span className="font-bold" style={{ color: 'var(--text-primary)' }}>
-                          ${(item.quantity * item.unit_price).toFixed(2)}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Sillas</label>
+                      <input type="number" value={editCapacity} onChange={e => setEditCapacity(+e.target.value)} className="w-full border border-gray-300 rounded-lg p-2.5 text-sm text-gray-800 outline-none focus:border-orange-500" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Forma</label>
+                      <select value={editShape} onChange={e => setEditShape(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2.5 text-sm text-gray-800 outline-none focus:border-orange-500">
+                        <option value="square">Cuadrada</option>
+                        <option value="circle">Redonda</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Zona</label>
+                    <select value={editZoneId} onChange={e => setEditZoneId(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2.5 text-sm text-gray-800 outline-none focus:border-orange-500">
+                      <option value="nozone">Sin zona</option>
+                      {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex gap-2 pt-4 border-t border-gray-100">
+                    <button onClick={() => setIsEditingTable(false)} className="flex-1 py-2 text-sm font-bold text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">Cancelar</button>
+                    <button onClick={saveTableEdit} disabled={isPending} className="flex-1 py-2 text-sm font-bold text-white bg-orange-500 rounded-lg hover:bg-orange-600 shadow-sm flex justify-center">
+                      {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Guardar'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* ── ACTIVE ORDER DETAILS ── */
+                <>
+                  {activeOrder ? (
+                    <div>
+                      <div className="flex justify-between items-end mb-3">
+                        <h3 className="font-black text-gray-800">Consumo</h3>
+                        <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-md flex items-center gap-1">
+                          <Clock className="h-3 w-3" /> {timeAgo(activeOrder.created_at)}
                         </span>
                       </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-between items-center pt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                    <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Total:</span>
-                    <span className="text-lg font-black" style={{ color: '#ef4444' }}>
-                      ${Number(order.total_amount).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-              ) : selected.status === 'free' ? (
-                <p className="text-xs text-center py-2" style={{ color: 'var(--text-muted)' }}>Mesa disponible sin pedido activo.</p>
-              ) : null}
+                      
+                      <div className="space-y-2 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                        {activeOrder.order_items.map(item => (
+                          <div key={item.id} className="flex justify-between text-sm">
+                            <span className="text-gray-700">
+                              <span className="font-bold">{item.quantity}×</span> {item.products?.name}
+                            </span>
+                            <span className="font-bold text-gray-900">${(item.quantity * item.unit_price).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
 
-              {/* ── QUICK ACTIONS ── */}
-              <div className="space-y-2">
-                {/* Go to POS */}
-                <button
-                  onClick={() => router.push(`/pos?tableId=${selected.id}`)}
-                  className="btn btn-primary w-full text-sm"
-                >
-                  <ShoppingCart className="h-4 w-4" />
-                  {selected.status === 'free' ? 'Nuevo Pedido' : 'Ver / Agregar Consumos'}
-                </button>
+                      <div className="flex justify-between items-center mt-4 bg-gray-900 text-white p-4 rounded-xl shadow-sm">
+                        <span className="text-sm font-bold uppercase tracking-wider text-gray-300">Total</span>
+                        <span className="text-2xl font-black">${Number(activeOrder.total_amount).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-32 bg-gray-50 border border-gray-100 rounded-xl">
+                      <span className="text-gray-400 font-medium text-sm">Mesa libre, sin pedido activo</span>
+                    </div>
+                  )}
 
-                {/* Transfer order */}
-                {selected.status === 'occupied' && freeTables.length > 0 && (
-                  <div className="flex gap-2">
-                    <select
-                      value={transferTarget}
-                      onChange={e => setTransferTarget(e.target.value)}
-                      className="input-field py-2 text-xs flex-1"
-                    >
-                      <option value="">Mudar a mesa...</option>
-                      {freeTables.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                    </select>
+                  {/* Actions */}
+                  <div className="mt-6 space-y-3">
                     <button
-                      onClick={handleTransfer}
-                      disabled={!transferTarget || isPending}
-                      className="btn btn-secondary btn-sm px-3"
-                      title="Transferir pedido"
+                      onClick={() => router.push(`/pos?tableId=${selected.id}`)}
+                      className="w-full py-3.5 text-white font-black text-sm bg-orange-500 hover:bg-orange-600 rounded-xl shadow-md shadow-orange-500/20 flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
                     >
-                      {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRightLeft className="h-4 w-4" />}
+                      <ShoppingCart className="h-5 w-5" />
+                      {selected.status === 'free' ? 'Abrir Mesa (Nuevo Pedido)' : 'Ver / Agregar Consumos'}
                     </button>
+
+                    {/* Mudar Cuenta */}
+                    {selected.status === 'occupied' && freeTables.length > 0 && (
+                      <div className="flex gap-2">
+                        <select
+                          value={transferTarget}
+                          onChange={e => setTransferTarget(e.target.value)}
+                          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none focus:border-orange-500"
+                        >
+                          <option value="">Mudar a mesa...</option>
+                          {freeTables.map(t => <option key={t.id} value={t.id}>Mesa {t.name}</option>)}
+                        </select>
+                        <button
+                          onClick={handleTransfer}
+                          disabled={!transferTarget || isPending}
+                          className="px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50"
+                          title="Transferir pedido"
+                        >
+                          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRightLeft className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    )}
                   </div>
-                )}
-
-                {/* Change status */}
-                <div className="grid grid-cols-2 gap-2">
-                  {(Object.keys(STATUS_CONFIG) as Table['status'][]).map(st => (
-                    <button
-                      key={st}
-                      onClick={() => changeStatus(st)}
-                      disabled={isPending || selected.status === st}
-                      className="text-xs py-2 px-3 rounded-xl font-semibold border transition-all"
-                      style={{
-                        background: selected.status === st ? STATUS_CONFIG[st].bg : 'transparent',
-                        borderColor: STATUS_CONFIG[st].border + '50',
-                        color: STATUS_CONFIG[st].text,
-                        opacity: selected.status === st ? 1 : 0.7,
-                      }}
-                    >
-                      {STATUS_CONFIG[st].label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* ── MANAGEMENT ── */}
-              <div className="flex gap-2 pt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                <button onClick={startEdit} className="btn btn-secondary btn-sm flex-1 text-xs">
-                  <Edit2 className="h-3.5 w-3.5" /> Editar
+                </>
+              )}
+            </div>
+            
+            {/* Footer Admin Actions */}
+            {!isEditingTable && (
+              <div className="bg-gray-50 p-4 border-t border-gray-200 flex gap-2">
+                <button onClick={startEditForm} className="flex-1 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1">
+                  <Edit2 className="h-3 w-3" /> Editar
                 </button>
-                {selected.status === 'occupied' && (
-                  <button onClick={handleRelease} disabled={isPending} className="btn btn-secondary btn-sm text-xs px-3"
-                    style={{ borderColor: 'rgba(245,158,11,0.3)', color: '#f59e0b' }} title="Liberar mesa forzado">
-                    Liberar
-                  </button>
-                )}
                 <button
                   onClick={handleDelete}
                   disabled={isPending || selected.status !== 'free'}
-                  className="btn btn-ghost btn-icon btn-sm"
-                  style={{ color: 'var(--danger)' }}
-                  title="Eliminar mesa (solo si está libre)"
+                  className="px-4 py-2 text-xs font-bold text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 flex items-center justify-center disabled:opacity-50"
+                  title="Eliminar mesa (solo libre)"
                 >
-                  {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  <Trash2 className="h-4 w-4" />
                 </button>
               </div>
-            </>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )}
+      </div>
+
     </div>
   )
 }
