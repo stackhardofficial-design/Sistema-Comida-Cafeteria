@@ -72,6 +72,17 @@ async function dbUpdateTable(tableId, updates) {
   return data;
 }
 
+async function dbCreateTable(payload) {
+  const { data, error } = await sb.from('restaurant_tables').insert({
+    ...payload,
+    tenant_id: APP_STATE.tenantId,
+    status: 'free',
+    is_active: true
+  }).select().single();
+  if (error) throw error;
+  return data;
+}
+
 // ===== CATEGORIES =====
 async function dbGetCategories() {
   const { data } = await sb.from('categories')

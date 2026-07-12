@@ -10,7 +10,10 @@ async function renderMesas(container) {
   container.innerHTML = `
     <div class="module-header">
       <div style="display:flex;flex-direction:column;gap:4px">
-        <h1>Mesas</h1>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <h1>Mesas</h1>
+          <button class="btn-primary" style="padding:6px 10px;font-size:12px" onclick="showAddTableForm()">+ Agregar Mesa</button>
+        </div>
         <div class="module-tabs" id="zone-tabs">
           <button class="tab-btn active" onclick="filterZone(null)">Todos</button>
         </div>
@@ -70,7 +73,7 @@ async function loadMesasData() {
       return `<div class="table-card ${statusClass}" onclick="selectTable('${table.id}', '${table.name}', '${status}')">
         <div class="table-num">${table.name.replace('Mesa ', '')}</div>
         ${meta}
-        <div class="table-meta">${status === 'available' ? '✓ Libre' : status === 'billing' ? '💳 Cobrando' : '🍽️ Ocupada'}</div>
+        <div class="table-meta">${status === 'free' ? '✓ Libre' : status === 'billing' ? '💳 Cobrando' : '🍽️ Ocupada'}</div>
       </div>`;
     }).join('');
   } catch(e) {
@@ -105,7 +108,7 @@ async function selectTable(tableDbId, tableName, status) {
     orderId: existingOrder?.id || null
   };
 
-  updateComandaHeader(`Mesa ${tableName.replace('Mesa ', '')}`, status === 'available' ? '🟢 Mesa libre' : '🔴 Mesa ocupada');
+  updateComandaHeader(`Mesa ${tableName.replace('Mesa ', '')}`, status === 'free' ? '🟢 Mesa libre' : '🔴 Mesa ocupada');
 
   // If occupied, load existing order items into cart view (read only display)
   if (existingOrder && existingOrder.order_items) {
@@ -125,4 +128,48 @@ async function selectTable(tableDbId, tableName, status) {
   }
 
   mesasRefreshInterval = setInterval(loadMesasData, 30000);
+}
+
+function showAddTableForm() {
+  const zones = APP_STATE.zones || [];
+  const zoneOptions = zones.map(z => `<option value="${z.id}" ${mesasZoneFilter===z.id?'selected':''}>${z.name}</option>`).join('');
+  showGenericModal(`
+    <h3>+ Agregar Mesa</h3>
+    <div class="form-row">
+      <label>Sector / Zona</label>
+      <select id="new-table-zone">${zoneOptions}</select>
+    </div>
+    <div class="form-row">
+      <label>Nombre de la Mesa</label>
+      <input type="text" id="new-table-name" placeholder="Ej: Mesa 15" />
+    </div>
+    <div class="form-row">
+      <label>Capacidad (personas)</label>
+      <input type="number" id="new-table-cap" value="4" min="1" />
+    </div>
+    <div class="form-actions">
+      <button class="btn-secondary btn-primary" onclick="closeGenericModal()">Cancelar</button>
+      <button class="btn-primary" onclick="saveNewTable()">Guardar</button>
+    </div>
+  `);
+}
+
+async function saveNewTable() {
+  const zoneId = document.getElementById('new-table-zone').value;
+  const name = document.getElementById('new-table-name').value.trim();
+  const capacity = parseInt(document.getElementById('new-table-cap').value) || 4;
+
+  if (!name || !zoneId) {
+    showToast('Falta nombre o sector', 'error');
+    return;
+  }
+
+  try {
+    await dbCreateTable({ zone_id: zoneId, name: name, capacity: capacity });
+    closeGenericModal();
+    showToast('Mesa agregada', 'success');
+    loadMesasData(); // reload
+  } catch (e) {
+    showToast('Error al crear mesa: ' + e.message, 'error');
+  }
 }
