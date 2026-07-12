@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useMemo, useTransition } from 'react'
+import { useState, useMemo, useTransition, useEffect } from 'react'
 import { createOrder } from '@/infrastructure/supabase/orders/actions'
 import { 
   Coffee, ShoppingBag, Truck, Plus, Minus, Trash2, 
   Send, CreditCard, ChevronRight, AlertCircle, Loader2
 } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
 import PaymentModal from './payment-modal'
 
 interface Props {
@@ -19,15 +20,25 @@ interface Props {
 }
 
 export default function POSClient({ categories, products, tables, hasActiveCashSession, cashSessionId }: Props) {
+  const searchParams = useSearchParams()
+  const urlTableId = searchParams.get('tableId')
+
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [orderType, setOrderType] = useState<'dine_in' | 'takeout' | 'delivery'>('dine_in')
-  const [selectedTableId, setSelectedTableId] = useState<string>('')
+  const [selectedTableId, setSelectedTableId] = useState<string>(urlTableId || '')
   const [customerName, setCustomerName] = useState('')
   const [cart, setCart] = useState<any[]>([])
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (urlTableId) {
+      setSelectedTableId(urlTableId)
+      setOrderType('dine_in')
+    }
+  }, [urlTableId])
 
   // Filter products by category
   const filteredProducts = useMemo(() => {
