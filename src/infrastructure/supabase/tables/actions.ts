@@ -1,6 +1,6 @@
 'use server'
 
-import { createClientServer } from '../server'
+import { createClientServer, createAdminClient } from '../server'
 import { revalidatePath } from 'next/cache'
 
 export type ActionState = {
@@ -33,18 +33,16 @@ export async function createZone(prevState: any, formData: FormData): Promise<Ac
 
   const name = formData.get('name') as string
   const description = formData.get('description') as string
-
   if (!name) return { error: 'El nombre de la zona es requerido' }
 
-  const supabase = await createClientServer()
-  const { error } = await supabase.from('restaurant_zones').insert({
+  const admin = createAdminClient()
+  const { error } = await admin.from('restaurant_zones').insert({
     tenant_id: executor.tenant_id,
     name,
     description: description || null,
   })
 
   if (error) return { error: error.message }
-
   revalidatePath('/admin/mesas')
   return { success: true, message: 'Zona creada exitosamente' }
 }
@@ -55,15 +53,14 @@ export async function deleteZone(zoneId: string): Promise<ActionState> {
     return { error: 'Sin permisos' }
   }
 
-  const supabase = await createClientServer()
-  const { error } = await supabase
+  const admin = createAdminClient()
+  const { error } = await admin
     .from('restaurant_zones')
     .delete()
     .eq('id', zoneId)
     .eq('tenant_id', executor.tenant_id)
 
   if (error) return { error: error.message }
-
   revalidatePath('/admin/mesas')
   return { success: true }
 }
@@ -79,11 +76,10 @@ export async function createTable(prevState: any, formData: FormData): Promise<A
   const name = formData.get('name') as string
   const capacity = parseInt(formData.get('capacity') as string) || 4
   const zoneId = formData.get('zoneId') as string
-
   if (!name) return { error: 'El nombre de la mesa es requerido' }
 
-  const supabase = await createClientServer()
-  const { error } = await supabase.from('restaurant_tables').insert({
+  const admin = createAdminClient()
+  const { error } = await admin.from('restaurant_tables').insert({
     tenant_id: executor.tenant_id,
     zone_id: zoneId || null,
     name,
@@ -92,7 +88,6 @@ export async function createTable(prevState: any, formData: FormData): Promise<A
   })
 
   if (error) return { error: error.message }
-
   revalidatePath('/admin/mesas')
   revalidatePath('/pos')
   return { success: true, message: 'Mesa creada exitosamente' }
@@ -105,15 +100,14 @@ export async function updateTableStatus(
   const executor = await getExecutor()
   if (!executor) return { error: 'No autenticado' }
 
-  const supabase = await createClientServer()
-  const { error } = await supabase
+  const admin = createAdminClient()
+  const { error } = await admin
     .from('restaurant_tables')
     .update({ status })
     .eq('id', tableId)
     .eq('tenant_id', executor.tenant_id)
 
   if (error) return { error: error.message }
-
   revalidatePath('/admin/mesas')
   revalidatePath('/pos')
   return { success: true }
@@ -125,15 +119,14 @@ export async function deleteTable(tableId: string): Promise<ActionState> {
     return { error: 'Sin permisos' }
   }
 
-  const supabase = await createClientServer()
-  const { error } = await supabase
+  const admin = createAdminClient()
+  const { error } = await admin
     .from('restaurant_tables')
     .delete()
     .eq('id', tableId)
     .eq('tenant_id', executor.tenant_id)
 
   if (error) return { error: error.message }
-
   revalidatePath('/admin/mesas')
   revalidatePath('/pos')
   return { success: true }
@@ -147,12 +140,9 @@ export async function updateTablePositions(
     return { error: 'Sin permisos' }
   }
 
-  const supabase = await createClientServer()
-
-  // Perform updates. Since Supabase client doesn't do bulk updates with different values easily,
-  // we can run them in a Promise.all or a custom query.
+  const admin = createAdminClient()
   const updatePromises = positions.map(p =>
-    supabase
+    admin
       .from('restaurant_tables')
       .update({ pos_x: p.pos_x, pos_y: p.pos_y })
       .eq('id', p.id)
@@ -184,15 +174,14 @@ export async function updateTableDetails(
     return { error: 'Sin permisos' }
   }
 
-  const supabase = await createClientServer()
-  const { error } = await supabase
+  const admin = createAdminClient()
+  const { error } = await admin
     .from('restaurant_tables')
     .update(updates)
     .eq('id', tableId)
     .eq('tenant_id', executor.tenant_id)
 
   if (error) return { error: error.message }
-
   revalidatePath('/admin/mesas')
   revalidatePath('/pos')
   return { success: true, message: 'Mesa actualizada correctamente' }
@@ -205,10 +194,9 @@ export async function transferTableOrder(
   const executor = await getExecutor()
   if (!executor) return { error: 'No autenticado' }
 
-  const supabase = await createClientServer()
+  const admin = createAdminClient()
 
-  // 1. Get fromTable details
-  const { data: fromTable, error: getError } = await supabase
+  const { data: fromTable, error: getError } = await admin
     .from('restaurant_tables')
     .select('current_order_id, name')
     .eq('id', fromTableId)
@@ -218,8 +206,7 @@ export async function transferTableOrder(
   if (getError || !fromTable) return { error: 'No se pudo encontrar la mesa de origen' }
   if (!fromTable.current_order_id) return { error: 'La mesa de origen no tiene un pedido activo' }
 
-  // 2. Get toTable details
-  const { data: toTable, error: getToError } = await supabase
+  const { data: toTable, error: getToError } = await admin
     .from('restaurant_tables')
     .select('status, name')
     .eq('id', toTableId)
@@ -231,8 +218,7 @@ export async function transferTableOrder(
 
   const orderId = fromTable.current_order_id
 
-  // 3. Update orders table to point to new table
-  const { error: orderError } = await supabase
+  const { error: orderError } = await admin
     .from('orders')
     .update({ table_db_id: toTableId })
     .eq('id', orderId)
@@ -240,14 +226,12 @@ export async function transferTableOrder(
 
   if (orderError) return { error: orderError.message }
 
-  // 4. Free fromTable
-  await supabase
+  await admin
     .from('restaurant_tables')
     .update({ status: 'free', current_order_id: null })
     .eq('id', fromTableId)
 
-  // 5. Occupy toTable
-  await supabase
+  await admin
     .from('restaurant_tables')
     .update({ status: 'occupied', current_order_id: orderId })
     .eq('id', toTableId)
@@ -256,4 +240,3 @@ export async function transferTableOrder(
   revalidatePath('/pos')
   return { success: true, message: `Pedido mudado de ${fromTable.name} a ${toTable.name}` }
 }
-
