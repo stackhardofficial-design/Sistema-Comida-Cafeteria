@@ -1,4 +1,4 @@
-import { createClientServer } from '@/infrastructure/supabase/server'
+import { createClientServer, createAdminClient } from '@/infrastructure/supabase/server'
 import { redirect } from 'next/navigation'
 import { Table2 } from 'lucide-react'
 import CreateZoneModal from './components/create-zone-modal'
@@ -26,15 +26,19 @@ export default async function MesasPage({
   if (!profile?.tenant_id) redirect('/login')
 
   const params = await searchParams
+  const admin = createAdminClient()
 
-  const [{ data: zones }, { data: tables }, { data: activeOrders }] = await Promise.all([
-    supabase.from('restaurant_zones').select('*').eq('tenant_id', profile.tenant_id).order('sort_order'),
-    supabase.from('restaurant_tables').select('*').eq('tenant_id', profile.tenant_id).order('name'),
-    supabase.from('orders')
+  const [{ data: zones, error: zError }, { data: tables, error: tError }, { data: activeOrders }] = await Promise.all([
+    admin.from('restaurant_zones').select('*').eq('tenant_id', profile.tenant_id).order('sort_order'),
+    admin.from('restaurant_tables').select('*').eq('tenant_id', profile.tenant_id).order('name'),
+    admin.from('orders')
       .select('id, table_db_id, total_amount, created_at, order_items(id, quantity, unit_price, products(name))')
       .eq('tenant_id', profile.tenant_id)
       .in('status', ['pending', 'in_kitchen', 'ready']),
   ])
+
+  if (zError) console.error('Error fetching zones:', zError)
+  if (tError) console.error('Error fetching tables:', tError)
 
   const zoneList = zones || []
   const tableList = (tables || []) as any[]
