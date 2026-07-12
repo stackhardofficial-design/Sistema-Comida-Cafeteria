@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useRef, useEffect, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { 
-  updateTablePositions, 
-  updateTableDetails, 
+import {
+  updateTableDetails,
   transferTableOrder,
-  deleteTable
+  deleteTable,
+  updateTablePositions,
 } from '@/infrastructure/supabase/tables/actions'
-import { 
-  Move, Settings, Edit, Save, Trash2, Users, 
-  Check, X, RefreshCw, ShoppingCart, Coffee, Info, AlertTriangle
+import {
+  Users, X, Edit2, Trash2, ArrowRightLeft,
+  ShoppingCart, Coffee, Clock, Loader2, Settings
 } from 'lucide-react'
 
 interface Table {
@@ -21,9 +21,16 @@ interface Table {
   zone_id: string | null
   pos_x: number
   pos_y: number
-  shape: 'square' | 'circle'
+  shape: string
   color: string | null
   current_order_id: string | null
+}
+
+interface OrderItem {
+  id: string
+  quantity: number
+  unit_price: number
+  products: { name: string } | null
 }
 
 interface ActiveOrder {
@@ -31,627 +38,391 @@ interface ActiveOrder {
   table_db_id: string
   total_amount: number
   created_at: string
-  order_items: Array<{
-    id: string
-    quantity: number
-    unit_price: number
-    products: { name: string } | null
-  }>
+  order_items: OrderItem[]
 }
 
 interface Props {
   zoneId: string
   initialTables: Table[]
   activeOrders: ActiveOrder[]
-  allTables: Table[] // Used for target table select in transfer order
+  allTables: Table[]
   zones: Array<{ id: string; name: string }>
 }
 
-const PRESET_COLORS = [
-  { name: 'Naranja (Default)', value: '' },
-  { name: 'Esmeralda', value: '#10b981' },
-  { name: 'Azul', value: '#3b82f6' },
-  { name: 'Violeta', value: '#8b5cf6' },
-  { name: 'Grafito', value: '#4b5563' },
-  { name: 'Rosa', value: '#ec4899' },
-]
+const STATUS_CONFIG = {
+  free:     { label: 'Libre',      bg: 'rgba(34,197,94,0.12)',  border: '#22c55e', text: '#22c55e',  dot: '#22c55e' },
+  occupied: { label: 'Ocupada',    bg: 'rgba(239,68,68,0.12)',  border: '#ef4444', text: '#ef4444',  dot: '#ef4444' },
+  reserved: { label: 'Reservada',  bg: 'rgba(245,158,11,0.12)', border: '#f59e0b', text: '#f59e0b',  dot: '#f59e0b' },
+  billing:  { label: 'Por cobrar', bg: 'rgba(59,130,246,0.12)', border: '#3b82f6', text: '#3b82f6',  dot: '#3b82f6' },
+}
+
+function timeAgo(isoDate: string) {
+  const mins = Math.round((Date.now() - new Date(isoDate).getTime()) / 60000)
+  if (mins < 60) return `${mins} min`
+  return `${Math.floor(mins / 60)}h ${mins % 60}m`
+}
 
 export default function InteractiveMap({ zoneId, initialTables, activeOrders, allTables, zones }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  
-  // Table positioning states
-  const [tables, setTables] = useState<Table[]>(initialTables)
-  const [isDesignMode, setIsDesignMode] = useState(false)
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
-  
-  // Selected table states
-  const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
-  const [isEditingDetails, setIsEditingDetails] = useState(false)
+  const [selected, setSelected] = useState<Table | null>(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [transferTarget, setTransferTarget] = useState('')
 
-  // Edit details form state
+  // Edit form state
   const [editName, setEditName] = useState('')
   const [editCapacity, setEditCapacity] = useState(4)
-  const [editShape, setEditShape] = useState<'square' | 'circle'>('square')
-  const [editColor, setEditColor] = useState<string | null>(null)
-  const [editZoneId, setEditZoneId] = useState<string | null>(zoneId)
-  
-  // Transfer table state
-  const [transferTargetId, setTransferTargetId] = useState('')
+  const [editShape, setEditShape] = useState('square')
+  const [editZoneId, setEditZoneId] = useState('')
 
-  const canvasRef = useRef<HTMLDivElement>(null)
-  const dragTableIdRef = useRef<string | null>(null)
-  const dragStartOffset = useRef({ x: 0, y: 0 })
+  const tables = initialTables
+  const order = selected ? activeOrders.find(o => o.table_db_id === selected.id) : null
+  const freeTables = allTables.filter(t => t.status === 'free' && t.id !== selected?.id)
 
-  // Synchronize when initialTables changes
-  useEffect(() => {
-    setTables(initialTables)
-  }, [initialTables])
-
-  const selectedTable = tables.find(t => t.id === selectedTableId)
-  const selectedTableOrder = selectedTable
-    ? activeOrders.find(o => o.table_db_id === selectedTable.id || o.id === selectedTable.current_order_id)
-    : null
-
-  // Setup form states when editing a table
-  const startEditing = () => {
-    if (!selectedTable) return
-    setEditName(selectedTable.name)
-    setEditCapacity(selectedTable.capacity)
-    setEditShape(selectedTable.shape || 'square')
-    setEditColor(selectedTable.color || '')
-    setEditZoneId(selectedTable.zone_id || zoneId)
-    setIsEditingDetails(true)
+  function openTable(table: Table) {
+    setSelected(table)
+    setIsEditing(false)
+    setTransferTarget('')
   }
 
-  // Handle Dragging
-  const handlePointerDown = (e: React.PointerEvent, tableId: string) => {
-    if (!isDesignMode) {
-      setSelectedTableId(tableId)
-      setIsEditingDetails(false)
-      return
-    }
-
-    e.preventDefault()
-    dragTableIdRef.current = tableId
-    setSelectedTableId(tableId)
-    setIsEditingDetails(false)
-
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    dragStartOffset.current = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    }
-    
-    // Capture pointer
-    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+  function startEdit() {
+    if (!selected) return
+    setEditName(selected.name)
+    setEditCapacity(selected.capacity)
+    setEditShape(selected.shape || 'square')
+    setEditZoneId(selected.zone_id || zoneId)
+    setIsEditing(true)
   }
 
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDesignMode || !dragTableIdRef.current || !canvasRef.current) return
-
-    const canvasRect = canvasRef.current.getBoundingClientRect()
-    
-    // Calculate new absolute coordinates
-    const newX = e.clientX - canvasRect.left - dragStartOffset.current.x
-    const newY = e.clientY - canvasRect.top - dragStartOffset.current.y
-
-    // Convert to percentage (0 - 100)
-    let pctX = Math.round((newX / canvasRect.width) * 100)
-    let pctY = Math.round((newY / canvasRect.height) * 100)
-
-    // Clamp coordinates to bounds (taking approx width of table into account)
-    pctX = Math.max(0, Math.min(90, pctX))
-    pctY = Math.max(0, Math.min(90, pctY))
-
-    setTables(prev => prev.map(t => 
-      t.id === dragTableIdRef.current 
-        ? { ...t, pos_x: pctX, pos_y: pctY }
-        : t
-    ))
-    setHasUnsavedChanges(true)
-  }
-
-  const handlePointerUp = (e: React.PointerEvent) => {
-    if (dragTableIdRef.current) {
-      ;(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId)
-      dragTableIdRef.current = null
-    }
-  }
-
-  // Save layout positions
-  const handleSaveLayout = () => {
+  function saveEdit() {
+    if (!selected) return
     startTransition(async () => {
-      const positions = tables.map(t => ({
-        id: t.id,
-        pos_x: t.pos_x,
-        pos_y: t.pos_y
-      }))
-      const res = await updateTablePositions(positions)
-      if (res.success) {
-        setHasUnsavedChanges(false)
-        setIsDesignMode(false)
-        router.refresh()
-      } else {
-        alert('Error al guardar posiciones: ' + res.error)
-      }
-    })
-  }
-
-  // Save table details edit
-  const handleSaveDetails = () => {
-    if (!selectedTableId) return
-    startTransition(async () => {
-      const res = await updateTableDetails(selectedTableId, {
-        name: editName,
-        capacity: editCapacity,
-        shape: editShape,
-        color: editColor || null,
-        zone_id: editZoneId || null
+      const res = await updateTableDetails(selected.id, {
+        name: editName, capacity: editCapacity,
+        shape: editShape, zone_id: editZoneId || null,
       })
-      if (res.success) {
-        setIsEditingDetails(false)
-        router.refresh()
-      } else {
-        alert('Error al actualizar mesa: ' + res.error)
-      }
+      if (res.error) return alert(res.error)
+      setIsEditing(false)
+      setSelected(null)
+      router.refresh()
     })
   }
 
-  // Update status directly
-  const handleStatusChange = (newStatus: 'free' | 'occupied' | 'reserved' | 'billing') => {
-    if (!selectedTableId) return
+  function changeStatus(status: Table['status']) {
+    if (!selected) return
     startTransition(async () => {
-      const res = await updateTableDetails(selectedTableId, { status: newStatus })
-      if (res.success) {
-        router.refresh()
-      } else {
-        alert('Error al actualizar estado: ' + res.error)
-      }
+      await updateTableDetails(selected.id, { status })
+      setSelected(null)
+      router.refresh()
     })
   }
 
-  // Release table (clear current order & set free)
-  const handleReleaseTable = () => {
-    if (!selectedTableId) return
-    if (!confirm('¿Seguro que deseas liberar esta mesa? Esto no cancelará la factura, pero desvinculará el pedido de la mesa.')) return
+  function handleTransfer() {
+    if (!selected || !transferTarget) return
     startTransition(async () => {
-      const res = await updateTableDetails(selectedTableId, { 
-        status: 'free',
-        current_order_id: null 
-      })
-      if (res.success) {
-        router.refresh()
-      } else {
-        alert('Error al liberar mesa: ' + res.error)
-      }
+      const res = await transferTableOrder(selected.id, transferTarget)
+      if (res.error) return alert(res.error)
+      setSelected(null)
+      setTransferTarget('')
+      router.refresh()
     })
   }
 
-  // Delete table
-  const handleDeleteTable = () => {
-    if (!selectedTableId || !selectedTable) return
-    if (!confirm(`¿Eliminar definitivamente la mesa "${selectedTable.name}"?`)) return
+  function handleDelete() {
+    if (!selected) return
+    if (!confirm(`¿Eliminar "${selected.name}"?`)) return
     startTransition(async () => {
-      const res = await deleteTable(selectedTableId)
-      if (res.success) {
-        setSelectedTableId(null)
-        router.refresh()
-      } else {
-        alert('Error al eliminar mesa: ' + res.error)
-      }
+      await deleteTable(selected.id)
+      setSelected(null)
+      router.refresh()
     })
   }
 
-  // Transfer active order
-  const handleTransferOrder = () => {
-    if (!selectedTableId || !transferTargetId) return
+  function handleRelease() {
+    if (!selected) return
     startTransition(async () => {
-      const res = await transferTableOrder(selectedTableId, transferTargetId)
-      if (res.success) {
-        setTransferTargetId('')
-        router.refresh()
-      } else {
-        alert('Error al mudar pedido: ' + res.error)
-      }
+      await updateTableDetails(selected.id, { status: 'free', current_order_id: null })
+      setSelected(null)
+      router.refresh()
     })
-  }
-
-  const getStatusBadge = (status: string) => {
-    switch(status) {
-      case 'free': return <span className="px-2 py-0.5 text-xs rounded-full bg-emerald-500/10 text-emerald-500 font-semibold border border-emerald-500/20">Libre</span>
-      case 'occupied': return <span className="px-2 py-0.5 text-xs rounded-full bg-red-500/10 text-red-500 font-semibold border border-red-500/20">Ocupada</span>
-      case 'reserved': return <span className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-500 font-semibold border border-purple-500/20">Reservada</span>
-      case 'billing': return <span className="px-2 py-0.5 text-xs rounded-full bg-amber-500/10 text-amber-500 font-semibold border border-amber-500/20">Por Cobrar</span>
-      default: return null
-    }
-  }
-
-  const getTableStatusStyle = (table: Table) => {
-    if (selectedTableId === table.id) {
-      return 'ring-4 ring-orange-500 shadow-lg scale-105 border-orange-500'
-    }
-    
-    switch(table.status) {
-      case 'free': return 'border-emerald-500/30 hover:border-emerald-500'
-      case 'occupied': return 'border-red-500/40 hover:border-red-500'
-      case 'reserved': return 'border-purple-500/30 hover:border-purple-500'
-      case 'billing': return 'border-amber-500/30 hover:border-amber-500'
-    }
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-220px)] min-h-[500px]">
-      
-      {/* Map Canvas Area */}
-      <div className="flex-1 flex flex-col bg-surface border border-subtle rounded-2xl overflow-hidden relative">
-        
-        {/* Canvas Toolbar */}
-        <div className="p-4 border-b border-subtle flex items-center justify-between bg-elevated/40 backdrop-blur-sm z-10">
-          <div className="flex items-center gap-3">
-            <h3 className="font-bold text-sm text-primary uppercase tracking-wider">
-              {isDesignMode ? '📐 Editando Distribución' : '📍 Vista de Mesas'}
-            </h3>
-            {hasUnsavedChanges && (
-              <span className="text-[11px] text-amber-500 font-medium animate-pulse">
-                Tiene cambios sin guardar
-              </span>
-            )}
-          </div>
-          
-          <div className="flex gap-2">
-            {isDesignMode ? (
-              <>
-                <button 
-                  onClick={() => {
-                    setTables(initialTables)
-                    setHasUnsavedChanges(false)
-                    setIsDesignMode(false)
-                  }}
-                  className="btn btn-secondary btn-sm"
-                  disabled={isPending}
-                >
-                  <X className="h-4 w-4" /> Cancelar
-                </button>
-                <button 
-                  onClick={handleSaveLayout}
-                  className="btn btn-primary btn-sm shadow-md"
-                  disabled={isPending}
-                >
-                  <Save className="h-4 w-4" /> Guardar
-                </button>
-              </>
-            ) : (
-              <button 
-                onClick={() => setIsDesignMode(true)}
-                className="btn btn-secondary btn-sm"
-              >
-                <Move className="h-4 w-4" /> Diseñar Plano
-              </button>
-            )}
-          </div>
-        </div>
+    <div className="flex gap-5" style={{ minHeight: '420px' }}>
 
-        {/* Canvas Floor */}
-        <div 
-          ref={canvasRef}
-          onPointerMove={handlePointerMove}
-          className="flex-1 bg-[radial-gradient(ellipse_at_center,_var(--border-subtle)_1px,_transparent_1px)] bg-[size:24px_24px] relative overflow-hidden"
-          style={{ minHeight: '400px' }}
-        >
-          {tables.map((table) => {
-            const isCircle = table.shape === 'circle'
-            const customBg = table.color || (table.status === 'occupied' ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-elevated)')
-            const customBorderColor = table.color || 'transparent'
-
-            return (
-              <div
-                key={table.id}
-                onPointerDown={(e) => handlePointerDown(e, table.id)}
-                onPointerUp={handlePointerUp}
-                className={`absolute cursor-pointer flex flex-col items-center justify-center transition-all select-none border-2 ${
-                  isCircle ? 'rounded-full' : 'rounded-2xl'
-                } ${getTableStatusStyle(table)}`}
-                style={{
-                  left: `${table.pos_x}%`,
-                  top: `${table.pos_y}%`,
-                  width: '90px',
-                  height: '90px',
-                  background: customBg,
-                  borderColor: customBorderColor !== 'transparent' ? customBorderColor : undefined,
-                  touchAction: 'none',
-                }}
-              >
-                {/* Table Indicator Badge */}
-                <div 
-                  className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full"
-                  style={{
-                    backgroundColor: 
-                      table.status === 'free' ? '#10b981' :
-                      table.status === 'occupied' ? '#ef4444' :
-                      table.status === 'reserved' ? '#8b5cf6' : '#f59e0b'
-                  }}
-                />
-
-                <span className="font-extrabold text-sm text-primary tracking-tight">{table.name}</span>
-                <span className="text-[10px] text-muted flex items-center gap-0.5 mt-0.5">
-                  <Users className="h-3 w-3" /> {table.capacity}
-                </span>
-                
-                {/* Visual state decorator */}
-                {table.status === 'occupied' && (
-                  <span className="absolute bottom-1 px-1.5 py-0.5 rounded text-[8px] bg-red-500/20 text-red-500 font-bold uppercase">
-                    Servida
-                  </span>
-                )}
-              </div>
-            )
-          })}
-
-          {tables.length === 0 && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 text-muted">
-              <AlertTriangle className="h-10 w-10 mb-3 text-muted" />
-              <p className="text-sm font-semibold">No hay mesas en esta zona</p>
-              <p className="text-xs mt-1">Usa el botón superior para crear una nueva mesa.</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Side Information / Control Panel */}
-      <div className="w-full lg:w-[360px] bg-surface border border-subtle rounded-2xl p-5 flex flex-col overflow-y-auto">
-        {selectedTable ? (
-          <div className="space-y-6 flex-1 flex flex-col">
-            
-            {/* Header info */}
-            <div>
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="text-xl font-extrabold text-primary flex items-center gap-2">
-                    {selectedTable.name}
-                  </h2>
-                  <p className="text-xs text-muted flex items-center gap-1.5 mt-1">
-                    <Users className="h-3.5 w-3.5" /> Capacidad: {selectedTable.capacity} personas
-                    {selectedTable.shape === 'circle' ? ' (Circular)' : ' (Rectangular)'}
-                  </p>
-                </div>
-                <div>
-                  {getStatusBadge(selectedTable.status)}
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions Mode Design vs Normal */}
-            {isEditingDetails ? (
-              <div className="space-y-4 p-4 rounded-xl bg-elevated/50 border border-subtle">
-                <h3 className="font-bold text-sm text-primary">Editar Mesa</h3>
-                
-                <div className="form-group">
-                  <label className="form-label text-xs">Nombre / Número</label>
-                  <input 
-                    type="text" 
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="input-field py-1.5 text-sm" 
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="form-group">
-                    <label className="form-label text-xs">Sillas</label>
-                    <input 
-                      type="number" 
-                      value={editCapacity}
-                      onChange={(e) => setEditCapacity(parseInt(e.target.value) || 2)}
-                      className="input-field py-1.5 text-sm" 
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label text-xs font-semibold">Forma</label>
-                    <select 
-                      value={editShape}
-                      onChange={(e) => setEditShape(e.target.value as any)}
-                      className="input-field py-1.5 text-sm"
-                    >
-                      <option value="square">Rectangular</option>
-                      <option value="circle">Circular</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label text-xs">Color Personalizado</label>
-                  <select
-                    value={editColor || ''}
-                    onChange={(e) => setEditColor(e.target.value || null)}
-                    className="input-field py-1.5 text-sm"
-                  >
-                    {PRESET_COLORS.map(c => (
-                      <option key={c.name} value={c.value}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label text-xs">Cambiar Zona</label>
-                  <select
-                    value={editZoneId || ''}
-                    onChange={(e) => setEditZoneId(e.target.value || null)}
-                    className="input-field py-1.5 text-sm"
-                  >
-                    {zones.map(z => (
-                      <option key={z.id} value={z.id}>{z.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex gap-2 pt-2">
-                  <button 
-                    onClick={() => setIsEditingDetails(false)}
-                    className="btn btn-secondary btn-sm flex-1"
-                  >
-                    Cancelar
-                  </button>
-                  <button 
-                    onClick={handleSaveDetails}
-                    disabled={isPending}
-                    className="btn btn-primary btn-sm flex-1"
-                  >
-                    Guardar
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-6 flex-1 flex flex-col">
-                
-                {/* ACTIVE ORDER DETAILS */}
-                {selectedTable.status === 'occupied' && selectedTableOrder ? (
-                  <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/10 space-y-4">
-                    <div className="flex items-center justify-between border-b border-red-500/10 pb-2">
-                      <span className="text-xs font-bold text-red-500 uppercase tracking-wider flex items-center gap-1.5">
-                        <ShoppingCart className="h-3.5 w-3.5" /> Consumo Activo
-                      </span>
-                      <span className="text-xs text-muted">
-                        Hace {Math.max(1, Math.round((Date.now() - new Date(selectedTableOrder.created_at).getTime()) / 60000))} min
-                      </span>
-                    </div>
-
-                    {/* Items List */}
-                    <div className="space-y-2 max-h-[160px] overflow-y-auto text-sm pr-1">
-                      {selectedTableOrder.order_items.map((item) => (
-                        <div key={item.id} className="flex justify-between items-start text-xs">
-                          <span className="text-primary font-medium">
-                            <span className="font-bold text-red-400">{item.quantity}x</span> {item.products?.name || 'Producto'}
-                          </span>
-                          <span className="text-muted font-bold">${(item.quantity * item.unit_price).toFixed(2)}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="flex justify-between items-center border-t border-red-500/10 pt-3">
-                      <span className="text-sm font-semibold text-muted">Total Parcial:</span>
-                      <span className="text-lg font-black text-red-500">${Number(selectedTableOrder.total_amount).toFixed(2)}</span>
-                    </div>
-
-                    {/* POS Checkout shortcut */}
-                    <button 
-                      onClick={() => router.push(`/pos?tableId=${selectedTable.id}`)}
-                      className="btn btn-primary w-full py-2.5 text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 shadow-md shadow-orange-500/20"
-                    >
-                      <Coffee className="h-4 w-4" /> Agregar / Cobrar Cuenta
-                    </button>
-                  </div>
-                ) : (
-                  selectedTable.status === 'occupied' && (
-                    <div className="p-4 rounded-xl bg-orange-500/5 border border-orange-500/10 flex items-center gap-2.5 text-xs text-orange-500">
-                      <Info className="h-4 w-4 flex-shrink-0" />
-                      <span>Hay un pedido en esta mesa, pero se está preparando el envío inicial.</span>
-                    </div>
-                  )
-                )}
-
-                {/* DIRECT POS ORDER ACTION FOR FREE TABLE */}
-                {selectedTable.status === 'free' && (
-                  <button
-                    onClick={() => router.push(`/pos?tableId=${selectedTable.id}`)}
-                    className="btn btn-primary w-full py-3 flex items-center justify-center gap-2 font-bold shadow-md shadow-orange-500/25"
-                  >
-                    <ShoppingCart className="h-4 w-4" /> Abrir Pedido en Mesa
-                  </button>
-                )}
-
-                {/* TRANSFER / MUDAR ACCOUNT */}
-                {selectedTable.status === 'occupied' && (
-                  <div className="p-4 rounded-xl bg-elevated/40 border border-subtle space-y-3">
-                    <h4 className="font-bold text-xs text-primary uppercase tracking-wider">Mudar Mesa</h4>
-                    <p className="text-[11px] text-muted">Transfiere la cuenta activa a otra mesa libre.</p>
-                    
-                    <div className="flex gap-2">
-                      <select
-                        value={transferTargetId}
-                        onChange={(e) => setTransferTargetId(e.target.value)}
-                        className="input-field py-1.5 text-xs flex-1"
-                      >
-                        <option value="">Selecciona mesa libre...</option>
-                        {allTables
-                          .filter(t => t.status === 'free' && t.id !== selectedTable.id)
-                          .map(t => (
-                            <option key={t.id} value={t.id}>{t.name}</option>
-                          ))}
-                      </select>
-                      <button
-                        onClick={handleTransferOrder}
-                        disabled={isPending || !transferTargetId}
-                        className="btn btn-primary btn-sm px-3 text-xs"
-                      >
-                        Mudar
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* CHANGE STATE MANUALLY */}
-                <div className="space-y-2">
-                  <h4 className="font-bold text-xs text-muted uppercase tracking-wider">Cambiar Estado</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { id: 'free', label: 'Libre', color: 'border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/5' },
-                      { id: 'occupied', label: 'Ocupada', color: 'border-red-500/20 text-red-500 hover:bg-red-500/5' },
-                      { id: 'reserved', label: 'Reservada', color: 'border-purple-500/20 text-purple-500 hover:bg-purple-500/5' },
-                      { id: 'billing', label: 'Por Cobrar', color: 'border-amber-500/20 text-amber-500 hover:bg-amber-500/5' },
-                    ].map((st) => (
-                      <button
-                        key={st.id}
-                        disabled={isPending}
-                        onClick={() => handleStatusChange(st.id as any)}
-                        className={`border rounded-xl py-2 px-3 text-xs font-semibold transition-all ${st.color} ${
-                          selectedTable.status === st.id ? 'bg-primary/5 border-primary font-bold' : ''
-                        }`}
-                      >
-                        {st.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* EDIT/DELETE CONFIG */}
-                <div className="border-t border-subtle pt-5 mt-auto flex gap-2">
-                  <button 
-                    onClick={startEditing}
-                    className="btn btn-secondary btn-sm flex-1"
-                  >
-                    <Edit className="h-3.5 w-3.5" /> Editar Mesa
-                  </button>
-                  {selectedTable.status === 'occupied' && (
-                    <button 
-                      onClick={handleReleaseTable}
-                      className="btn btn-secondary btn-sm border-amber-500/20 text-amber-500 hover:bg-amber-500/5"
-                      title="Forzar liberación de mesa"
-                    >
-                      Liberar
-                    </button>
-                  )}
-                  <button 
-                    onClick={handleDeleteTable}
-                    disabled={isPending || selectedTable.status !== 'free'}
-                    className="btn btn-ghost btn-icon btn-sm text-red-500 hover:bg-red-500/10"
-                    title="Eliminar mesa (debe estar libre)"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-
-              </div>
-            )}
+      {/* ══ TABLE GRID ══ */}
+      <div className="flex-1">
+        {tables.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 text-center" style={{ color: 'var(--text-muted)' }}>
+            <Coffee className="h-10 w-10 mb-3 opacity-40" />
+            <p className="text-sm font-semibold">Sin mesas en esta zona</p>
+            <p className="text-xs mt-1">Crea mesas usando el botón "Nueva Mesa" arriba.</p>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center opacity-60">
-            <Info className="h-10 w-10 mb-3 text-muted" />
-            <p className="text-sm font-semibold">Ninguna mesa seleccionada</p>
-            <p className="text-xs mt-1">Haz clic sobre cualquier mesa en el mapa para ver sus detalles, pedidos o gestionar su distribución.</p>
+          <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))' }}>
+            {tables.map(table => {
+              const cfg = STATUS_CONFIG[table.status]
+              const tableOrder = activeOrders.find(o => o.table_db_id === table.id)
+              const isSelected = selected?.id === table.id
+              const isCircle = table.shape === 'circle'
+
+              return (
+                <button
+                  key={table.id}
+                  onClick={() => openTable(table)}
+                  className="relative flex flex-col items-center justify-center text-center transition-all"
+                  style={{
+                    height: '120px',
+                    borderRadius: isCircle ? '50%' : '20px',
+                    background: cfg.bg,
+                    border: `2px solid ${isSelected ? '#e56b25' : cfg.border}`,
+                    boxShadow: isSelected
+                      ? '0 0 0 4px rgba(229,107,37,0.25), 0 8px 24px rgba(0,0,0,0.4)'
+                      : `0 4px 16px rgba(0,0,0,0.25)`,
+                    transform: isSelected ? 'scale(1.05)' : 'scale(1)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {/* Status dot */}
+                  <span
+                    className="absolute top-3 left-3 w-2.5 h-2.5 rounded-full"
+                    style={{ background: cfg.dot, boxShadow: `0 0 6px ${cfg.dot}` }}
+                  />
+
+                  {/* Table name */}
+                  <span className="font-black text-base" style={{ color: 'var(--text-primary)' }}>
+                    {table.name}
+                  </span>
+
+                  {/* Capacity */}
+                  <span className="flex items-center gap-1 text-[11px] mt-1 font-medium" style={{ color: 'var(--text-secondary)' }}>
+                    <Users className="h-3 w-3" />{table.capacity}
+                  </span>
+
+                  {/* Order total badge */}
+                  {tableOrder && (
+                    <span
+                      className="absolute bottom-2 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: 'rgba(239,68,68,0.2)', color: '#ef4444' }}
+                    >
+                      ${Number(tableOrder.total_amount).toFixed(0)}
+                    </span>
+                  )}
+
+                  {/* Time badge for occupied */}
+                  {table.status === 'occupied' && tableOrder && (
+                    <span
+                      className="absolute top-2 right-2 text-[9px] font-bold flex items-center gap-0.5"
+                      style={{ color: cfg.text }}
+                    >
+                      <Clock className="h-2.5 w-2.5" />
+                      {timeAgo(tableOrder.created_at)}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
         )}
+
+        {/* Legend */}
+        <div className="flex flex-wrap gap-4 mt-6 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+          {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+            <span key={key} className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+              <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: cfg.dot }} />
+              {cfg.label}
+            </span>
+          ))}
+        </div>
       </div>
+
+      {/* ══ SIDE PANEL ══ */}
+      {selected && (
+        <div
+          className="flex flex-col gap-4 flex-shrink-0"
+          style={{
+            width: '300px',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: '20px',
+            padding: '20px',
+          }}
+        >
+          {/* Header */}
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="text-xl font-black" style={{ color: 'var(--text-primary)' }}>{selected.name}</h2>
+              <span
+                className="text-xs font-bold px-2 py-0.5 rounded-full mt-1 inline-block"
+                style={{
+                  background: STATUS_CONFIG[selected.status].bg,
+                  color: STATUS_CONFIG[selected.status].text,
+                  border: `1px solid ${STATUS_CONFIG[selected.status].border}20`,
+                }}
+              >
+                {STATUS_CONFIG[selected.status].label}
+              </span>
+            </div>
+            <button
+              onClick={() => { setSelected(null); setIsEditing(false) }}
+              className="p-1.5 rounded-lg hover:bg-white/5"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {isEditing ? (
+            /* ── EDIT FORM ── */
+            <div className="space-y-3 flex-1">
+              <div className="form-group">
+                <label className="form-label text-xs">Nombre / Número</label>
+                <input value={editName} onChange={e => setEditName(e.target.value)} className="input-field py-2 text-sm" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="form-group">
+                  <label className="form-label text-xs">Sillas</label>
+                  <input type="number" value={editCapacity} onChange={e => setEditCapacity(+e.target.value)} className="input-field py-2 text-sm" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label text-xs">Forma</label>
+                  <select value={editShape} onChange={e => setEditShape(e.target.value)} className="input-field py-2 text-sm">
+                    <option value="square">Rectangular</option>
+                    <option value="circle">Circular</option>
+                  </select>
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label text-xs">Zona</label>
+                <select value={editZoneId} onChange={e => setEditZoneId(e.target.value)} className="input-field py-2 text-sm">
+                  {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+                </select>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button onClick={() => setIsEditing(false)} className="btn btn-secondary btn-sm flex-1">Cancelar</button>
+                <button onClick={saveEdit} disabled={isPending} className="btn btn-primary btn-sm flex-1">
+                  {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Guardar'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* ── ACTIVE ORDER ── */}
+              {order ? (
+                <div
+                  className="rounded-xl p-3 space-y-2"
+                  style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold uppercase tracking-wider" style={{ color: '#ef4444' }}>
+                      Consumo activo
+                    </span>
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      <Clock className="h-3 w-3 inline mr-0.5" />{timeAgo(order.created_at)}
+                    </span>
+                  </div>
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                    {order.order_items.map(item => (
+                      <div key={item.id} className="flex justify-between text-xs">
+                        <span style={{ color: 'var(--text-secondary)' }}>
+                          <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{item.quantity}×</span> {item.products?.name}
+                        </span>
+                        <span className="font-bold" style={{ color: 'var(--text-primary)' }}>
+                          ${(item.quantity * item.unit_price).toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-between items-center pt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                    <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Total:</span>
+                    <span className="text-lg font-black" style={{ color: '#ef4444' }}>
+                      ${Number(order.total_amount).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              ) : selected.status === 'free' ? (
+                <p className="text-xs text-center py-2" style={{ color: 'var(--text-muted)' }}>Mesa disponible sin pedido activo.</p>
+              ) : null}
+
+              {/* ── QUICK ACTIONS ── */}
+              <div className="space-y-2">
+                {/* Go to POS */}
+                <button
+                  onClick={() => router.push(`/pos?tableId=${selected.id}`)}
+                  className="btn btn-primary w-full text-sm"
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  {selected.status === 'free' ? 'Nuevo Pedido' : 'Ver / Agregar Consumos'}
+                </button>
+
+                {/* Transfer order */}
+                {selected.status === 'occupied' && freeTables.length > 0 && (
+                  <div className="flex gap-2">
+                    <select
+                      value={transferTarget}
+                      onChange={e => setTransferTarget(e.target.value)}
+                      className="input-field py-2 text-xs flex-1"
+                    >
+                      <option value="">Mudar a mesa...</option>
+                      {freeTables.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                    <button
+                      onClick={handleTransfer}
+                      disabled={!transferTarget || isPending}
+                      className="btn btn-secondary btn-sm px-3"
+                      title="Transferir pedido"
+                    >
+                      {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRightLeft className="h-4 w-4" />}
+                    </button>
+                  </div>
+                )}
+
+                {/* Change status */}
+                <div className="grid grid-cols-2 gap-2">
+                  {(Object.keys(STATUS_CONFIG) as Table['status'][]).map(st => (
+                    <button
+                      key={st}
+                      onClick={() => changeStatus(st)}
+                      disabled={isPending || selected.status === st}
+                      className="text-xs py-2 px-3 rounded-xl font-semibold border transition-all"
+                      style={{
+                        background: selected.status === st ? STATUS_CONFIG[st].bg : 'transparent',
+                        borderColor: STATUS_CONFIG[st].border + '50',
+                        color: STATUS_CONFIG[st].text,
+                        opacity: selected.status === st ? 1 : 0.7,
+                      }}
+                    >
+                      {STATUS_CONFIG[st].label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ── MANAGEMENT ── */}
+              <div className="flex gap-2 pt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                <button onClick={startEdit} className="btn btn-secondary btn-sm flex-1 text-xs">
+                  <Edit2 className="h-3.5 w-3.5" /> Editar
+                </button>
+                {selected.status === 'occupied' && (
+                  <button onClick={handleRelease} disabled={isPending} className="btn btn-secondary btn-sm text-xs px-3"
+                    style={{ borderColor: 'rgba(245,158,11,0.3)', color: '#f59e0b' }} title="Liberar mesa forzado">
+                    Liberar
+                  </button>
+                )}
+                <button
+                  onClick={handleDelete}
+                  disabled={isPending || selected.status !== 'free'}
+                  className="btn btn-ghost btn-icon btn-sm"
+                  style={{ color: 'var(--danger)' }}
+                  title="Eliminar mesa (solo si está libre)"
+                >
+                  {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }

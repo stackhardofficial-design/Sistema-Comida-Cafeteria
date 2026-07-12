@@ -1,18 +1,17 @@
 import { createClientServer } from '@/infrastructure/supabase/server'
 import { redirect } from 'next/navigation'
-import { Table2, LayoutGrid, Map, Users } from 'lucide-react'
+import { Table2 } from 'lucide-react'
 import CreateZoneModal from './components/create-zone-modal'
 import CreateTableModal from './components/create-table-modal'
 import InteractiveMap from './components/interactive-map'
-import ZoneCard from './components/zone-card'
 import Link from 'next/link'
 
-export const metadata = { title: 'Mesas y Zonas' }
+export const metadata = { title: 'Mesas' }
 
 export default async function MesasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ zoneId?: string; view?: string }>
+  searchParams: Promise<{ zoneId?: string }>
 }) {
   const supabase = await createClientServer()
   const { data: { user } } = await supabase.auth.getUser()
@@ -27,63 +26,37 @@ export default async function MesasPage({
   if (!profile?.tenant_id) redirect('/login')
 
   const params = await searchParams
-  const viewMode = params?.view || 'map'
 
-  // Fetch zones, tables, and active orders
-  const [
-    { data: zones }, 
-    { data: tables },
-    { data: activeOrders }
-  ] = await Promise.all([
-    supabase
-      .from('restaurant_zones')
-      .select('*')
+  const [{ data: zones }, { data: tables }, { data: activeOrders }] = await Promise.all([
+    supabase.from('restaurant_zones').select('*').eq('tenant_id', profile.tenant_id).order('sort_order'),
+    supabase.from('restaurant_tables').select('*').eq('tenant_id', profile.tenant_id).order('name'),
+    supabase.from('orders')
+      .select('id, table_db_id, total_amount, created_at, order_items(id, quantity, unit_price, products(name))')
       .eq('tenant_id', profile.tenant_id)
-      .order('sort_order'),
-    supabase
-      .from('restaurant_tables')
-      .select('*')
-      .eq('tenant_id', profile.tenant_id)
-      .order('name'),
-    supabase
-      .from('orders')
-      .select(`
-        id,
-        table_db_id,
-        total_amount,
-        created_at,
-        order_items (
-          id,
-          quantity,
-          unit_price,
-          products (name)
-        )
-      `)
-      .eq('tenant_id', profile.tenant_id)
-      .in('status', ['pending', 'in_kitchen', 'ready'])
+      .in('status', ['pending', 'in_kitchen', 'ready']),
   ])
 
   const zoneList = zones || []
-  const tableList = tables || []
-  const activeOrderList = (activeOrders as any) || []
+  const tableList = (tables || []) as any[]
+  const orderList = (activeOrders || []) as any[]
 
-  // Determine selected zone
-  const activeZoneId = params?.zoneId || zoneList[0]?.id || ''
-  const selectedZone = zoneList.find(z => z.id === activeZoneId)
+  const activeZoneId = params?.zoneId || zoneList[0]?.id || 'all'
 
-  // Filter tables in active zone
-  const zoneTables = activeZoneId 
-    ? tableList.filter(t => t.zone_id === activeZoneId)
-    : tableList.filter(t => !t.zone_id)
+  const zoneTables = activeZoneId === 'all'
+    ? tableList
+    : tableList.filter(t => t.zone_id === activeZoneId)
+
+  // Counts for zone badges
+  const occupiedCount = (id: string) =>
+    tableList.filter(t => (id === 'all' || t.zone_id === id) && t.status !== 'free').length
 
   return (
-    <div className="space-y-6 flex flex-col h-full">
-      
-      {/* Page Header */}
-      <div className="page-header flex-shrink-0">
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="page-header">
         <div>
-          <h1 className="page-title">Mesas y Zonas</h1>
-          <p className="page-subtitle font-medium">Configura y gestiona el mapa físico de tu restaurante</p>
+          <h1 className="page-title">Mesas</h1>
+          <p className="page-subtitle">Gestiona el estado, pedidos y distribución de las mesas</p>
         </div>
         <div className="flex items-center gap-3">
           <CreateZoneModal />
@@ -95,125 +68,90 @@ export default async function MesasPage({
         <div className="card">
           <div className="empty-state">
             <Table2 className="empty-state-icon h-12 w-12" />
-            <p className="empty-state-title">No has configurado mesas ni zonas</p>
-            <p className="empty-state-desc">Comienza creando zonas (ej. Interior, Terraza) y agregando mesas.</p>
+            <p className="empty-state-title">Sin mesas configuradas</p>
+            <p className="empty-state-desc">Comienza creando una zona (ej: Salón, Terraza) y luego agregando mesas.</p>
           </div>
         </div>
       ) : (
-        <div className="space-y-6 flex-1 flex flex-col">
-          
-          {/* Tabs Bar */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-surface p-2 rounded-2xl border border-subtle flex-shrink-0">
-            <div className="flex flex-wrap gap-1">
-              {zoneList.map((zone) => (
+        <div className="space-y-5">
+          {/* Zone Tabs — like Fudo */}
+          <div
+            className="flex items-center gap-1 p-1 rounded-2xl"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}
+          >
+            {zoneList.length > 1 && (
+              <Link
+                href="/admin/mesas?zoneId=all"
+                className="relative px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
+                style={
+                  activeZoneId === 'all'
+                    ? { background: 'var(--brand-orange)', color: '#fff', boxShadow: '0 4px 12px rgba(229,107,37,0.35)' }
+                    : { color: 'var(--text-muted)' }
+                }
+              >
+                Todas
+                {occupiedCount('all') > 0 && (
+                  <span className="w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center"
+                    style={{ background: activeZoneId === 'all' ? 'rgba(255,255,255,0.25)' : 'var(--bg-elevated)', color: activeZoneId === 'all' ? '#fff' : 'var(--text-secondary)' }}>
+                    {occupiedCount('all')}
+                  </span>
+                )}
+              </Link>
+            )}
+
+            {zoneList.map(zone => {
+              const isActive = activeZoneId === zone.id
+              const count = occupiedCount(zone.id)
+              return (
                 <Link
                   key={zone.id}
-                  href={`/admin/mesas?zoneId=${zone.id}&view=${viewMode}`}
-                  className={`px-4 py-2 text-xs font-bold rounded-xl transition-all border ${
-                    activeZoneId === zone.id
-                      ? 'bg-orange-500 text-white border-orange-500 shadow-sm shadow-orange-500/20'
-                      : 'border-transparent text-muted hover:bg-white/5'
-                  }`}
+                  href={`/admin/mesas?zoneId=${zone.id}`}
+                  className="relative px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
+                  style={
+                    isActive
+                      ? { background: 'var(--brand-orange)', color: '#fff', boxShadow: '0 4px 12px rgba(229,107,37,0.35)' }
+                      : { color: 'var(--text-muted)' }
+                  }
                 >
                   {zone.name}
+                  {count > 0 && (
+                    <span className="w-5 h-5 rounded-full text-[10px] font-black flex items-center justify-center"
+                      style={{ background: isActive ? 'rgba(255,255,255,0.25)' : 'var(--bg-elevated)', color: isActive ? '#fff' : 'var(--text-secondary)' }}>
+                      {count}
+                    </span>
+                  )}
                 </Link>
-              ))}
-              
-              {tableList.some(t => !t.zone_id) && (
-                <Link
-                  href={`/admin/mesas?zoneId=none&view=${viewMode}`}
-                  className={`px-4 py-2 text-xs font-bold rounded-xl transition-all border ${
-                    activeZoneId === 'none'
-                      ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
-                      : 'border-transparent text-muted hover:bg-white/5'
-                  }`}
-                >
-                  Sin Zona
-                </Link>
-              )}
-            </div>
-
-            {/* View Mode & Zone Control Actions */}
-            <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-              {selectedZone && (
-                <div className="flex items-center gap-2 border-r border-subtle pr-3 mr-1">
-                  <ZoneCard zone={selectedZone} />
-                </div>
-              )}
-              
-              <div className="flex bg-elevated p-1 rounded-xl border border-subtle">
-                <Link
-                  href={`/admin/mesas?zoneId=${activeZoneId}&view=map`}
-                  className={`p-1.5 rounded-lg transition-all ${
-                    viewMode === 'map' ? 'bg-surface text-orange-500 shadow-sm' : 'text-muted hover:text-primary'
-                  }`}
-                  title="Modo Mapa"
-                >
-                  <Map className="h-4 w-4" />
-                </Link>
-                <Link
-                  href={`/admin/mesas?zoneId=${activeZoneId}&view=list`}
-                  className={`p-1.5 rounded-lg transition-all ${
-                    viewMode === 'list' ? 'bg-surface text-orange-500 shadow-sm' : 'text-muted hover:text-primary'
-                  }`}
-                  title="Modo Lista"
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </Link>
-              </div>
-            </div>
+              )
+            })}
           </div>
 
-          {/* Core Content Area */}
-          <div className="flex-1">
-            {viewMode === 'map' ? (
-              <InteractiveMap
-                zoneId={activeZoneId === 'none' ? '' : activeZoneId}
-                initialTables={zoneTables}
-                activeOrders={activeOrderList}
-                allTables={tableList}
-                zones={zoneList}
-              />
-            ) : (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-                  {zoneTables.map((table: any) => {
-                    const activeOrder = activeOrderList.find((o: any) => o.table_db_id === table.id)
-                    return (
-                      <Link 
-                        key={table.id}
-                        href={`/pos?tableId=${table.id}`}
-                        className="card hover:-translate-y-1 transition-all p-5 flex flex-col items-center justify-center text-center cursor-pointer border border-subtle hover:border-orange-500/50"
-                      >
-                        <div 
-                          className="w-3 h-3 rounded-full mb-3"
-                          style={{
-                            backgroundColor: 
-                              table.status === 'free' ? '#10b981' :
-                              table.status === 'occupied' ? '#ef4444' :
-                              table.status === 'reserved' ? '#8b5cf6' : '#f59e0b'
-                          }}
-                        />
-                        <h4 className="text-base font-extrabold text-primary">{table.name}</h4>
-                        <span className="text-xs text-muted mt-1 flex items-center gap-1">
-                          <Users className="h-3 w-3" /> {table.capacity} sillas
-                        </span>
-                        {activeOrder && (
-                          <div className="mt-3 px-2 py-0.5 rounded bg-red-500/10 text-red-500 text-[10px] font-bold">
-                            Total: ${Number(activeOrder.total_amount).toFixed(2)}
-                          </div>
-                        )}
-                      </Link>
-                    )
-                  })}
-                </div>
-                {zoneTables.length === 0 && (
-                  <p className="text-center text-sm text-muted p-12">No hay mesas configuradas en esta zona.</p>
-                )}
+          {/* Stats bar */}
+          <div className="grid grid-cols-4 gap-3">
+            {[
+              { label: 'Libres',      status: 'free',     color: '#22c55e' },
+              { label: 'Ocupadas',    status: 'occupied',  color: '#ef4444' },
+              { label: 'Reservadas',  status: 'reserved',  color: '#f59e0b' },
+              { label: 'Por cobrar',  status: 'billing',   color: '#3b82f6' },
+            ].map(({ label, status, color }) => (
+              <div key={status} className="rounded-2xl p-4 text-center" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+                <p className="text-2xl font-black" style={{ color }}>
+                  {zoneTables.filter((t: any) => t.status === status).length}
+                </p>
+                <p className="text-xs font-semibold mt-0.5" style={{ color: 'var(--text-muted)' }}>{label}</p>
               </div>
-            )}
+            ))}
           </div>
 
+          {/* Interactive map */}
+          <div className="rounded-2xl p-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+            <InteractiveMap
+              zoneId={activeZoneId}
+              initialTables={zoneTables}
+              activeOrders={orderList}
+              allTables={tableList}
+              zones={zoneList}
+            />
+          </div>
         </div>
       )}
     </div>
