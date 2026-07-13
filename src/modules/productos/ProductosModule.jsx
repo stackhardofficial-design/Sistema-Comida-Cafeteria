@@ -7,7 +7,7 @@ import {
 import Modal from '../../components/Modal'
 
 export default function ProductosModule() {
-  const { tenantId } = useApp()
+  const { tenantId, triggerRefresh } = useApp()
   const [activeTab, setActiveTab] = useState('productos') // 'productos' | 'categorias'
   
   const [products, setProducts] = useState([])
@@ -96,6 +96,7 @@ export default function ProductosModule() {
       await dbSaveProduct(tenantId, payload, editingProd?.id || null)
       setProdModal(false)
       loadData()
+      triggerRefresh()
     } catch (e) {
       alert('Error al guardar producto: ' + e.message)
     }
@@ -107,6 +108,7 @@ export default function ProductosModule() {
     try {
       await dbDeleteProduct(prod.id)
       loadData()
+      triggerRefresh()
     } catch (e) {
       alert('Error al eliminar producto')
     }
@@ -161,6 +163,7 @@ export default function ProductosModule() {
       if (newCat && !editingCat) {
         setPCat(newCat.id)
       }
+      triggerRefresh()
     } catch (e) {
       alert('Error al guardar categoría: ' + e.message)
     }
@@ -172,6 +175,7 @@ export default function ProductosModule() {
     try {
       await dbDeleteCategory(cat.id)
       loadData()
+      triggerRefresh()
     } catch (e) {
       alert('Error al eliminar categoría')
     }

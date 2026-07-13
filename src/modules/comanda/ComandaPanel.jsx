@@ -11,7 +11,7 @@ export default function ComandaPanel() {
   const {
     tenantId, currentContext, setCurrentContext,
     cart, setCart, discount, setDiscount, clearCart,
-    cartTotal, discountAmount, grandTotal
+    cartTotal, discountAmount, grandTotal, refreshTrigger
   } = useApp()
 
   const [categories, setCategories] = useState([])
@@ -36,11 +36,11 @@ export default function ComandaPanel() {
 
   useEffect(() => {
     refreshCats()
-  }, [refreshCats])
+  }, [refreshCats, refreshTrigger])
 
   useEffect(() => {
     refreshProds()
-  }, [refreshProds])
+  }, [refreshProds, refreshTrigger])
 
   useEffect(() => {
     if (!tenantId) return

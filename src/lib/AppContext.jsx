@@ -17,6 +17,11 @@ export function AppProvider({ children }) {
     setCurrentContext(null)
   }, [])
 
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const triggerRefresh = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1)
+  }, [])
+
   const cartTotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0)
   const discountAmount = discount.type === 'percent'
     ? cartTotal * (discount.value / 100)
@@ -32,7 +37,8 @@ export function AppProvider({ children }) {
       discount, setDiscount,
       currentContext, setCurrentContext,
       clearCart,
-      cartTotal, discountAmount, grandTotal
+      cartTotal, discountAmount, grandTotal,
+      refreshTrigger, triggerRefresh
     }}>
       {children}
     </AppContext.Provider>
