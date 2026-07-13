@@ -68,23 +68,27 @@ export default function ComandaPanel() {
 
   async function addToCart(product) {
     if (!currentContext) return
-    // Ensure order exists
-    let orderId = currentContext.orderId
-    if (!orderId) {
-      const order = await dbCreateOrder(tenantId, currentContext.type === 'mesa' ? 'dine_in' : 'takeaway', currentContext.tableDbId)
-      orderId = order.id
-      setCurrentContext(prev => ({ ...prev, orderId }))
-      if (currentContext.tableDbId) {
-        await dbUpdateTable(currentContext.tableDbId, { status: 'occupied', current_order_id: orderId })
+    try {
+      // Ensure order exists
+      let orderId = currentContext.orderId
+      if (!orderId) {
+        const order = await dbCreateOrder(tenantId, currentContext.type === 'mesa' ? 'dine_in' : 'takeaway', currentContext.tableDbId)
+        orderId = order.id
+        setCurrentContext(prev => ({ ...prev, orderId }))
+        if (currentContext.tableDbId) {
+          await dbUpdateTable(currentContext.tableDbId, { status: 'occupied', current_order_id: orderId })
+        }
       }
+      await dbAddItem(tenantId, orderId, product)
+      // Update local cart
+      setCart(prev => {
+        const existing = prev.find(i => i.product.id === product.id)
+        if (existing) return prev.map(i => i.product.id === product.id ? { ...i, qty: i.qty + 1 } : i)
+        return [...prev, { product, qty: 1, notes: '' }]
+      })
+    } catch (e) {
+      alert('Error al agregar al carrito: ' + e.message)
     }
-    await dbAddItem(tenantId, orderId, product)
-    // Update local cart
-    setCart(prev => {
-      const existing = prev.find(i => i.product.id === product.id)
-      if (existing) return prev.map(i => i.product.id === product.id ? { ...i, qty: i.qty + 1 } : i)
-      return [...prev, { product, qty: 1, notes: '' }]
-    })
   }
 
   async function changeQty(item, delta) {
