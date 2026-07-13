@@ -129,9 +129,18 @@ export default function ProductosModule() {
         description: cDesc,
         is_active: true
       }
-      await dbSaveCategory(tenantId, payload, editingCat?.id || null)
+      const newCat = await dbSaveCategory(tenantId, payload, editingCat?.id || null)
       setCatModal(false)
-      loadData()
+      // Recargar datos y seleccionar la nueva categoría
+      const [prods, cats] = await Promise.all([
+        dbGetAllProducts(tenantId),
+        dbGetCategories(tenantId)
+      ])
+      setProducts(prods)
+      setCategories(cats)
+      if (newCat && !editingCat) {
+        setPCat(newCat.id)
+      }
     } catch (e) {
       alert('Error al guardar categoría: ' + e.message)
     }
@@ -317,12 +326,15 @@ export default function ProductosModule() {
             </div>
             <div className="form-row">
               <label>Categoría *</label>
-              <select value={pCat} onChange={e => setPCat(e.target.value)} required>
-                <option value="">Selecciona...</option>
-                {categories.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <select value={pCat} onChange={e => setPCat(e.target.value)} required style={{ flex: 1 }}>
+                  <option value="">Selecciona...</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                <button type="button" className="btn btn-secondary" onClick={openNewCat} style={{ padding: '0 12px', height: '38px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>＋</button>
+              </div>
             </div>
             <div className="form-row">
               <label>Precio *</label>
