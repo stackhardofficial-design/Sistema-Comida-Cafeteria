@@ -54,6 +54,16 @@ async function dbGetZones() {
   return data || [];
 }
 
+async function dbCreateZone(name) {
+  const { data, error } = await sb.from('restaurant_zones').insert({
+    tenant_id: APP_STATE.tenantId,
+    name: name,
+    is_active: true
+  }).select().single();
+  if (error) throw error;
+  return data;
+}
+
 // ===== TABLES =====
 async function dbGetTables(zoneId = null) {
   let q = sb.from('restaurant_tables')
