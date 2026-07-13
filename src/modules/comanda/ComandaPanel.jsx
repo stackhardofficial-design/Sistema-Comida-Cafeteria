@@ -3,7 +3,7 @@ import { useApp } from '../../lib/AppContext'
 import {
   dbGetCategories, dbGetProducts, dbAddItem, dbRemoveItem,
   dbCreateOrder, dbUpdateOrder, dbUpdateTable, dbCreatePayment,
-  dbGetOpenSession, fmtMoney, dbRecalcOrder
+  dbGetOpenSession, fmtMoney, dbRecalcOrder, sb
 } from '../../lib/supabase'
 import Modal from '../../components/Modal'
 
@@ -24,15 +24,43 @@ export default function ComandaPanel() {
   const [cashIn, setCashIn] = useState('')
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
+  const refreshCats = useCallback(() => {
     if (tenantId) dbGetCategories(tenantId).then(setCategories)
   }, [tenantId])
 
-  useEffect(() => {
+  const refreshProds = useCallback(() => {
     if (tenantId && activeCategory) {
       dbGetProducts(tenantId, activeCategory).then(setProducts)
     }
   }, [tenantId, activeCategory])
+
+  useEffect(() => {
+    refreshCats()
+  }, [refreshCats])
+
+  useEffect(() => {
+    refreshProds()
+  }, [refreshProds])
+
+  useEffect(() => {
+    if (!tenantId) return
+    const comandaChannel = sb.channel('realtime-comanda')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'categories', filter: `tenant_id=eq.${tenantId}` },
+        () => { refreshCats() }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products', filter: `tenant_id=eq.${tenantId}` },
+        () => { refreshProds() }
+      )
+      .subscribe()
+
+    return () => {
+      sb.removeChannel(comandaChannel)
+    }
+  }, [tenantId, refreshCats, refreshProds])
 
   const filteredProducts = search
     ? products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
