@@ -40,6 +40,26 @@ export default function CajaModule() {
     loadCaja()
   }, [tenantId])
 
+  useEffect(() => {
+    if (!tenantId) return
+    const cajaChannel = sb.channel('realtime-caja')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'cash_register_sessions', filter: `tenant_id=eq.${tenantId}` },
+        () => { loadCaja() }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'payments', filter: `tenant_id=eq.${tenantId}` },
+        () => { loadCaja() }
+      )
+      .subscribe()
+
+    return () => {
+      sb.removeChannel(cajaChannel)
+    }
+  }, [tenantId])
+
   async function handleAbrirCaja() {
     const amount = parseFloat(openingAmount) || 0
     try {

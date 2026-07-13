@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useApp } from '../../lib/AppContext'
-import { dbGetOrders, dbGetOrder, fmtMoney } from '../../lib/supabase'
+import { dbGetOrders, dbGetOrder, fmtMoney, sb } from '../../lib/supabase'
 
 export default function MostradorModule() {
   const { tenantId, setCurrentContext, setCart, setDiscount } = useApp()
@@ -28,6 +28,21 @@ export default function MostradorModule() {
 
   useEffect(() => {
     loadData()
+  }, [tenantId])
+
+  useEffect(() => {
+    if (!tenantId) return
+    const mostradorChannel = sb.channel('realtime-mostrador')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `tenant_id=eq.${tenantId}` },
+        () => { loadData() }
+      )
+      .subscribe()
+
+    return () => {
+      sb.removeChannel(mostradorChannel)
+    }
   }, [tenantId])
 
   function newSale() {

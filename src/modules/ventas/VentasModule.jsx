@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useApp } from '../../lib/AppContext'
-import { dbGetOrders, dbGetOrder, dbUpdateOrder, fmtMoney, fmtDate } from '../../lib/supabase'
+import { dbGetOrders, dbGetOrder, dbUpdateOrder, fmtMoney, fmtDate, sb } from '../../lib/supabase'
 import Modal from '../../components/Modal'
 
 export default function VentasModule() {
@@ -42,6 +42,21 @@ export default function VentasModule() {
   useEffect(() => {
     loadVentas()
   }, [tenantId, from, to, status])
+
+  useEffect(() => {
+    if (!tenantId) return
+    const ordersChannel = sb.channel('realtime-ventas')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `tenant_id=eq.${tenantId}` },
+        () => { loadVentas() }
+      )
+      .subscribe()
+
+    return () => {
+      sb.removeChannel(ordersChannel)
+    }
+  }, [tenantId])
 
   const filteredOrders = orders.filter(o => {
     if (!search) return true

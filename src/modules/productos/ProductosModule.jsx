@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useApp } from '../../lib/AppContext'
 import {
   dbGetAllProducts, dbGetCategories, dbSaveProduct, dbDeleteProduct,
-  dbSaveCategory, dbDeleteCategory, fmtMoney
+  dbSaveCategory, dbDeleteCategory, fmtMoney, sb
 } from '../../lib/supabase'
 import Modal from '../../components/Modal'
 
@@ -54,6 +54,26 @@ export default function ProductosModule() {
 
   useEffect(() => {
     loadData()
+  }, [tenantId])
+
+  useEffect(() => {
+    if (!tenantId) return
+    const prodChannel = sb.channel('realtime-products')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products', filter: `tenant_id=eq.${tenantId}` },
+        () => { loadData() }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'categories', filter: `tenant_id=eq.${tenantId}` },
+        () => { loadData() }
+      )
+      .subscribe()
+
+    return () => {
+      sb.removeChannel(prodChannel)
+    }
   }, [tenantId])
 
   // Guardar Producto

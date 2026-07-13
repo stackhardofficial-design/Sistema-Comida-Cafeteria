@@ -41,11 +41,26 @@ export default function MesasModule() {
 
   useEffect(() => { loadData() }, [loadData])
 
-  // Auto-refresh
+  // Realtime subscription
   useEffect(() => {
-    const id = setInterval(loadData, 30000)
-    return () => clearInterval(id)
-  }, [loadData])
+    if (!tenantId) return
+    const tablesChannel = sb.channel('realtime-tables')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'restaurant_tables', filter: `tenant_id=eq.${tenantId}` },
+        () => { loadData() }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'restaurant_zones', filter: `tenant_id=eq.${tenantId}` },
+        () => { loadData() }
+      )
+      .subscribe()
+
+    return () => {
+      sb.removeChannel(tablesChannel)
+    }
+  }, [tenantId, loadData])
 
   // Close context menu on outside click
   useEffect(() => {
