@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useApp } from '../../lib/AppContext'
-import { dbGetOrders, dbGetOrder, fmtMoney, sb } from '../../lib/supabase'
+import { dbGetOrders, dbGetOrder, dbCreateOrder, fmtMoney, sb } from '../../lib/supabase'
+import Modal from '../../components/Modal'
 
 export default function MostradorModule() {
   const { tenantId, setCurrentContext, setCart, setDiscount } = useApp()
@@ -8,6 +9,12 @@ export default function MostradorModule() {
   const [closedOrders, setClosedOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+
+  // Modal de nuevo pedido
+  const [newOrderModal, setNewOrderModal] = useState(false)
+  const [customerName, setCustomerName] = useState('')
+  const [customerPhone, setCustomerPhone] = useState('')
+  const [creating, setCreating] = useState(false)
 
   async function loadData() {
     if (!tenantId) return
@@ -45,24 +52,56 @@ export default function MostradorModule() {
     }
   }, [tenantId])
 
-  function newSale() {
-    setCurrentContext({ type: 'mostrador', orderId: null })
-    setCart([])
-    setDiscount({ type: 'none', value: 0 })
+  async function handleCreateOrder(e) {
+    e.preventDefault()
+    if (!customerName.trim()) return
+    setCreating(true)
+    try {
+      const order = await dbCreateOrder(
+        tenantId,
+        'takeaway',
+        null,
+        customerName.trim() || null,
+        customerPhone.trim() || null
+      )
+      // Activar la comanda para este nuevo pedido
+      setCurrentContext({
+        type: 'mostrador',
+        orderId: order.id,
+        customerName: customerName.trim(),
+      })
+      setCart([])
+      setDiscount({ type: 'none', value: 0 })
+      // Agregar el pedido a la lista local inmediatamente
+      setOpenOrders(prev => [order, ...prev])
+      // Resetear y cerrar modal
+      setCustomerName('')
+      setCustomerPhone('')
+      setNewOrderModal(false)
+    } catch (e) {
+      alert('Error al crear pedido: ' + e.message)
+    } finally {
+      setCreating(false)
+    }
   }
 
-  async function openTicket(orderId) {
+  async function openTicket(order) {
     try {
-      const order = await dbGetOrder(orderId)
-      if (!order) return
-      setCurrentContext({ type: 'mostrador', orderId })
-      setCart((order.order_items || []).map(oi => ({
+      const fullOrder = await dbGetOrder(order.id)
+      if (!fullOrder) return
+      setCurrentContext({
+        type: 'mostrador',
+        orderId: order.id,
+        customerName: order.customer_name || '',
+      })
+      setCart((fullOrder.order_items || []).map(oi => ({
         id: oi.id,
         product: oi.products,
         qty: oi.quantity,
         notes: oi.notes || '',
         dbItemId: oi.id
       })))
+      setDiscount({ type: 'none', value: 0 })
     } catch (e) {
       alert('Error al cargar pedido')
     }
@@ -102,44 +141,64 @@ export default function MostradorModule() {
         .btn-new-order:hover {
           background: #1e293b;
         }
+        .mostrador-input {
+          width: 100%;
+          padding: 10px 12px;
+          border: 1.5px solid #e2e8f0;
+          border-radius: 8px;
+          font-size: 14px;
+          outline: none;
+          transition: border-color 0.15s;
+          box-sizing: border-box;
+          background: #f8fafc;
+          color: #1e293b;
+        }
+        .mostrador-input:focus {
+          border-color: #334155;
+          background: white;
+        }
       `}</style>
 
+      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h1 style={{ fontSize: '20px', fontWeight: '800', color: '#1e293b', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
           Mostrador
         </h1>
-        <button className="btn-new-order" onClick={newSale}>
+        <button className="btn-new-order" onClick={() => setNewOrderModal(true)}>
           <span style={{ fontSize: '16px', fontWeight: 'bold' }}>+</span> Nuevo Pedido
         </button>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Buscador */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          background: 'white', 
-          border: '1px solid var(--border)', 
-          borderRadius: '8px', 
-          padding: '10px 14px', 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          background: 'white',
+          border: '1px solid var(--border)',
+          borderRadius: '8px',
+          padding: '10px 14px',
           gap: '10px',
           boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
         }}>
           <span style={{ color: 'var(--text-muted)' }}>🔍</span>
           <input
             type="text"
-            placeholder="Buscar por etiqueta"
+            placeholder="Buscar por etiqueta o nombre"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ 
-              background: 'transparent', 
-              border: 'none', 
-              outline: 'none', 
-              color: 'var(--text)', 
-              width: '100%', 
-              fontSize: '14px' 
+            style={{
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              color: 'var(--text)',
+              width: '100%',
+              fontSize: '14px'
             }}
           />
+          {search && (
+            <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '16px' }}>✕</button>
+          )}
         </div>
 
         {/* Sección EN CURSO */}
@@ -150,11 +209,11 @@ export default function MostradorModule() {
           {loading ? (
             <div style={{ color: 'var(--text-muted)', fontSize: '13px', padding: '12px' }}>Cargando...</div>
           ) : (
-            <OrdersTable 
-              orders={filteredOpen} 
-              emptyText="Sin ventas en curso." 
-              onSelect={openTicket} 
-              isClosedTable={false} 
+            <OrdersTable
+              orders={filteredOpen}
+              emptyText="Sin ventas en curso."
+              onSelect={openTicket}
+              isClosedTable={false}
             />
           )}
         </div>
@@ -167,15 +226,85 @@ export default function MostradorModule() {
           {loading ? (
             <div style={{ color: 'var(--text-muted)', fontSize: '13px', padding: '12px' }}>Cargando...</div>
           ) : (
-            <OrdersTable 
-              orders={filteredClosed} 
-              emptyText="Sin ventas cerradas." 
-              onSelect={openTicket} 
-              isClosedTable={true} 
+            <OrdersTable
+              orders={filteredClosed}
+              emptyText="Sin ventas cerradas."
+              onSelect={openTicket}
+              isClosedTable={true}
             />
           )}
         </div>
       </div>
+
+      {/* Modal Nuevo Pedido */}
+      <Modal show={newOrderModal} onClose={() => { setNewOrderModal(false); setCustomerName(''); setCustomerPhone('') }} title="🏪 Nuevo Pedido Mostrador">
+        <form onSubmit={handleCreateOrder}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Nombre del Cliente *
+              </label>
+              <input
+                className="mostrador-input"
+                type="text"
+                placeholder="Ej: Juan García"
+                value={customerName}
+                onChange={e => setCustomerName(e.target.value)}
+                autoFocus
+                required
+              />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Teléfono <span style={{ fontWeight: '400', color: '#94a3b8' }}>(opcional)</span>
+              </label>
+              <input
+                className="mostrador-input"
+                type="text"
+                placeholder="Ej: 11-1234-5678"
+                value={customerPhone}
+                onChange={e => setCustomerPhone(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={() => { setNewOrderModal(false); setCustomerName(''); setCustomerPhone('') }}
+              style={{
+                padding: '9px 16px',
+                background: '#f1f5f9',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: '600',
+                color: '#64748b'
+              }}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={creating || !customerName.trim()}
+              style={{
+                padding: '9px 20px',
+                background: creating || !customerName.trim() ? '#94a3b8' : '#334155',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: creating || !customerName.trim() ? 'not-allowed' : 'pointer',
+                fontSize: '13px',
+                fontWeight: '700',
+                transition: 'background 0.15s'
+              }}
+            >
+              {creating ? 'Creando...' : '🏪 Crear Pedido'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }
@@ -198,12 +327,12 @@ function OrdersTable({ orders, emptyText, onSelect, isClosedTable }) {
             orders.map(o => {
               const orderTime = new Date(o.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
               return (
-                <tr 
-                  key={o.id} 
-                  onClick={() => onSelect(o.id)}
-                  style={{ 
-                    borderBottom: '1px solid var(--border)', 
-                    cursor: 'pointer', 
+                <tr
+                  key={o.id}
+                  onClick={() => onSelect(o)}
+                  style={{
+                    borderBottom: '1px solid var(--border)',
+                    cursor: 'pointer',
                     transition: 'background 0.15s'
                   }}
                   className="table-row-hover"
@@ -215,11 +344,11 @@ function OrdersTable({ orders, emptyText, onSelect, isClosedTable }) {
                     {orderTime}
                   </td>
                   <td style={{ padding: '12px 16px' }}>
-                    <span style={{ 
+                    <span style={{
                       display: 'inline-block',
-                      padding: '3px 8px', 
-                      borderRadius: '12px', 
-                      fontSize: '10px', 
+                      padding: '3px 8px',
+                      borderRadius: '12px',
+                      fontSize: '10px',
                       fontWeight: '700',
                       background: isClosedTable ? '#f1f5f9' : '#d1fae5',
                       color: isClosedTable ? '#475569' : '#065f46',
