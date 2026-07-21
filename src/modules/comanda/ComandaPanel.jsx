@@ -206,7 +206,7 @@ export default function ComandaPanel() {
       } else {
         const order = await dbGetOrder(currentContext.orderId)
         await sb.from('orders').update({
-          order_type: 'takeaway',
+          order_type: 'dine_in',
           delivery_address_id: null
         }).eq('id', currentContext.orderId)
         
@@ -237,7 +237,7 @@ export default function ComandaPanel() {
           addressId = addr?.id
         }
 
-        const oType = isDeliveryOrder ? 'delivery' : (currentContext.type === 'mesa' ? 'dine_in' : 'takeaway')
+        const oType = isDeliveryOrder ? 'delivery' : (currentContext.type === 'mesa' ? 'dine_in' : 'dine_in')
         const order = await dbCreateOrder(tenantId, oType, currentContext.tableDbId)
         orderId = order.id
         

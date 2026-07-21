@@ -21,8 +21,8 @@ export default function MostradorModule() {
     try {
       setLoading(true)
       const [open, closed] = await Promise.all([
-        dbGetOrders(tenantId, { status: 'open', type: 'takeaway' }),
-        dbGetOrders(tenantId, { status: 'paid', type: 'takeaway', limit: 5 })
+        dbGetOrders(tenantId, { status: 'open', type: 'dine_in' }),
+        dbGetOrders(tenantId, { status: 'paid', type: 'dine_in', limit: 5 })
       ])
       setOpenOrders(open)
       setClosedOrders(closed)
@@ -59,7 +59,7 @@ export default function MostradorModule() {
     try {
       const order = await dbCreateOrder(
         tenantId,
-        'takeaway',
+        'dine_in',
         null,
         customerName.trim() || null,
         customerPhone.trim() || null
