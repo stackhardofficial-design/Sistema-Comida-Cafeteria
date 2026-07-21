@@ -65,13 +65,16 @@ export default function ComandaPanel() {
         setDelivStreet(currentContext?.address || '')
         setDelivDesc('')
         setDelivMapsUrl('')
+        setDelivExpanded(isDelivMod)
         return
       }
       try {
         const order = await dbGetOrder(currentContext.orderId)
         if (order) {
           const hasAddr = !!order.delivery_address_id
-          setIsDeliveryOrder(hasAddr || order.order_type === 'delivery')
+          const isDeliv = hasAddr || order.order_type === 'delivery'
+          setIsDeliveryOrder(isDeliv)
+          setDelivExpanded(isDeliv)
           if (order.delivery_addresses) {
             setDelivStreet(order.delivery_addresses.street_address || '')
             const [desc, maps] = (order.delivery_addresses.reference || '').split(' | ')
@@ -328,10 +331,12 @@ export default function ComandaPanel() {
   const contextLabel = currentContext
     ? currentContext.type === 'mesa'
       ? `🪑 ${currentContext.tableName}`
-      : currentContext.type === 'delivery' ? '🛵 Delivery' : '🏪 Mostrador'
+      : currentContext.type === 'delivery'
+        ? `🛵 ${currentContext.customerName || 'Delivery'}`
+        : `🏪 ${currentContext.customerName || 'Mostrador'}`
     : null
 
-  if (currentModule === 'mostrador' && loadingSession) {
+  if (currentModule === 'mostrador' && loadingSession && currentContext?.type !== 'delivery') {
     return (
       <aside className="comanda-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
         Cargando caja...
@@ -339,7 +344,7 @@ export default function ComandaPanel() {
     )
   }
 
-  if (currentModule === 'mostrador' && !session) {
+  if (currentModule === 'mostrador' && !session && currentContext?.type !== 'delivery') {
     return (
       <aside className="comanda-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '24px', textAlign: 'center', gap: '16px' }}>
