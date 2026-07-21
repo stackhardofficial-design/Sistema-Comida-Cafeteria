@@ -246,11 +246,43 @@ export async function dbCloseSession(sessionId, closingAmount, expectedAmount) {
 // ===== DELIVERY =====
 export async function dbGetDeliveryOrders(tenantId) {
   const { data } = await sb.from('orders')
-    .select('*, delivery_addresses(*)')
-    .eq('tenant_id', tenantId).eq('order_type', 'delivery')
+    .select('*, delivery_addresses(*), order_items(id)')
+    .eq('tenant_id', tenantId)
+    .eq('order_type', 'delivery')
     .in('status', ['open', 'in_transit', 'delivered'])
     .order('created_at', { ascending: false })
   return data || []
+}
+
+export async function dbCreateDeliveryOrder(tenantId, { customerName, customerPhone, streetAddress, city, state, postalCode, reference }) {
+  // 1. Crear la dirección de entrega
+  const { data: addr, error: errAddr } = await sb.from('delivery_addresses').insert({
+    tenant_id: tenantId,
+    customer_name: customerName,
+    customer_phone: customerPhone || '',
+    street_address: streetAddress || '',
+    city: city || '',
+    state: state || null,
+    postal_code: postalCode || null,
+    country: 'AR',
+    reference: reference || null
+  }).select().single()
+  if (errAddr) throw errAddr
+
+  // 2. Crear la orden vinculando la dirección
+  const { data: order, error: errOrder } = await sb.from('orders').insert({
+    tenant_id: tenantId,
+    order_type: 'delivery',
+    status: 'open',
+    total_amount: 0,
+    discount_amount: 0,
+    customer_name: customerName,
+    customer_phone: customerPhone || null,
+    delivery_address_id: addr.id
+  }).select().single()
+  if (errOrder) throw errOrder
+
+  return { ...order, delivery_addresses: addr }
 }
 
 // ===== CUSTOMERS =====

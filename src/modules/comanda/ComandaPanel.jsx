@@ -280,31 +280,16 @@ export default function ComandaPanel() {
     )
   }
 
-  if (currentModule === 'mostrador' && (!currentContext || currentContext.type !== 'mostrador')) {
+  if ((currentModule === 'mostrador' || currentModule === 'delivery') && (!currentContext || (currentContext.type !== 'mostrador' && currentContext.type !== 'delivery'))) {
+    const isMostrador = currentModule === 'mostrador'
     return (
       <aside className="comanda-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '24px', textAlign: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '32px' }}>🏪</span>
-          <button
-            onClick={() => {
-              setCurrentContext({ type: 'mostrador', orderId: null })
-              setCart([])
-              setDiscount({ type: 'none', value: 0 })
-            }}
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              color: 'var(--accent)', 
-              fontSize: '14px', 
-              fontWeight: '600', 
-              cursor: 'pointer', 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '6px' 
-            }}
-          >
-            <span>‹</span> Crear un nuevo pedido
-          </button>
+          <span style={{ fontSize: '32px' }}>{isMostrador ? '🏪' : '🛵'}</span>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+            {isMostrador ? 'Seleccioná un pedido del mostrador' : 'Seleccioná un pedido de delivery'}
+          </p>
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>‹ o creá uno nuevo</span>
         </div>
       </aside>
     )
@@ -324,7 +309,7 @@ export default function ComandaPanel() {
             </span>
           )}
         </div>
-        {currentContext && currentContext.type === 'mostrador' && (
+        {currentContext && (currentContext.type === 'mostrador' || currentContext.type === 'delivery') && (
           <button 
             onClick={clearCart} 
             style={{ 
@@ -433,7 +418,7 @@ export default function ComandaPanel() {
               >
                 💳 COBRAR
               </button>
-              {currentContext?.type === 'mostrador' && (
+              {(currentContext?.type === 'mostrador' || currentContext?.type === 'delivery') && (
                 <button
                   className="btn-discount"
                   style={{ background: 'var(--border)', color: 'var(--text-primary)', marginTop: '4px' }}
