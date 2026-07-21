@@ -3,7 +3,7 @@ import { useApp } from '../../lib/AppContext'
 import {
   dbGetCategories, dbGetProducts, dbAddItem, dbRemoveItem,
   dbCreateOrder, dbUpdateOrder, dbUpdateTable, dbCreatePayment,
-  dbGetOpenSession, fmtMoney, dbRecalcOrder, sb
+  dbGetOpenSession, dbOpenSession, fmtMoney, dbRecalcOrder, sb
 } from '../../lib/supabase'
 import Modal from '../../components/Modal'
 
@@ -11,7 +11,8 @@ export default function ComandaPanel() {
   const {
     tenantId, currentContext, setCurrentContext,
     cart, setCart, discount, setDiscount, clearCart,
-    cartTotal, discountAmount, grandTotal, refreshTrigger
+    cartTotal, discountAmount, grandTotal, refreshTrigger,
+    currentModule, triggerRefresh
   } = useApp()
 
   const [categories, setCategories] = useState([])
@@ -23,6 +24,33 @@ export default function ComandaPanel() {
   const [payMethod, setPayMethod] = useState('efectivo')
   const [cashIn, setCashIn] = useState('')
   const [saving, setSaving] = useState(false)
+  const [assigning, setAssigning] = useState(false)
+
+  // Estados para arqueo de caja (mostrador)
+  const [session, setSession] = useState(null)
+  const [loadingSession, setLoadingSession] = useState(true)
+  const [openCajaModal, setOpenCajaModal] = useState(false)
+  const [openingAmount, setOpeningAmount] = useState('')
+
+  async function loadSession() {
+    if (!tenantId) return
+    try {
+      setLoadingSession(true)
+      const activeSession = await dbGetOpenSession(tenantId)
+      setSession(activeSession)
+    } catch (e) {
+      console.error('Error al cargar la sesión de caja:', e)
+    } finally {
+      setLoadingSession(false)
+    }
+  }
+
+  useEffect(() => {
+    loadSession()
+  }, [tenantId, refreshTrigger])
+
+  // true when this is a new order that hasn't been assigned yet
+  const isNewOrder = currentContext?.type === 'mesa' && !currentContext?.hasOrder && !currentContext?.orderId
 
   const refreshCats = useCallback(() => {
     if (tenantId) dbGetCategories(tenantId).then(setCategories)
@@ -55,12 +83,29 @@ export default function ComandaPanel() {
         { event: '*', schema: 'public', table: 'products', filter: `tenant_id=eq.${tenantId}` },
         () => { refreshProds() }
       )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'cash_register_sessions', filter: `tenant_id=eq.${tenantId}` },
+        () => { loadSession() }
+      )
       .subscribe()
 
     return () => {
       sb.removeChannel(comandaChannel)
     }
   }, [tenantId, refreshCats, refreshProds])
+
+  async function handleAbrirCaja() {
+    const amount = parseFloat(openingAmount) || 0
+    try {
+      await dbOpenSession(tenantId, amount)
+      setOpenCajaModal(false)
+      setOpeningAmount('')
+      triggerRefresh()
+    } catch (e) {
+      alert('Error al abrir caja: ' + e.message)
+    }
+  }
 
   const filteredProducts = search
     ? products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
@@ -127,7 +172,33 @@ export default function ComandaPanel() {
     }
   }
 
-  const change = payMethod === 'efectivo' && cashIn ? parseFloat(cashIn) - grandTotal : 0
+  // Assign order (save to DB and mark table as occupied)
+  async function assignOrder() {
+    if (!currentContext || cart.length === 0) return
+    setAssigning(true)
+    try {
+      let orderId = currentContext.orderId
+      if (!orderId) {
+        const order = await dbCreateOrder(
+          tenantId,
+          'dine_in',
+          currentContext.tableDbId,
+          currentContext.customerName || null
+        )
+        orderId = order.id
+        setCurrentContext(prev => ({ ...prev, orderId, hasOrder: true }))
+        if (currentContext.tableDbId) {
+          await dbUpdateTable(currentContext.tableDbId, { status: 'occupied', current_order_id: orderId })
+        }
+      }
+    } catch (e) {
+      alert('Error al asignar pedido: ' + e.message)
+    } finally {
+      setAssigning(false)
+    }
+  }
+
+  const change = (parseFloat(cashIn) || 0) - grandTotal
 
   const contextLabel = currentContext
     ? currentContext.type === 'mesa'
@@ -135,17 +206,139 @@ export default function ComandaPanel() {
       : currentContext.type === 'delivery' ? '🛵 Delivery' : '🏪 Mostrador'
     : null
 
+  if (currentModule === 'mostrador' && loadingSession) {
+    return (
+      <aside className="comanda-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+        Cargando caja...
+      </aside>
+    )
+  }
+
+  if (currentModule === 'mostrador' && !session) {
+    return (
+      <aside className="comanda-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '24px', textAlign: 'center', gap: '16px' }}>
+          <div style={{ fontSize: '48px' }}>🏧</div>
+          <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0 }}>Arqueo de caja cerrado</h3>
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>Abrí uno para darle seguimiento a las ventas.</p>
+          <button 
+            className="btn btn-primary" 
+            onClick={() => setOpenCajaModal(true)}
+            style={{ 
+              padding: '10px 16px', 
+              background: 'var(--accent)', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '8px', 
+              fontWeight: '600', 
+              cursor: 'pointer' 
+            }}
+          >
+            Nuevo arqueo
+          </button>
+        </div>
+
+        <Modal show={openCajaModal} onClose={() => setOpenCajaModal(false)} title="🔓 Abrir Caja">
+          <div>
+            <div className="form-row" style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>Saldo Inicial (cambio en caja)</label>
+              <input
+                type="number"
+                placeholder="0.00"
+                value={openingAmount}
+                onChange={e => setOpeningAmount(e.target.value)}
+                style={{ 
+                  width: '100%', 
+                  padding: '10px', 
+                  borderRadius: '6px', 
+                  border: '1px solid var(--border)', 
+                  background: 'var(--input-bg, #fff)', 
+                  color: 'var(--text)' 
+                }}
+                autoFocus
+              />
+            </div>
+            <div className="form-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setOpenCajaModal(false)}
+                style={{ padding: '8px 14px', background: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+              >
+                Cancelar
+               </button>
+              <button 
+                className="btn btn-primary" 
+                onClick={handleAbrirCaja}
+                style={{ padding: '8px 14px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+              >
+                Abrir Caja
+              </button>
+            </div>
+          </div>
+        </Modal>
+      </aside>
+    )
+  }
+
+  if (currentModule === 'mostrador' && (!currentContext || currentContext.type !== 'mostrador')) {
+    return (
+      <aside className="comanda-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '24px', textAlign: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '32px' }}>🏪</span>
+          <button
+            onClick={() => {
+              setCurrentContext({ type: 'mostrador', orderId: null })
+              setCart([])
+              setDiscount({ type: 'none', value: 0 })
+            }}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: 'var(--accent)', 
+              fontSize: '14px', 
+              fontWeight: '600', 
+              cursor: 'pointer', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px' 
+            }}
+          >
+            <span>‹</span> Crear un nuevo pedido
+          </button>
+        </div>
+      </aside>
+    )
+  }
+
   return (
     <aside className="comanda-panel">
       {/* Header */}
-      <div className="comanda-header">
-        <span className="comanda-title">
-          {currentContext ? contextLabel : 'Selecciona una mesa'}
-        </span>
-        {currentContext && (
-          <span className="comanda-context">
-            {currentContext.orderId ? '🔴 Pedido activo' : '🟢 Mesa libre'}
+      <div className="comanda-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <span className="comanda-title">
+            {currentContext ? contextLabel : 'Selecciona una mesa'}
           </span>
+          {currentContext && (
+            <span className="comanda-context">
+              {currentContext.orderId ? `🔴 Pedido activo (#${currentContext.orderId.slice(-6).toUpperCase()})` : '🟢 Nuevo Pedido'}
+            </span>
+          )}
+        </div>
+        {currentContext && currentContext.type === 'mostrador' && (
+          <button 
+            onClick={clearCart} 
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              fontSize: '20px', 
+              color: 'var(--text-muted)', 
+              cursor: 'pointer',
+              padding: '4px'
+            }}
+            title="Volver al mostrador (Guardar)"
+          >
+            ✕
+          </button>
         )}
       </div>
 
@@ -222,9 +415,35 @@ export default function ComandaPanel() {
         </div>
         <div className="comanda-btns">
           <button className="btn-discount" onClick={() => setDiscountModal(true)}>🏷️ Descuento</button>
-          <button className="btn-cobrar" disabled={cart.length === 0} onClick={() => setPayModal(true)}>
-            💳 COBRAR
-          </button>
+          {isNewOrder ? (
+            <button
+              className="btn-cobrar"
+              disabled={cart.length === 0 || assigning}
+              onClick={assignOrder}
+              style={{ background: 'var(--accent, #f59e0b)' }}
+            >
+              {assigning ? 'Asignando...' : '📋 ASIGNAR PEDIDO'}
+            </button>
+          ) : (
+            <>
+              <button
+                className="btn-cobrar"
+                disabled={cart.length === 0}
+                onClick={() => setPayModal(true)}
+              >
+                💳 COBRAR
+              </button>
+              {currentContext?.type === 'mostrador' && (
+                <button
+                  className="btn-discount"
+                  style={{ background: 'var(--border)', color: 'var(--text-primary)', marginTop: '4px' }}
+                  onClick={clearCart}
+                >
+                  💾 GUARDAR Y VOLVER
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
 

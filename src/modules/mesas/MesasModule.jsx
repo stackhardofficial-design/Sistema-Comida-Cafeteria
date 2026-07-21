@@ -22,6 +22,11 @@ export default function MesasModule() {
   const [editZone, setEditZone] = useState(null)
   const [editTable, setEditTable] = useState(null)
 
+  // Customer name modal
+  const [customerModal, setCustomerModal] = useState(false)
+  const [pendingTable, setPendingTable] = useState(null)
+  const [customerName, setCustomerName] = useState('')
+
   // Context menu
   const [ctxMenu, setCtxMenu] = useState(null) // { tableId, x, y }
   const ctxRef = useRef(null)
@@ -79,7 +84,7 @@ export default function MesasModule() {
 
   async function selectTable(table) {
     if (table.status !== 'free') {
-      // Load existing open order
+      // Mesa ocupada: cargar pedido existente
       const { data: orders } = await sb.from('orders')
         .select('*, order_items(*, products(id, name, price))')
         .eq('tenant_id', tenantId)
@@ -87,17 +92,43 @@ export default function MesasModule() {
         .eq('status', 'open')
         .limit(1)
       const order = orders?.[0] || null
-      setCurrentContext({ type: 'mesa', tableDbId: table.id, tableName: table.name, orderId: order?.id || null })
+      setCurrentContext({
+        type: 'mesa',
+        tableDbId: table.id,
+        tableName: table.name,
+        orderId: order?.id || null,
+        customerName: order?.customer_name || null,
+        hasOrder: !!order
+      })
       if (order?.order_items) {
         setCart(order.order_items.map(oi => ({
           id: oi.id, product: oi.products, qty: oi.quantity, notes: oi.notes || '', dbItemId: oi.id
         })))
+      } else {
+        setCart([])
       }
     } else {
-      setCurrentContext({ type: 'mesa', tableDbId: table.id, tableName: table.name, orderId: null })
-      setCart([])
-      setDiscount({ type: 'none', value: 0 })
+      // Mesa libre: pedir nombre del cliente antes de abrir
+      setPendingTable(table)
+      setCustomerName('')
+      setCustomerModal(true)
     }
+  }
+
+  function confirmCustomer() {
+    if (!pendingTable) return
+    setCurrentContext({
+      type: 'mesa',
+      tableDbId: pendingTable.id,
+      tableName: pendingTable.name,
+      orderId: null,
+      customerName: customerName.trim() || null,
+      hasOrder: false
+    })
+    setCart([])
+    setDiscount({ type: 'none', value: 0 })
+    setCustomerModal(false)
+    setPendingTable(null)
   }
 
   // ===== ZONE CRUD =====
@@ -271,6 +302,34 @@ export default function MesasModule() {
         onSave={saveTable}
       />
 
+      {/* Customer Name Modal */}
+      <Modal show={customerModal} onClose={() => setCustomerModal(false)} title={`🪑 ${pendingTable?.name || 'Mesa'}`}>
+        <form onSubmit={e => { e.preventDefault(); confirmCustomer() }}>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 14 }}>
+            Ingresá el nombre del cliente para identificar el pedido (opcional).
+          </p>
+          <div className="form-row" style={{ marginBottom: 20 }}>
+            <label>Nombre del cliente</label>
+            <input
+              autoFocus
+              type="text"
+              placeholder="Ej: Juan, Mesa cumpleaños, Familia García..."
+              value={customerName}
+              onChange={e => setCustomerName(e.target.value)}
+              style={{ width: '100%' }}
+            />
+          </div>
+          <div className="form-actions" style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <button type="button" className="btn btn-secondary" onClick={() => { confirmCustomer() }}>
+              Sin nombre
+            </button>
+            <button type="submit" className="btn btn-primary">
+              ✅ Abrir Mesa
+            </button>
+          </div>
+        </form>
+      </Modal>
+
       {/* Toast */}
       {toast && (
         <div className="toast-container">
@@ -287,17 +346,23 @@ function TableCard({ table, onSelect, onContextMenu }) {
   const order = table.orders?.find(o => o.status === 'open' || o.status === 'billing')
   const shape = table.shape === 'circle' ? ' circle' : ''
   const num = table.name.replace(/[^0-9]/g, '') || table.name
+  const statusLabel = status === 'free' ? 'Libre' : status === 'billing' ? 'Cobrando' : 'Ocupada'
 
   return (
     <div
       className={`table-card ${status}${shape}`}
       onClick={onSelect}
       onContextMenu={onContextMenu}
-      title={`${table.name} — ${status === 'free' ? 'Libre' : status === 'billing' ? 'Cobrando' : 'Ocupada'}`}
+      title={`${table.name} — ${statusLabel}`}
     >
       <div className="table-num">{num}</div>
       {order && (
         <>
+          {order.customer_name && (
+            <div className="table-customer" style={{ fontSize: 10, fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', padding: '0 4px', opacity: 0.9 }}>
+              👤 {order.customer_name}
+            </div>
+          )}
           <div className="table-amount">{fmtMoney(order.total_amount)}</div>
           <div className="table-timer">{fmtTimer(order.created_at)}</div>
         </>
