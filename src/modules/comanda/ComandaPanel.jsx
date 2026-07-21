@@ -32,6 +32,13 @@ export default function ComandaPanel() {
   const [openCajaModal, setOpenCajaModal] = useState(false)
   const [openingAmount, setOpeningAmount] = useState('')
 
+  // Estados locales para delivery
+  const [isDeliveryOrder, setIsDeliveryOrder] = useState(false)
+  const [delivStreet, setDelivStreet] = useState('')
+  const [delivDesc, setDelivDesc] = useState('')
+  const [delivMapsUrl, setDelivMapsUrl] = useState('')
+  const [delivExpanded, setDelivExpanded] = useState(false)
+
   async function loadSession() {
     if (!tenantId) return
     try {
@@ -48,6 +55,40 @@ export default function ComandaPanel() {
   useEffect(() => {
     loadSession()
   }, [tenantId, refreshTrigger])
+
+  // Cargar datos de la dirección al cambiar el pedido
+  useEffect(() => {
+    async function fetchOrderDetails() {
+      if (!currentContext?.orderId) {
+        const isDelivMod = currentContext?.type === 'delivery'
+        setIsDeliveryOrder(isDelivMod)
+        setDelivStreet(currentContext?.address || '')
+        setDelivDesc('')
+        setDelivMapsUrl('')
+        return
+      }
+      try {
+        const order = await dbGetOrder(currentContext.orderId)
+        if (order) {
+          const hasAddr = !!order.delivery_address_id
+          setIsDeliveryOrder(hasAddr || order.order_type === 'delivery')
+          if (order.delivery_addresses) {
+            setDelivStreet(order.delivery_addresses.street_address || '')
+            const [desc, maps] = (order.delivery_addresses.reference || '').split(' | ')
+            setDelivDesc(desc || '')
+            setDelivMapsUrl(maps || '')
+          } else {
+            setDelivStreet('')
+            setDelivDesc('')
+            setDelivMapsUrl('')
+          }
+        }
+      } catch (e) {
+        console.error('Error al cargar detalles de la orden en comanda:', e)
+      }
+    }
+    fetchOrderDetails()
+  }, [currentContext?.orderId, currentContext?.type])
 
   // true when this is a new order that hasn't been assigned yet
   const isNewOrder = currentContext?.type === 'mesa' && !currentContext?.hasOrder && !currentContext?.orderId
@@ -111,21 +152,105 @@ export default function ComandaPanel() {
     ? products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
     : products
 
+  async function saveDeliveryInfo(street, desc, maps) {
+    if (!currentContext?.orderId) return
+    try {
+      const fullReference = `${desc || ''} | ${maps || ''}`
+      const order = await dbGetOrder(currentContext.orderId)
+      if (order.delivery_address_id) {
+        await sb.from('delivery_addresses').update({
+          street_address: street || '',
+          reference: fullReference
+        }).eq('id', order.delivery_address_id)
+      } else {
+        const { data: addr, error: errAddr } = await sb.from('delivery_addresses').insert({
+          tenant_id: tenantId,
+          customer_name: order.customer_name || 'Cliente Delivery',
+          street_address: street || '',
+          reference: fullReference,
+          country: 'AR'
+        }).select().single()
+        if (errAddr) throw errAddr
+        
+        await sb.from('orders').update({
+          delivery_address_id: addr.id,
+          order_type: 'delivery'
+        }).eq('id', order.id)
+      }
+      triggerRefresh()
+    } catch (e) {
+      console.error('Error al guardar datos de delivery:', e)
+    }
+  }
+
+  async function handleToggleDeliveryType(e) {
+    const checked = e.target.checked
+    setIsDeliveryOrder(checked)
+    
+    if (!currentContext?.orderId) return
+    
+    try {
+      if (checked) {
+        const { data: addr } = await sb.from('delivery_addresses').insert({
+          tenant_id: tenantId,
+          customer_name: currentContext.customerName || 'Cliente Mostrador',
+          street_address: delivStreet || '',
+          reference: `${delivDesc || ''} | ${delivMapsUrl || ''}`,
+          country: 'AR'
+        }).select().single()
+        
+        await sb.from('orders').update({
+          order_type: 'delivery',
+          delivery_address_id: addr?.id || null
+        }).eq('id', currentContext.orderId)
+      } else {
+        const order = await dbGetOrder(currentContext.orderId)
+        await sb.from('orders').update({
+          order_type: 'takeaway',
+          delivery_address_id: null
+        }).eq('id', currentContext.orderId)
+        
+        if (order.delivery_address_id) {
+          await sb.from('delivery_addresses').delete().eq('id', order.delivery_address_id)
+        }
+      }
+      triggerRefresh()
+    } catch (e) {
+      console.error('Error al cambiar tipo de pedido:', e)
+    }
+  }
+
   async function addToCart(product) {
     if (!currentContext) return
     try {
-      // Ensure order exists
       let orderId = currentContext.orderId
       if (!orderId) {
-        const order = await dbCreateOrder(tenantId, currentContext.type === 'mesa' ? 'dine_in' : 'takeaway', currentContext.tableDbId)
+        let addressId = null
+        if (isDeliveryOrder) {
+          const { data: addr } = await sb.from('delivery_addresses').insert({
+            tenant_id: tenantId,
+            customer_name: currentContext.customerName || 'Cliente Delivery',
+            street_address: delivStreet || '',
+            reference: `${delivDesc || ''} | ${delivMapsUrl || ''}`,
+            country: 'AR'
+          }).select().single()
+          addressId = addr?.id
+        }
+
+        const oType = isDeliveryOrder ? 'delivery' : (currentContext.type === 'mesa' ? 'dine_in' : 'takeaway')
+        const order = await dbCreateOrder(tenantId, oType, currentContext.tableDbId)
         orderId = order.id
+        
+        if (addressId) {
+          await sb.from('orders').update({ delivery_address_id: addressId }).eq('id', orderId)
+        }
+        
         setCurrentContext(prev => ({ ...prev, orderId }))
         if (currentContext.tableDbId) {
           await dbUpdateTable(currentContext.tableDbId, { status: 'occupied', current_order_id: orderId })
         }
       }
       await dbAddItem(tenantId, orderId, product)
-      // Update local cart
       setCart(prev => {
         const existing = prev.find(i => i.product.id === product.id)
         if (existing) return prev.map(i => i.product.id === product.id ? { ...i, qty: i.qty + 1 } : i)
@@ -326,6 +451,104 @@ export default function ComandaPanel() {
           </button>
         )}
       </div>
+
+      {/* Sección Desplegable de Datos de Delivery */}
+      {currentContext && (currentContext.type === 'mostrador' || currentContext.type === 'delivery') && (
+        <div style={{ borderBottom: '1px solid var(--border)', background: '#f8fafc' }}>
+          <button 
+            onClick={() => setDelivExpanded(!delivExpanded)}
+            style={{ 
+              width: '100%', 
+              padding: '10px 16px', 
+              background: 'none', 
+              border: 'none', 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              fontSize: '12px', 
+              fontWeight: 'bold', 
+              color: '#475569', 
+              cursor: 'pointer' 
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>🛵</span> Datos de Envío {isDeliveryOrder ? '(Activo)' : '(Inactivo)'}
+            </span>
+            <span>{delivExpanded ? '▲' : '▼'}</span>
+          </button>
+          
+          {delivExpanded && (
+            <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px', borderTop: '1px solid var(--border)' }}>
+              {currentContext.type === 'mostrador' && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '600', color: '#1e293b', cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={isDeliveryOrder} 
+                    onChange={handleToggleDeliveryType} 
+                  />
+                  Enviar por Delivery
+                </label>
+              )}
+
+              {isDeliveryOrder && (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase' }}>Dirección *</label>
+                    <input 
+                      type="text" 
+                      placeholder="Calle y altura..." 
+                      value={delivStreet}
+                      onChange={e => setDelivStreet(e.target.value)}
+                      onBlur={() => saveDeliveryInfo(delivStreet, delivDesc, delivMapsUrl)}
+                      style={{ padding: '7px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', background: 'white', color: '#334155' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase' }}>Descripción / Indicaciones</label>
+                    <input 
+                      type="text" 
+                      placeholder="Piso, depto, color de puerta..." 
+                      value={delivDesc}
+                      onChange={e => setDelivDesc(e.target.value)}
+                      onBlur={() => saveDeliveryInfo(delivStreet, delivDesc, delivMapsUrl)}
+                      style={{ padding: '7px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', background: 'white', color: '#334155' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase' }}>Enlace de Google Maps</label>
+                    <input 
+                      type="text" 
+                      placeholder="https://maps.app.goo.gl/..." 
+                      value={delivMapsUrl}
+                      onChange={e => setDelivMapsUrl(e.target.value)}
+                      onBlur={() => saveDeliveryInfo(delivStreet, delivDesc, delivMapsUrl)}
+                      style={{ padding: '7px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', background: 'white', color: '#334155' }}
+                    />
+                  </div>
+
+                  {(delivMapsUrl || delivStreet) && (
+                    <div style={{ marginTop: '4px' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                        Vista previa de ubicación:
+                      </span>
+                      <iframe 
+                        width="100%" 
+                        height="160" 
+                        frameBorder="0" 
+                        style={{ border: 0, borderRadius: '8px', background: '#e2e8f0' }} 
+                        src={`https://maps.google.com/maps?q=${encodeURIComponent(delivMapsUrl ? delivMapsUrl : delivStreet)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                        allowFullScreen
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Search + Categories */}
       <div className="comanda-search-zone">

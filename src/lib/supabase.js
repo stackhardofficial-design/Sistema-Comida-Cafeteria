@@ -143,7 +143,7 @@ export async function dbCreateOrder(tenantId, type, tableDbId = null, customerNa
 
 export async function dbGetOrder(orderId) {
   const { data } = await sb.from('orders')
-    .select('*, order_items(*, products(id, name, price))')
+    .select('*, delivery_addresses(*), order_items(*, products(id, name, price))')
     .eq('id', orderId).single()
   return data
 }
@@ -284,6 +284,16 @@ export async function dbCreateDeliveryOrder(tenantId, { customerName, customerPh
 
   return { ...order, delivery_addresses: addr }
 }
+
+export async function dbUpdateDeliveryAddress(addressId, payload) {
+  const { data, error } = await sb.from('delivery_addresses')
+    .update(payload)
+    .eq('id', addressId)
+    .select().single()
+  if (error) throw error
+  return data
+}
+
 
 // ===== CUSTOMERS =====
 export async function dbGetCustomers(tenantId) {
