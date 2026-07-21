@@ -227,8 +227,14 @@ export async function dbGetOpenSession(tenantId) {
 }
 
 export async function dbOpenSession(tenantId, openingAmount) {
+  const { data: { user } } = await sb.auth.getUser()
   const { data, error } = await sb.from('cash_register_sessions')
-    .insert({ tenant_id: tenantId, opening_amount: openingAmount, status: 'open' }).select().single()
+    .insert({
+      tenant_id: tenantId,
+      opening_amount: openingAmount,
+      status: 'open',
+      cashier_user_id: user?.id || null
+    }).select().single()
   if (error) throw error
   return data
 }
