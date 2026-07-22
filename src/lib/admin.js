@@ -70,21 +70,23 @@ export async function dbGetEmployeeHours(tenantId, filters = {}) {
   return data || []
 }
 
-export async function dbAddEmployeeHours(tenantId, userId, workDate, hoursWorked, notes = '') {
+export async function dbAddEmployeeHours(tenantId, userId, workDate, hoursWorked, notes = '', timeIn = null, timeOut = null) {
   const { data, error } = await adminSb.from('employee_hours').insert({
     tenant_id: tenantId,
     user_id: userId,
     work_date: workDate,
     hours_worked: hoursWorked,
-    notes
+    notes,
+    time_in: timeIn,
+    time_out: timeOut
   }).select().single()
   if (error) throw error
   return data
 }
 
-export async function dbUpdateEmployeeHours(id, hoursWorked, notes = '') {
+export async function dbUpdateEmployeeHours(id, hoursWorked, notes = '', timeIn = null, timeOut = null) {
   const { data, error } = await adminSb.from('employee_hours')
-    .update({ hours_worked: hoursWorked, notes, updated_at: new Date().toISOString() })
+    .update({ hours_worked: hoursWorked, notes, time_in: timeIn, time_out: timeOut, updated_at: new Date().toISOString() })
     .eq('id', id).select().single()
   if (error) throw error
   return data

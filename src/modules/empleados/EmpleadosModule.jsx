@@ -276,8 +276,12 @@ function TabHoras({ tenantId }) {
   const [filterFrom, setFilterFrom] = useState('')
   const [filterTo, setFilterTo] = useState('')
   const [modal, setModal] = useState(null)
-  const [form, setForm] = useState({ user_id: '', work_date: new Date().toISOString().slice(0, 10), hours_worked: '', notes: '' })
+  const [form, setForm] = useState({
+    user_id: '', work_date: new Date().toISOString().slice(0, 10),
+    time_in: '', time_out: '', notes: ''
+  })
   const [saving, setSaving] = useState(false)
+  const [dupWarning, setDupWarning] = useState('')
 
   const load = useCallback(async () => {
     if (!tenantId) return
@@ -297,12 +301,47 @@ function TabHoras({ tenantId }) {
 
   useEffect(() => { load() }, [load])
 
+  // Calculate hours from time_in and time_out
+  function calcHours(timeIn, timeOut) {
+    if (!timeIn || !timeOut) return null
+    const [h1, m1] = timeIn.split(':').map(Number)
+    const [h2, m2] = timeOut.split(':').map(Number)
+    let mins = (h2 * 60 + m2) - (h1 * 60 + m1)
+    if (mins < 0) mins += 24 * 60 // overnight shift
+    return Math.round(mins) / 60
+  }
+
+  const calculatedHours = calcHours(form.time_in, form.time_out)
+
+  // Check duplicate when employee or date changes
+  useEffect(() => {
+    if (modal !== 'new' || !form.user_id || !form.work_date) { setDupWarning(''); return }
+    const exists = hours.find(h => h.user_id === form.user_id && h.work_date === form.work_date)
+    if (exists) {
+      const emp = employees.find(e => e.id === form.user_id)
+      setDupWarning(`⚠️ ${emp?.first_name} ${emp?.last_name} ya tiene un registro para el ${new Date(form.work_date + 'T00:00:00').toLocaleDateString('es-AR')}. Podés editar ese registro o elegir otra fecha.`)
+    } else {
+      setDupWarning('')
+    }
+  }, [form.user_id, form.work_date, modal, hours, employees])
+
   async function handleSave() {
-    if (!form.user_id || !form.work_date || !form.hours_worked) return
+    if (!form.user_id || !form.work_date || !form.time_in || !form.time_out) return
+    const hrs = calcHours(form.time_in, form.time_out)
+    if (!hrs || hrs <= 0) { alert('La hora de salida debe ser posterior a la de entrada.'); return }
+
+    // Block duplicate on new entry
+    if (modal === 'new' && dupWarning) {
+      if (!confirm('Ya existe un registro para este empleado en esa fecha. ¿Querés agregar otro de todas formas?')) return
+    }
+
     setSaving(true)
     try {
-      if (modal === 'new') await dbAddEmployeeHours(tenantId, form.user_id, form.work_date, parseFloat(form.hours_worked), form.notes)
-      else await dbUpdateEmployeeHours(modal.id, parseFloat(form.hours_worked), form.notes)
+      if (modal === 'new') {
+        await dbAddEmployeeHours(tenantId, form.user_id, form.work_date, hrs, form.notes, form.time_in, form.time_out)
+      } else {
+        await dbUpdateEmployeeHours(modal.id, hrs, form.notes, form.time_in, form.time_out)
+      }
       setModal(null); load()
     } catch (e) { alert('Error: ' + e.message) }
     finally { setSaving(false) }
@@ -321,6 +360,8 @@ function TabHoras({ tenantId }) {
     const totalPay = totalH * (parseFloat(emp.hourly_rate) || 0)
     return { emp, totalH, totalPay }
   })
+
+  const inputStyle = { width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '14px', boxSizing: 'border-box' }
 
   return (
     <div>
@@ -347,40 +388,46 @@ function TabHoras({ tenantId }) {
         <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>hasta</span>
         <input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px' }} />
         <div style={{ flex: 1 }} />
-        <button onClick={() => { setForm({ user_id: '', work_date: new Date().toISOString().slice(0, 10), hours_worked: '', notes: '' }); setModal('new') }}
-          style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'white', fontWeight: '700', cursor: 'pointer' }}>
-          + Registrar Horas
+        <button onClick={() => {
+          setForm({ user_id: '', work_date: new Date().toISOString().slice(0, 10), time_in: '', time_out: '', notes: '' })
+          setDupWarning(''); setModal('new')
+        }} style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'white', fontWeight: '700', cursor: 'pointer' }}>
+          + Registrar Turno
         </button>
       </div>
 
+      {/* Table */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'var(--surface-2, #f8fafc)' }}>
-              {['Empleado', 'Fecha', 'Horas', 'Sueldo/h', 'Monto', 'Notas', 'Acciones'].map(h => (
-                <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
+              {['Empleado', 'Fecha', 'Entrada', 'Salida', 'Horas', 'Sueldo/h', 'Monto', 'Notas', ''].map(h => (
+                <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {loading ? <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Cargando...</td></tr>
-              : hours.length === 0 ? <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Sin registros</td></tr>
+            {loading ? <tr><td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Cargando...</td></tr>
+              : hours.length === 0 ? <tr><td colSpan={9} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Sin registros</td></tr>
                 : hours.map(h => {
                   const emp = employees.find(e => e.id === h.user_id)
                   const pay = parseFloat(h.hours_worked) * (parseFloat(emp?.hourly_rate) || 0)
                   return (
                     <tr key={h.id} style={{ borderTop: '1px solid var(--border)' }}>
-                      <td style={{ padding: '11px 16px', fontWeight: '600' }}>{h.users?.first_name} {h.users?.last_name}</td>
-                      <td style={{ padding: '11px 16px', color: 'var(--text-secondary)' }}>{new Date(h.work_date + 'T00:00:00').toLocaleDateString('es-AR')}</td>
-                      <td style={{ padding: '11px 16px', fontWeight: '700', color: 'var(--accent)' }}>{parseFloat(h.hours_worked).toFixed(1)}h</td>
-                      <td style={{ padding: '11px 16px', color: 'var(--text-secondary)' }}>{emp?.hourly_rate ? fmtMoney(emp.hourly_rate) : '--'}</td>
-                      <td style={{ padding: '11px 16px', fontWeight: '700', color: '#10b981' }}>{pay > 0 ? fmtMoney(pay) : '--'}</td>
-                      <td style={{ padding: '11px 16px', color: 'var(--text-secondary)', fontSize: '12px', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.notes || '--'}</td>
-                      <td style={{ padding: '11px 16px', display: 'flex', gap: '6px' }}>
-                        <button onClick={() => { setForm({ user_id: h.user_id, work_date: h.work_date, hours_worked: h.hours_worked, notes: h.notes || '' }); setModal(h) }}
-                          style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '12px' }}>✏️</button>
-                        <button onClick={() => handleDelete(h.id)}
-                          style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #fee2e2', background: '#fff5f5', color: '#ef4444', cursor: 'pointer', fontSize: '12px' }}>🗑️</button>
+                      <td style={{ padding: '11px 14px', fontWeight: '600' }}>{h.users?.first_name} {h.users?.last_name}</td>
+                      <td style={{ padding: '11px 14px', color: 'var(--text-secondary)' }}>{new Date(h.work_date + 'T00:00:00').toLocaleDateString('es-AR')}</td>
+                      <td style={{ padding: '11px 14px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{h.time_in || '--'}</td>
+                      <td style={{ padding: '11px 14px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{h.time_out || '--'}</td>
+                      <td style={{ padding: '11px 14px', fontWeight: '700', color: 'var(--accent)' }}>{parseFloat(h.hours_worked).toFixed(2)}h</td>
+                      <td style={{ padding: '11px 14px', color: 'var(--text-secondary)' }}>{emp?.hourly_rate ? fmtMoney(emp.hourly_rate) : '--'}</td>
+                      <td style={{ padding: '11px 14px', fontWeight: '700', color: '#10b981' }}>{pay > 0 ? fmtMoney(pay) : '--'}</td>
+                      <td style={{ padding: '11px 14px', color: 'var(--text-secondary)', fontSize: '12px', maxWidth: '130px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.notes || '--'}</td>
+                      <td style={{ padding: '11px 14px', display: 'flex', gap: '6px' }}>
+                        <button onClick={() => {
+                          setForm({ user_id: h.user_id, work_date: h.work_date, time_in: h.time_in || '', time_out: h.time_out || '', notes: h.notes || '' })
+                          setDupWarning(''); setModal(h)
+                        }} style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '12px' }}>✏️</button>
+                        <button onClick={() => handleDelete(h.id)} style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #fee2e2', background: '#fff5f5', color: '#ef4444', cursor: 'pointer', fontSize: '12px' }}>🗑️</button>
                       </td>
                     </tr>
                   )
@@ -389,37 +436,63 @@ function TabHoras({ tenantId }) {
         </table>
       </div>
 
-      <Modal show={!!modal} onClose={() => setModal(null)} title={modal === 'new' ? '⏱️ Registrar Horas' : '✏️ Editar Registro'}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', minWidth: '320px' }}>
+      {/* Modal */}
+      <Modal show={!!modal} onClose={() => setModal(null)} title={modal === 'new' ? '⏱️ Registrar Turno' : '✏️ Editar Turno'}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', minWidth: '340px' }}>
           {modal === 'new' && (
             <div>
               <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '5px', color: 'var(--text-secondary)' }}>Empleado *</label>
-              <select value={form.user_id} onChange={e => setForm(p => ({ ...p, user_id: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '14px' }}>
+              <select value={form.user_id} onChange={e => setForm(p => ({ ...p, user_id: e.target.value }))} style={inputStyle}>
                 <option value="">Seleccionar...</option>
                 {employees.filter(e => e.role !== 'owner').map(e => <option key={e.id} value={e.id}>{e.first_name} {e.last_name}</option>)}
               </select>
             </div>
           )}
+
           <div>
             <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '5px', color: 'var(--text-secondary)' }}>Fecha *</label>
-            <input type="date" value={form.work_date} onChange={e => setForm(p => ({ ...p, work_date: e.target.value }))} disabled={modal !== 'new'}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '14px', boxSizing: 'border-box' }} />
+            <input type="date" value={form.work_date} onChange={e => setForm(p => ({ ...p, work_date: e.target.value }))} disabled={modal !== 'new'} style={inputStyle} />
           </div>
-          <div>
-            <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '5px', color: 'var(--text-secondary)' }}>Horas trabajadas *</label>
-            <input type="number" min="0" step="0.25" placeholder="Ej: 8 o 4.5" value={form.hours_worked} onChange={e => setForm(p => ({ ...p, hours_worked: e.target.value }))}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '14px', fontWeight: '700', boxSizing: 'border-box' }} autoFocus />
+
+          {/* Duplicate warning */}
+          {dupWarning && (
+            <div style={{ padding: '10px 12px', borderRadius: '8px', background: '#fffbeb', border: '1px solid #f59e0b', fontSize: '12px', color: '#92400e', lineHeight: '1.4' }}>
+              {dupWarning}
+            </div>
+          )}
+
+          {/* Time in / out */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '5px', color: 'var(--text-secondary)' }}>🟢 Hora entrada *</label>
+              <input type="time" value={form.time_in} onChange={e => setForm(p => ({ ...p, time_in: e.target.value }))} style={{ ...inputStyle, fontFamily: 'monospace', fontSize: '16px', fontWeight: '700' }} autoFocus />
+            </div>
+            <div>
+              <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '5px', color: 'var(--text-secondary)' }}>🔴 Hora salida *</label>
+              <input type="time" value={form.time_out} onChange={e => setForm(p => ({ ...p, time_out: e.target.value }))} style={{ ...inputStyle, fontFamily: 'monospace', fontSize: '16px', fontWeight: '700' }} />
+            </div>
           </div>
+
+          {/* Auto-calculated hours preview */}
+          {calculatedHours !== null && (
+            <div style={{ padding: '12px 16px', borderRadius: '10px', background: calculatedHours > 0 ? 'rgba(99,102,241,0.08)' : '#fee2e2', border: `1px solid ${calculatedHours > 0 ? 'var(--accent)' : '#ef4444'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>⏱️ Horas calculadas</span>
+              <span style={{ fontSize: '20px', fontWeight: '800', color: calculatedHours > 0 ? 'var(--accent)' : '#ef4444' }}>
+                {calculatedHours > 0 ? `${calculatedHours.toFixed(2)}h` : '⚠️ Revisar horarios'}
+              </span>
+            </div>
+          )}
+
           <div>
             <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '5px', color: 'var(--text-secondary)' }}>Notas (opcional)</label>
-            <input type="text" placeholder="Ej: Turno tarde" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px', boxSizing: 'border-box' }} />
+            <input type="text" placeholder="Ej: Turno tarde, cubrió a otro..." value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} style={{ ...inputStyle, fontSize: '13px' }} />
           </div>
+
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
             <button onClick={() => setModal(null)} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer' }}>Cancelar</button>
-            <button onClick={handleSave} disabled={saving || !form.hours_worked || (modal === 'new' && !form.user_id)}
-              style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'white', fontWeight: '700', cursor: 'pointer', opacity: (saving || !form.hours_worked || (modal === 'new' && !form.user_id)) ? 0.6 : 1 }}>
+            <button onClick={handleSave}
+              disabled={saving || !form.time_in || !form.time_out || !calculatedHours || calculatedHours <= 0 || (modal === 'new' && !form.user_id)}
+              style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'white', fontWeight: '700', cursor: 'pointer', opacity: (saving || !form.time_in || !form.time_out || !calculatedHours || calculatedHours <= 0 || (modal === 'new' && !form.user_id)) ? 0.6 : 1 }}>
               {saving ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
@@ -428,6 +501,7 @@ function TabHoras({ tenantId }) {
     </div>
   )
 }
+
 
 // ─── TAB PROPINAS ─────────────────────────────────────────────────────────────
 function TabPropinas({ tenantId }) {
