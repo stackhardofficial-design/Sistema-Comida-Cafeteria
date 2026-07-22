@@ -323,7 +323,31 @@ export async function dbUpdateDeliveryAddress(addressId, payload) {
 }
 
 
-// ===== CUSTOMERS =====
+// ===== TABLES =====
+export async function dbGetTables(tenantId) {
+  const { data } = await sb.from('restaurant_tables')
+    .select('*, orders(id, status)')
+    .eq('tenant_id', tenantId)
+    .eq('is_active', true)
+    .order('name')
+  return data || []
+}
+
+export async function dbGetZones(tenantId) {
+  // Las mesas tienen un campo zone_id pero no hay tabla zones separada.
+  // Extraemos zonas únicas de las mesas. Si zone_id es null agrupamos en 'Sin zona'.
+  const tables = await dbGetTables(tenantId)
+  const zoneMap = new Map()
+  tables.forEach(t => {
+    const zid = t.zone_id || '__default__'
+    if (!zoneMap.has(zid)) {
+      zoneMap.set(zid, { id: zid, name: zid === '__default__' ? 'General' : zid })
+    }
+  })
+  return [...zoneMap.values()]
+}
+
+
 export async function dbGetCustomers(tenantId) {
   const { data } = await sb.from('users')
     .select('*')

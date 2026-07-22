@@ -256,12 +256,22 @@ export default function ComandaPanel() {
     setAssigning(true)
     try {
       const order = await dbGetOrder(currentContext.orderId)
-      await sb.from('orders').update({
+
+      // Update order: assign table and set type to dine_in
+      const { error } = await sb.from('orders').update({
         order_type: 'dine_in',
         table_db_id: selectedTable.id,
         delivery_address_id: null
       }).eq('id', currentContext.orderId)
+      if (error) throw error
 
+      // Mark table as occupied
+      await sb.from('restaurant_tables').update({
+        status: 'occupied',
+        current_order_id: currentContext.orderId
+      }).eq('id', selectedTable.id)
+
+      // Clean up delivery address if it existed
       if (order.delivery_address_id) {
         await sb.from('delivery_addresses').delete().eq('id', order.delivery_address_id)
       }
@@ -274,9 +284,11 @@ export default function ComandaPanel() {
       })
       
       setAssignTableModal(false)
+      setSelectedTable(null)
       triggerRefresh()
     } catch (e) {
-      console.error(e)
+      console.error('Error asignando mesa:', e)
+      alert('Error al asignar mesa: ' + (e.message || e))
     } finally {
       setAssigning(false)
     }

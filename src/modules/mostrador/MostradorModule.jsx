@@ -152,6 +152,13 @@ export default function MostradorModule() {
     setFormError('')
     try {
       const order = await dbCreateOrder(tenantId, 'dine_in', selectedTable.id, customerName.trim(), customerPhone.trim() || null)
+
+      // Mark the table as occupied
+      await sb.from('restaurant_tables').update({
+        status: 'occupied',
+        current_order_id: order.id
+      }).eq('id', selectedTable.id)
+
       setCurrentContext({ 
         type: 'mesa', 
         orderId: order.id, 
