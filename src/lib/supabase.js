@@ -12,6 +12,11 @@ export const dbLogin = (email, password) =>
 export const dbLogout = () => sb.auth.signOut()
 export const dbGetSession = () => sb.auth.getSession()
 
+export async function dbGetUserInfo(userId) {
+  const { data } = await sb.from('users').select('*').eq('id', userId).single()
+  return data
+}
+
 // ===== TENANT =====
 export async function dbGetTenant() {
   const { data } = await sb.from('tenants').select('*').limit(1).single()
