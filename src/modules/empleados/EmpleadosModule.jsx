@@ -5,7 +5,7 @@ import {
   dbUpdateEmployee, dbGetEmployeeHours, dbAddEmployeeHours,
   dbUpdateEmployeeHours, dbDeleteEmployeeHours, dbGetTips
 } from '../../lib/admin'
-import { fmtMoney } from '../../lib/supabase'
+import { fmtMoney, dbGetTenant } from '../../lib/supabase'
 import Modal from '../../components/Modal'
 
 const MODULE_OPTIONS = [
@@ -71,10 +71,18 @@ function TabEquipo({ tenantId }) {
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
+  const [domain, setDomain] = useState('correo.com')
+
   const load = useCallback(async () => {
     if (!tenantId) return
     setLoading(true)
-    try { setEmployees(await dbGetEmployees(tenantId)) }
+    try { 
+      setEmployees(await dbGetEmployees(tenantId))
+      const tenant = await dbGetTenant(tenantId)
+      if (tenant && tenant.slug) {
+        setDomain(tenant.slug.split('-')[0] + '.com')
+      }
+    }
     catch (e) { console.error(e) }
     finally { setLoading(false) }
   }, [tenantId])
@@ -90,7 +98,8 @@ function TabEquipo({ tenantId }) {
     e.preventDefault()
     setSaving(true); setErrorMsg('')
     try {
-      const emp = await dbCreateEmployee(tenantId, newForm.email, newForm.password, newForm.firstName, newForm.lastName, newForm.modules)
+      const fullEmail = `${newForm.email.replace(/[^a-z0-9_.-]/gi, '').toLowerCase()}@${domain}`
+      const emp = await dbCreateEmployee(tenantId, fullEmail, newForm.password, newForm.firstName, newForm.lastName, newForm.modules)
       if (newForm.hourly_rate) await dbUpdateEmployee(emp.id, { hourly_rate: parseFloat(newForm.hourly_rate) })
       setShowNew(false)
       setNewForm({ email: '', password: '', firstName: '', lastName: '', modules: [], hourly_rate: '' })
@@ -192,9 +201,15 @@ function TabEquipo({ tenantId }) {
               </div>
             </div>
             <div>
-              <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '4px' }}>Email *</label>
-              <input required type="email" value={newForm.email} onChange={e => setNewForm(p => ({ ...p, email: e.target.value }))}
-                style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: '6px', boxSizing: 'border-box' }} />
+              <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '4px' }}>Usuario / Correo *</label>
+              <div style={{ display: 'flex', alignItems: 'stretch', height: '36px' }}>
+                <input required type="text" value={newForm.email} onChange={e => setNewForm(p => ({ ...p, email: e.target.value.replace(/[^a-z0-9_.-]/gi, '').toLowerCase() }))}
+                  placeholder="ej: pedro"
+                  style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border)', borderRight: 'none', borderRadius: '6px 0 0 6px', boxSizing: 'border-box' }} />
+                <div style={{ padding: '0 12px', background: 'var(--surface-2, #f8fafc)', border: '1px solid var(--border)', borderLeft: 'none', display: 'flex', alignItems: 'center', borderRadius: '0 6px 6px 0', color: 'var(--text-secondary)', fontSize: '13px' }}>
+                  @{domain}
+                </div>
+              </div>
             </div>
             <div>
               <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '4px' }}>Contraseña *</label>

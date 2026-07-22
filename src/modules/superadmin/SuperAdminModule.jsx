@@ -37,9 +37,12 @@ export default function SuperAdminModule() {
       return alert('Por favor, completa todos los campos.')
     }
     
+    const domain = restaurantName.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com'
+    const fullEmail = `${ownerEmail}@${domain}`
+    
     setSaving(true)
     try {
-      await dbCreateTenantAndOwner(restaurantName, ownerEmail, ownerPassword, ownerName)
+      await dbCreateTenantAndOwner(restaurantName, fullEmail, ownerPassword, ownerName)
       setShowModal(false)
       setRestaurantName('')
       setOwnerName('')
@@ -151,8 +154,21 @@ export default function SuperAdminModule() {
               <input type="text" value={ownerName} onChange={e => setOwnerName(e.target.value)} required placeholder="Ej: Juan Perez" disabled={saving}/>
             </div>
             <div className="form-row">
-              <label>Correo Electrónico (Para iniciar sesión)</label>
-              <input type="email" value={ownerEmail} onChange={e => setOwnerEmail(e.target.value)} required placeholder="dueño@correo.com" disabled={saving}/>
+              <label>Usuario para el Dueño</label>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <input 
+                  type="text" 
+                  value={ownerEmail} 
+                  onChange={e => setOwnerEmail(e.target.value.replace(/[^a-z0-9_.-]/gi, '').toLowerCase())} 
+                  required 
+                  placeholder="ej: juan" 
+                  disabled={saving}
+                  style={{ flex: 1, borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
+                />
+                <div style={{ padding: '0 12px', background: 'var(--surface-color)', border: '1px solid var(--border-color)', borderLeft: 'none', height: '100%', display: 'flex', alignItems: 'center', borderTopRightRadius: '4px', borderBottomRightRadius: '4px', color: 'var(--text-secondary)' }}>
+                  @{restaurantName ? restaurantName.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com' : 'correo.com'}
+                </div>
+              </div>
             </div>
             <div className="form-row">
               <label>Contraseña</label>

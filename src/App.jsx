@@ -28,14 +28,15 @@ function AppShell() {
       if (data?.session?.user) {
         setUser(data.session.user)
         const userInfo = await dbGetUserInfo(data.session.user.id)
-        if (userInfo && userInfo.roles && userInfo.roles.length > 0) {
-          setUserRoles(userInfo.roles)
-        } else if (userInfo && (userInfo.role === 'owner' || userInfo.role === 'super_admin')) {
-          // Fallback if roles array is empty but is owner/super_admin
-          setUserRoles([userInfo.role])
+        if (userInfo) {
+          if (userInfo.roles && userInfo.roles.length > 0) {
+            setUserRoles(userInfo.roles)
+          } else if (userInfo.role === 'owner' || userInfo.role === 'super_admin' || userInfo.role === 'admin') {
+            setUserRoles([userInfo.role])
+          }
+          const tenant = await dbGetTenant(userInfo.tenant_id)
+          if (tenant) setTenantId(tenant.id)
         }
-        const tenant = await dbGetTenant()
-        if (tenant) setTenantId(tenant.id)
       }
       setLoading(false)
     }

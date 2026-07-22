@@ -18,8 +18,10 @@ export async function dbGetUserInfo(userId) {
 }
 
 // ===== TENANT =====
-export async function dbGetTenant() {
-  const { data } = await sb.from('tenants').select('*').limit(1).single()
+export async function dbGetTenant(tenantId) {
+  let query = sb.from('tenants').select('*')
+  if (tenantId) query = query.eq('id', tenantId)
+  const { data } = await query.limit(1).single()
   return data
 }
 

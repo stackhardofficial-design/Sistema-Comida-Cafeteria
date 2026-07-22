@@ -25,7 +25,7 @@ export default function Login() {
       }
       
       setUser(data.user)
-      const tenant = await dbGetTenant()
+      const tenant = await dbGetTenant(userInfo?.tenant_id)
       if (tenant) setTenantId(tenant.id)
     } catch (e) {
       setError(e.message || 'Error al iniciar sesión')
