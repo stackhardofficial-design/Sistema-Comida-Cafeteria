@@ -165,7 +165,7 @@ export default function RepartidorModule() {
   }
 
   const now = new Date()
-  const timeStr = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+  const timeStr = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#0f172a', overflowY: 'auto' }}>
@@ -245,7 +245,7 @@ export default function RepartidorModule() {
           orders.map(order => {
             const { phone, name, addressText, desc, mapsUrl } = getOrderInfo(order)
             const isBeingDelivered = delivering === order.id
-            const orderTime = new Date(order.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+            const orderTime = new Date(order.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
             const waLink = phone ? `https://wa.me/${phone.replace(/[^0-9]/g, '')}` : null
 
             return (

@@ -310,7 +310,7 @@ export default function DeliveryModule() {
                     ) : visible.length > 0 ? (
                       visible.map(order => {
                         const addr = order.delivery_addresses
-                        const orderTime = new Date(order.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+                        const orderTime = new Date(order.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
                         return (
                           <tr
                             key={order.id}

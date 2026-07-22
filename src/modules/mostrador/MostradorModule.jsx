@@ -180,11 +180,15 @@ export default function MostradorModule() {
   async function openTicket(order) {
     try {
       const isDelivOrd = order.order_type === 'delivery'
+      const isMesaOrd = !isDelivOrd && !!order.table_db_id
+      
       // Respuesta visual inmediata
       setCurrentContext({
-        type: isDelivOrd ? 'delivery' : 'mostrador',
+        type: isDelivOrd ? 'delivery' : (isMesaOrd ? 'mesa' : 'mostrador'),
         orderId: order.id,
         customerName: order.customer_name || '',
+        tableName: order.restaurant_tables?.name || '',
+        tableDbId: order.table_db_id || null,
         address: '',
       })
       setCart([])
@@ -193,10 +197,13 @@ export default function MostradorModule() {
       // Carga asíncrona de detalles en segundo plano
       const fullOrder = await dbGetOrder(order.id)
       if (!fullOrder) return
+      const isMesaFull = !isDelivOrd && !!fullOrder.table_db_id
       setCurrentContext({
-        type: isDelivOrd ? 'delivery' : 'mostrador',
+        type: isDelivOrd ? 'delivery' : (isMesaFull ? 'mesa' : 'mostrador'),
         orderId: order.id,
         customerName: order.customer_name || '',
+        tableName: fullOrder.restaurant_tables?.name || order.restaurant_tables?.name || '',
+        tableDbId: fullOrder.table_db_id || null,
         address: fullOrder.delivery_addresses?.street_address || '',
       })
       setCart((fullOrder.order_items || []).map(oi => ({
@@ -486,8 +493,9 @@ function OrdersTable({ orders, emptyText, onSelect, isClosedTable }) {
         </thead>
         <tbody>
           {orders.length > 0 ? orders.map(o => {
-            const orderTime = new Date(o.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+            const orderTime = new Date(o.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
             const isDelivOrd = o.order_type === 'delivery'
+            const isMesaOrd = !isDelivOrd && !!o.table_db_id
             return (
               <tr key={o.id} onClick={() => onSelect(o)} style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer', transition: 'background 0.15s' }} className="table-row-hover">
                 <td style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--accent)' }}>
@@ -495,7 +503,9 @@ function OrdersTable({ orders, emptyText, onSelect, isClosedTable }) {
                 </td>
                 <td style={{ padding: '12px 16px', color: '#64748b' }}>{orderTime}</td>
                 <td style={{ padding: '12px 16px' }}>
-                  <span style={{ fontSize: '14px' }}>{isDelivOrd ? '🛵' : '🏪'}</span>
+                  <span style={{ fontSize: '14px' }}>
+                    {isDelivOrd ? '🛵' : (isMesaOrd ? '🪑' : '🏪')}
+                  </span>
                 </td>
                 <td style={{ padding: '12px 16px' }}>
                   <span style={{ display: 'inline-block', padding: '3px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: '700', background: isClosedTable ? '#f1f5f9' : '#d1fae5', color: isClosedTable ? '#475569' : '#065f46', textTransform: 'uppercase' }}>

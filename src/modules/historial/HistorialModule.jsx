@@ -302,7 +302,7 @@ CREATE POLICY "Allow ALL for tenant" ON public.activity_logs FOR ALL USING (true
                     <div style={{ fontWeight: '500', color: 'var(--text)' }}>
                       {new Date(log.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                     </div>
-                    <div>{new Date(log.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
+                    <div>{new Date(log.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</div>
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: '13px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

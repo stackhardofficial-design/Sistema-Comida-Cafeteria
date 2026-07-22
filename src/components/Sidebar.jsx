@@ -20,7 +20,7 @@ export default function Sidebar() {
   useEffect(() => {
     const tick = () => {
       const now = new Date()
-      setClock(now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }))
+      setClock(now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }))
     }
     tick()
     const id = setInterval(tick, 1000)

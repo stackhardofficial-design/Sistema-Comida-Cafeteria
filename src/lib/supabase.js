@@ -338,7 +338,10 @@ export const fmtMoney = n =>
   '$' + Number(n || 0).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 
 export const fmtDate = d =>
-  new Date(d).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  new Date(d).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
+
+export const fmtTime = d =>
+  new Date(d).toLocaleString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
 
 export const fmtTimer = d => {
   const diff = Math.floor((Date.now() - new Date(d).getTime()) / 1000)
