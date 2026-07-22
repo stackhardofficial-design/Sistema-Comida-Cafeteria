@@ -758,7 +758,7 @@ export default function ComandaPanel() {
                 }}
                 style={{
                   marginTop: '6px', padding: '6px 8px', fontSize: '11px', borderRadius: '4px',
-                  border: '1px dashed var(--border)', background: 'transparent', color: 'var(--text-secondary)',
+                  border: '1px dashed var(--border)', background: 'var(--bg)', color: 'var(--text-primary)',
                   width: '100%', boxSizing: 'border-box'
                 }}
               />
@@ -787,7 +787,7 @@ export default function ComandaPanel() {
               onClick={assignOrder}
               style={{ background: 'var(--accent, #f59e0b)' }}
             >
-              {assigning ? 'Asignando...' : '📋 ASIGNAR PEDIDO'}
+              {assigning ? 'Asignando...' : <><Check size={18} style={{marginRight:6}}/> ASIGNAR PEDIDO</>}
             </button>
           ) : (
             <>
@@ -795,16 +795,14 @@ export default function ComandaPanel() {
                 className="btn-cobrar"
                 disabled={cart.length === 0}
                 onClick={() => setPayModal(true)}
-              >
-                💳 COBRAR
-              </button>
-              {(currentContext?.type === 'mostrador' || currentContext?.type === 'delivery') && (
+              ><CreditCard size={18} style={{marginRight:6}}/> COBRAR</button>
+              {true && (
                 <button
                   className="btn-discount"
                   style={{ background: 'var(--border)', color: 'var(--text-primary)', marginTop: '4px' }}
                   onClick={clearCart}
                 >
-                  <><Check size={18} style={{marginRight:6}}/> GUARDAR Y VOLVER</>
+                  <><ChefHat size={18} style={{marginRight:6}}/> GUARDAR (ENVIAR A COCINA)</>
                 </button>
               )}
             </>

@@ -282,7 +282,7 @@
 }
 .search-bar input { border: none; background: none; outline: none; width: 100%; font-size: 13px; }
 .category-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; max-height: 250px; overflow-y: auto; padding-right: 4px; }
-.cat-btn {
+.cat-btn { color: var(--text-primary);
   padding: 9px 6px; border: 1px solid var(--border); border-radius: var(--radius);
   background: var(--surface); cursor: pointer; font-size: 12px; font-weight: 600;
   color: var(--text-primary); transition: all .15s; text-align: center;
@@ -291,7 +291,7 @@
 .cat-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
 .cat-icon { font-size: 18px; }
 .products-list { display: flex; flex-direction: column; gap: 4px; max-height: 250px; overflow-y: auto; padding-right: 4px; }
-.product-btn {
+.product-btn { color: var(--text-primary);
   display: flex; justify-content: space-between; align-items: center;
   padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius);
   background: var(--surface); cursor: pointer; transition: all .15s;
