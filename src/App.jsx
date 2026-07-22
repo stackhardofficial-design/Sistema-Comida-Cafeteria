@@ -16,6 +16,7 @@ import RepartidorModule from './modules/repartidor/RepartidorModule'
 import HistorialModule from './modules/historial/HistorialModule'
 import StockModule from './modules/stock/StockModule'
 import SuperAdminModule from './modules/superadmin/SuperAdminModule'
+import CocinaModule from './modules/cocina/CocinaModule'
 import './App.css'
 
 function AppShell() {
