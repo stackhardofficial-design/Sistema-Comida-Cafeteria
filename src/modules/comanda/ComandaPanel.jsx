@@ -730,14 +730,38 @@ export default function ComandaPanel() {
           </div>
         ) : (
           cart.map((item, i) => (
-            <div key={i} className="cart-item">
-              <span className="cart-item-name">{item.product.name}</span>
-              <div className="qty-controls">
-                <button className="qty-btn" onClick={() => changeQty(item, -1)}>−</button>
-                <span className="qty-display">{item.qty}</span>
-                <button className="qty-btn" onClick={() => changeQty(item, 1)}>+</button>
+            <div key={i} className="cart-item" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span className="cart-item-name">{item.product.name}</span>
+                <div className="qty-controls">
+                  <button className="qty-btn" onClick={() => changeQty(item, -1)}>−</button>
+                  <span className="qty-display">{item.qty}</span>
+                  <button className="qty-btn" onClick={() => changeQty(item, 1)}>+</button>
+                </div>
+                <span className="cart-item-price">{fmtMoney(item.product.price * item.qty)}</span>
               </div>
-              <span className="cart-item-price">{fmtMoney(item.product.price * item.qty)}</span>
+              <input
+                type="text"
+                placeholder="Ej. sin cebolla..."
+                value={item.notes || ''}
+                onChange={(e) => {
+                  const val = e.target.value
+                  setCart(prev => prev.map((it, idx) => idx === i ? { ...it, notes: val } : it))
+                }}
+                onBlur={async (e) => {
+                  if (item.dbItemId && currentContext?.orderId) {
+                    try {
+                      const { sb } = await import('../../lib/supabase')
+                      await sb.from('order_items').update({ notes: e.target.value }).eq('id', item.dbItemId)
+                    } catch(err) { console.error(err) }
+                  }
+                }}
+                style={{
+                  marginTop: '6px', padding: '6px 8px', fontSize: '11px', borderRadius: '4px',
+                  border: '1px dashed var(--border)', background: 'transparent', color: 'var(--text-secondary)',
+                  width: '100%', boxSizing: 'border-box'
+                }}
+              />
             </div>
           ))
         )}
@@ -800,12 +824,19 @@ export default function ComandaPanel() {
             
             <div style={{ flex: 1, overflowY: 'auto', marginBottom: '16px', maxHeight: '30vh' }}>
               {cart.map((item, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
-                  <div>
-                    <span style={{ fontWeight: 600, marginRight: 8 }}>{item.qty}x</span>
-                    <span>{item.product.name}</span>
+                <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <div>
+                      <span style={{ fontWeight: 600, marginRight: 8 }}>{item.qty}x</span>
+                      <span>{item.product.name}</span>
+                    </div>
+                    <span style={{ fontWeight: 500 }}>{fmtMoney(item.product.price * item.qty)}</span>
                   </div>
-                  <span style={{ fontWeight: 500 }}>{fmtMoney(item.product.price * item.qty)}</span>
+                  {item.notes && (
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '11px', marginTop: '4px', fontStyle: 'italic', paddingLeft: '24px' }}>
+                      * {item.notes}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
