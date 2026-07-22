@@ -42,9 +42,10 @@ export default function Sidebar() {
     isOwner || userRoles.includes(item.id)
   )
 
-  // Owners get to see Empleados module
+  // Owners get to see Empleados and Historial modules
   if (isOwner) {
     allowedItems.push({ id: 'empleados', icon: '👤', label: 'Empleados' })
+    allowedItems.push({ id: 'historial', icon: '📜', label: 'Historial' })
   }
 
   return (

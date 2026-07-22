@@ -329,3 +329,36 @@ export const fmtTimer = d => {
   const m = Math.floor((diff % 3600) / 60)
   return h > 0 ? `${h}h ${m}m` : `${m}m`
 }
+
+// ===== ACTIVITY LOGS =====
+export async function logActivity(tenantId, userId, userName, action, entityType, details = {}) {
+  try {
+    await sb.from('activity_logs').insert({
+      tenant_id: tenantId,
+      user_id: userId || null,
+      user_name: userName || 'Sistema',
+      action,
+      entity_type: entityType,
+      details
+    })
+  } catch (e) {
+    // Silent fail - logging should never break the app
+    console.warn('Log activity failed:', e.message)
+  }
+}
+
+export async function dbGetActivityLogs(tenantId, filters = {}) {
+  let q = sb.from('activity_logs')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .order('created_at', { ascending: false })
+  if (filters.userId) q = q.eq('user_id', filters.userId)
+  if (filters.action) q = q.eq('action', filters.action)
+  if (filters.entityType) q = q.eq('entity_type', filters.entityType)
+  if (filters.from) q = q.gte('created_at', filters.from)
+  if (filters.to) q = q.lte('created_at', filters.to)
+  q = q.limit(filters.limit || 200)
+  const { data, error } = await q
+  if (error) throw error
+  return data || []
+}

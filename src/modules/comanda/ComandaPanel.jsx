@@ -3,7 +3,7 @@ import { useApp } from '../../lib/AppContext'
 import {
   dbGetCategories, dbGetProducts, dbAddItem, dbRemoveItem,
   dbCreateOrder, dbUpdateOrder, dbUpdateTable, dbCreatePayment,
-  dbGetOpenSession, dbOpenSession, fmtMoney, dbRecalcOrder, sb
+  dbGetOpenSession, dbOpenSession, fmtMoney, dbRecalcOrder, sb, logActivity
 } from '../../lib/supabase'
 import Modal from '../../components/Modal'
 
@@ -229,6 +229,13 @@ export default function ComandaPanel() {
 
   async function addToCart(product) {
     if (!currentContext) return
+    // --- OPTIMISTIC UPDATE: Show in cart immediately ---
+    setCart(prev => {
+      const existing = prev.find(i => i.product.id === product.id)
+      if (existing) return prev.map(i => i.product.id === product.id ? { ...i, qty: i.qty + 1 } : i)
+      return [...prev, { product, qty: 1, notes: '' }]
+    })
+    // --- SYNC TO DB IN BACKGROUND ---
     try {
       let orderId = currentContext.orderId
       if (!orderId) {
@@ -243,27 +250,26 @@ export default function ComandaPanel() {
           }).select().single()
           addressId = addr?.id
         }
-
-        const oType = isDeliveryOrder ? 'delivery' : (currentContext.type === 'mesa' ? 'dine_in' : 'dine_in')
+        const oType = isDeliveryOrder ? 'delivery' : 'dine_in'
         const order = await dbCreateOrder(tenantId, oType, currentContext.tableDbId)
         orderId = order.id
-        
         if (addressId) {
           await sb.from('orders').update({ delivery_address_id: addressId }).eq('id', orderId)
         }
-        
         setCurrentContext(prev => ({ ...prev, orderId }))
         if (currentContext.tableDbId) {
           await dbUpdateTable(currentContext.tableDbId, { status: 'occupied', current_order_id: orderId })
         }
       }
       await dbAddItem(tenantId, orderId, product)
+    } catch (e) {
+      // Rollback optimistic update on failure
       setCart(prev => {
         const existing = prev.find(i => i.product.id === product.id)
-        if (existing) return prev.map(i => i.product.id === product.id ? { ...i, qty: i.qty + 1 } : i)
-        return [...prev, { product, qty: 1, notes: '' }]
+        if (!existing) return prev
+        if (existing.qty <= 1) return prev.filter(i => i.product.id !== product.id)
+        return prev.map(i => i.product.id === product.id ? { ...i, qty: i.qty - 1 } : i)
       })
-    } catch (e) {
       alert('Error al agregar al carrito: ' + e.message)
     }
   }
@@ -289,8 +295,27 @@ export default function ComandaPanel() {
     try {
       const session = await dbGetOpenSession(tenantId)
       await dbCreatePayment(tenantId, currentContext.orderId, payments, session?.id)
-      
       await dbUpdateOrder(currentContext.orderId, { status: 'paid', discount_amount: discountAmount })
+
+      // Log the payment activity
+      const { data: { user: authUser } } = await sb.auth.getUser()
+      const totalPaid = payments.reduce((s, p) => s + p.amount, 0)
+      logActivity(
+        tenantId,
+        authUser?.id,
+        authUser?.email?.split('@')[0] || 'Empleado',
+        'CLOSE_SALE',
+        'order',
+        {
+          order_id: currentContext.orderId,
+          context: currentContext.customerName || currentContext.tableName || currentContext.type,
+          total: grandTotal,
+          total_paid: totalPaid,
+          methods: payments.map(p => `${p.method}: $${p.amount}`),
+          items_count: cart.length
+        }
+      )
+
       if (currentContext.tableDbId) {
         await dbUpdateTable(currentContext.tableDbId, { status: 'free', current_order_id: null })
       }

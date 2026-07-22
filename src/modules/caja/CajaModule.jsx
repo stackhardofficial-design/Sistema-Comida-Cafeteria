@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useApp } from '../../lib/AppContext'
-import { dbGetOpenSession, dbOpenSession, dbCloseSession, fmtMoney, fmtDate, sb } from '../../lib/supabase'
+import { dbGetOpenSession, dbOpenSession, dbCloseSession, fmtMoney, fmtDate, sb, logActivity } from '../../lib/supabase'
 import Modal from '../../components/Modal'
 
 export default function CajaModule() {
@@ -64,6 +64,8 @@ export default function CajaModule() {
     const amount = parseFloat(openingAmount) || 0
     try {
       await dbOpenSession(tenantId, amount)
+      const { data: { user: authUser } } = await sb.auth.getUser()
+      logActivity(tenantId, authUser?.id, authUser?.email?.split('@')[0] || 'Admin', 'OPEN_SESSION', 'cash_session', { opening_amount: amount })
       setAbrirModal(false)
       setOpeningAmount('')
       loadCaja()
@@ -82,6 +84,14 @@ export default function CajaModule() {
 
     try {
       await dbCloseSession(session.id, closing, expected)
+      const { data: { user: authUser } } = await sb.auth.getUser()
+      logActivity(tenantId, authUser?.id, authUser?.email?.split('@')[0] || 'Admin', 'CLOSE_SESSION', 'cash_session', {
+        session_id: session.id,
+        closing_amount: closing,
+        expected_amount: expected,
+        difference: closing - expected,
+        total_payments: payments.reduce((s, p) => s + parseFloat(p.amount), 0)
+      })
       setCierreModal(false)
       setClosingAmount('')
       loadCaja()

@@ -13,6 +13,7 @@ import ProductosModule from './modules/productos/ProductosModule'
 import ClientesModule from './modules/clientes/ClientesModule'
 import EmpleadosModule from './modules/empleados/EmpleadosModule'
 import RepartidorModule from './modules/repartidor/RepartidorModule'
+import HistorialModule from './modules/historial/HistorialModule'
 import './App.css'
 
 function AppShell() {
@@ -57,6 +58,7 @@ function AppShell() {
     clientes: <ClientesModule />,
     empleados: <EmpleadosModule />,
     repartidor: <RepartidorModule />,
+    historial: <HistorialModule />,
   }
 
   return (
