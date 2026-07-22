@@ -65,7 +65,8 @@ function AppShell() {
     repartidor: <RepartidorModule />,
     historial: <HistorialModule />,
     stock: <StockModule />,
-    superadmin: <SuperAdminModule />
+    superadmin: <SuperAdminModule />,
+    cocina: <CocinaModule />
   }
 
   return (

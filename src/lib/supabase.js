@@ -155,6 +155,13 @@ export async function dbGetOrder(orderId) {
   return data
 }
 
+export async function dbUpdateKitchenStatus(orderId, status) {
+  const { error } = await sb.from('orders')
+    .update({ kitchen_status: status })
+    .eq('id', orderId)
+  if (error) throw error
+}
+
 export async function dbGetOrders(tenantId, filters = {}) {
   let q = sb.from('orders')
     .select('*, order_items(id, quantity, unit_price, total_price, products(name)), payments(payment_method, amount, change_amount), restaurant_tables(name)')

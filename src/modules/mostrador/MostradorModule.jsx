@@ -478,6 +478,17 @@ export default function MostradorModule() {
 }
 
 function OrdersTable({ orders, emptyText, onSelect, isClosedTable }) {
+  const { tenantId } = useApp()
+  const handleMarkReady = async (e, orderId) => {
+    e.stopPropagation()
+    try {
+      const { dbUpdateKitchenStatus } = await import('../../lib/supabase')
+      await dbUpdateKitchenStatus(orderId, 'ready')
+    } catch(err) {
+      alert(err.message)
+    }
+  }
+
   return (
     <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
@@ -489,6 +500,7 @@ function OrdersTable({ orders, emptyText, onSelect, isClosedTable }) {
             <th style={{ padding: '10px 16px' }}>Estado</th>
             <th style={{ padding: '10px 16px' }}>Cliente</th>
             <th style={{ padding: '10px 16px', textAlign: 'right' }}>Total</th>
+            {!isClosedTable && <th style={{ padding: '10px 16px', textAlign: 'center' }}>Cocina</th>}
           </tr>
         </thead>
         <tbody>
@@ -496,6 +508,9 @@ function OrdersTable({ orders, emptyText, onSelect, isClosedTable }) {
             const orderTime = new Date(o.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
             const isDelivOrd = o.order_type === 'delivery'
             const isMesaOrd = !isDelivOrd && !!o.table_db_id
+            
+            const isReady = o.kitchen_status === 'ready'
+
             return (
               <tr key={o.id} onClick={() => onSelect(o)} style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer', transition: 'background 0.15s' }} className="table-row-hover">
                 <td style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--accent)' }}>
@@ -510,16 +525,31 @@ function OrdersTable({ orders, emptyText, onSelect, isClosedTable }) {
                   </span>
                 </td>
                 <td style={{ padding: '12px 16px' }}>
-                  <span style={{ display: 'inline-block', padding: '3px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: '700', background: isClosedTable ? '#f1f5f9' : '#d1fae5', color: isClosedTable ? '#475569' : '#065f46', textTransform: 'uppercase' }}>
-                    {isClosedTable ? 'Pagado' : 'En curso'}
-                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                    <span style={{ display: 'inline-block', padding: '3px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: '700', background: isClosedTable ? '#f1f5f9' : '#d1fae5', color: isClosedTable ? '#475569' : '#065f46', textTransform: 'uppercase' }}>
+                      {isClosedTable ? 'Pagado' : 'En curso'}
+                    </span>
+                  </div>
                 </td>
                 <td style={{ padding: '12px 16px', color: '#334155', fontWeight: '500' }}>{o.customer_name || 'Sin nombre'}</td>
                 <td style={{ padding: '12px 16px', fontWeight: '700', textAlign: 'right', color: '#1e293b' }}>{fmtMoney(o.total_amount)}</td>
+                {!isClosedTable && (
+                  <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                    {isReady ? (
+                      <span style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '800', background: '#10b981', color: 'white' }}>
+                        ✅ LISTO
+                      </span>
+                    ) : (
+                      <button onClick={(e) => handleMarkReady(e, o.id)} style={{ padding: '4px 10px', borderRadius: '12px', border: '1px solid #f59e0b', background: '#fffbeb', color: '#d97706', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}>
+                        ⏳ PENDIENTE
+                      </button>
+                    )}
+                  </td>
+                )}
               </tr>
             )
           }) : (
-            <tr><td colSpan={6} style={{ padding: '24px 16px', textAlign: 'center', color: '#94a3b8' }}>{emptyText}</td></tr>
+            <tr><td colSpan={isClosedTable ? 6 : 7} style={{ padding: '24px 16px', textAlign: 'center', color: '#94a3b8' }}>{emptyText}</td></tr>
           )}
         </tbody>
       </table>

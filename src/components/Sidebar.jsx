@@ -5,6 +5,7 @@ import { dbLogout } from '../lib/supabase'
 const NAV_ITEMS = [
   { id: 'mesas', icon: '🪑', label: 'Mesas' },
   { id: 'mostrador', icon: '🏪', label: 'Mostrador' },
+  { id: 'cocina', icon: '🧑‍🍳', label: 'Cocina' },
   { id: 'delivery', icon: '📦', label: 'Delivery' },
   { id: 'repartidor', icon: '🛵', label: 'Repartidor' },
   { id: 'ventas', icon: '📊', label: 'Ventas' },
