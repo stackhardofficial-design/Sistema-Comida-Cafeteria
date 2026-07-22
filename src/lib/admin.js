@@ -1,8 +1,8 @@
-import { createClient } from '@supabase/supabase-js'
+﻿import { createClient } from '@supabase/supabase-js'
 
 const SUPABASE_URL = 'https://mylukzjucxgjjmvbteuf.supabase.co'
 // MODO MVP/PROTOTIPO: Usamos la service_role key en el frontend para evitar crear un backend
-// En producción, esto DEBE moverse a un Supabase Edge Function
+// En producciÃ³n, esto DEBE moverse a un Supabase Edge Function
 const SERVICE_ROLE = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im15bHVremp1Y3hnamptdmJ0ZXVmIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MzU1ODMzNCwiZXhwIjoyMDk5MTM0MzM0fQ.m1gNMaOMVQznTtwTpHSxBPcgqUm5URi_vYQYndHyZ1c'
 
 const adminSb = createClient(SUPABASE_URL, SERVICE_ROLE, {
@@ -56,7 +56,7 @@ export async function dbToggleEmployeeStatus(userId, isActive) {
   return dbUpdateEmployee(userId, { is_active: isActive })
 }
 
-// ── EMPLOYEE HOURS ──────────────────────────────────────────────────────────
+// â”€â”€ EMPLOYEE HOURS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function dbGetEmployeeHours(tenantId, filters = {}) {
   let q = adminSb.from('employee_hours')
     .select('*, users(first_name, last_name)')
@@ -97,7 +97,7 @@ export async function dbDeleteEmployeeHours(id) {
   if (error) throw error
 }
 
-// ── TIPS ─────────────────────────────────────────────────────────────────────
+// â”€â”€ TIPS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function dbGetTips(tenantId, filters = {}) {
   let q = adminSb.from('payments')
     .select('*, orders(id, order_type, created_at)')
@@ -111,3 +111,62 @@ export async function dbGetTips(tenantId, filters = {}) {
   if (error) throw error
   return data || []
 }
+
+// -- SUPERADMIN (TENANTS / OWNERS) -------------------------------------------
+export async function dbGetTenants() {
+  const { data, error } = await adminSb.from('tenants')
+    .select('*')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+export async function dbCreateTenantAndOwner(restaurantName, ownerEmail, ownerPassword, ownerName) {
+  // 1. Crear el tenant
+  const slug = restaurantName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+  const { data: tenantData, error: tenantError } = await adminSb.from('tenants').insert({
+    name: restaurantName,
+    slug: slug + '-' + Math.floor(Math.random() * 1000),
+    is_active: true
+  }).select().single()
+
+  if (tenantError) throw tenantError
+
+  // 2. Crear el usuario en Auth
+  const { data: authData, error: authError } = await adminSb.auth.admin.createUser({
+    email: ownerEmail,
+    password: ownerPassword,
+    email_confirm: true
+  })
+
+  if (authError) {
+    await adminSb.from('tenants').delete().eq('id', tenantData.id)
+    throw authError
+  }
+
+  // 3. Crear el registro del dueño en users (role: admin)
+  const { data: userData, error: userError } = await adminSb.from('users').insert({
+    id: authData.user.id,
+    tenant_id: tenantData.id,
+    role: 'admin',
+    first_name: ownerName,
+    last_name: '',
+    roles: ['mesas', 'mostrador', 'delivery', 'ventas', 'caja', 'clientes', 'productos', 'empleados', 'historial', 'stock', 'configuracion'],
+    is_active: true,
+    hourly_rate: 0
+  }).select().single()
+
+  if (userError) throw userError
+
+  return { tenant: tenantData, owner: userData }
+}
+
+export async function dbToggleTenantStatus(tenantId, isActive) {
+  const { data, error } = await adminSb.from('tenants')
+    .update({ is_active: isActive })
+    .eq('id', tenantId)
+    .select().single()
+  if (error) throw error
+  return data
+}
+

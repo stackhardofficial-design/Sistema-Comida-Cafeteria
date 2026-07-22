@@ -15,6 +15,7 @@ import EmpleadosModule from './modules/empleados/EmpleadosModule'
 import RepartidorModule from './modules/repartidor/RepartidorModule'
 import HistorialModule from './modules/historial/HistorialModule'
 import StockModule from './modules/stock/StockModule'
+import SuperAdminModule from './modules/superadmin/SuperAdminModule'
 import './App.css'
 
 function AppShell() {
@@ -48,6 +49,10 @@ function AppShell() {
   )
 
   if (!user) return <Login />
+
+  if (user?.email === 'superadmin@stackhard.com') {
+    return <SuperAdminModule />
+  }
 
   const MODULE_MAP = {
     mesas: <MesasModule />,
