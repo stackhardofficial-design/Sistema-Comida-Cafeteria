@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { dbLogin, dbGetTenant } from '../lib/supabase'
+import { dbLogin, dbGetTenant, dbGetUserInfo } from '../lib/supabase'
 import { useApp } from '../lib/AppContext'
 
 export default function Login() {
-  const { setUser, setTenantId } = useApp()
+  const { setUser, setTenantId, setUserRoles } = useApp()
   const [email, setEmail] = useState('superadmin@stackhard.com')
   const [password, setPassword] = useState('StackHard2026!')
   const [error, setError] = useState('')
@@ -16,6 +16,14 @@ export default function Login() {
     try {
       const { data, error: err } = await dbLogin(email, password)
       if (err) throw err
+      
+      const userInfo = await dbGetUserInfo(data.user.id)
+      if (userInfo && userInfo.roles) {
+        setUserRoles(userInfo.roles)
+      } else if (userInfo && userInfo.role === 'owner') {
+        setUserRoles(['owner'])
+      }
+      
       setUser(data.user)
       const tenant = await dbGetTenant()
       if (tenant) setTenantId(tenant.id)
