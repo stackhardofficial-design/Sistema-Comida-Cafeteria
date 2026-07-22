@@ -539,7 +539,7 @@ export default function ComandaPanel() {
             👤 {currentContext?.customerName || 'Consumidor Final'}
           </div>
         </div>
-        {currentContext && (currentContext.type === 'mostrador' || currentContext.type === 'delivery') && (
+        {currentContext && ['mostrador', 'delivery'].includes(currentModule) && (
           <button 
             onClick={clearCart} 
             style={{ 
