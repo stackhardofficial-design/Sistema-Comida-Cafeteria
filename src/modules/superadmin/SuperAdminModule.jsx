@@ -76,14 +76,9 @@ export default function SuperAdminModule() {
           <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>Panel de SuperAdministrador</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Gestión central de franquicias y dueños de restaurantes</p>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-            + Nuevo Restaurante
-          </button>
-          <button className="btn btn-secondary" onClick={async () => { await dbLogout(); window.location.href = '/' }}>
-            Cerrar Sesión
-          </button>
-        </div>
+        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+          + Nuevo Restaurante
+        </button>
       </div>
 
       <div className="data-container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>

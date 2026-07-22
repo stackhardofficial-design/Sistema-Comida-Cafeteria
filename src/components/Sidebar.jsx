@@ -49,6 +49,11 @@ export default function Sidebar() {
     allowedItems.push({ id: 'stock', icon: '📦', label: 'Stock' })
   }
 
+  // SuperAdmin gets the Admin panel
+  if (user?.email === 'superadmin@stackhard.com' || userRoles.includes('super_admin')) {
+    allowedItems.push({ id: 'superadmin', icon: '👑', label: 'Admin' })
+  }
+
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">

@@ -51,9 +51,7 @@ function AppShell() {
 
   if (!user) return <Login />
 
-  if (user?.email === 'superadmin@stackhard.com') {
-    return <SuperAdminModule />
-  }
+
 
   const MODULE_MAP = {
     mesas: <MesasModule />,
@@ -67,6 +65,7 @@ function AppShell() {
     repartidor: <RepartidorModule />,
     historial: <HistorialModule />,
     stock: <StockModule />,
+    superadmin: <SuperAdminModule />
   }
 
   return (

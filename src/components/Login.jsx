@@ -3,7 +3,7 @@ import { dbLogin, dbGetTenant, dbGetUserInfo } from '../lib/supabase'
 import { useApp } from '../lib/AppContext'
 
 export default function Login() {
-  const { setUser, setTenantId, setUserRoles } = useApp()
+  const { setUser, setTenantId, setUserRoles, setCurrentModule } = useApp()
   const [email, setEmail] = useState('superadmin@stackhard.com')
   const [password, setPassword] = useState('StackHard2026!')
   const [error, setError] = useState('')
@@ -20,13 +20,17 @@ export default function Login() {
       const userInfo = await dbGetUserInfo(data.user.id)
       if (userInfo && userInfo.roles && userInfo.roles.length > 0) {
         setUserRoles(userInfo.roles)
-      } else if (userInfo && (userInfo.role === 'owner' || userInfo.role === 'super_admin')) {
+      } else if (userInfo && (userInfo.role === 'owner' || userInfo.role === 'super_admin' || userInfo.role === 'admin')) {
         setUserRoles([userInfo.role])
       }
       
       setUser(data.user)
       const tenant = await dbGetTenant(userInfo?.tenant_id)
       if (tenant) setTenantId(tenant.id)
+
+      if (data.user.email === 'superadmin@stackhard.com') {
+        setCurrentModule('superadmin')
+      }
     } catch (e) {
       setError(e.message || 'Error al iniciar sesión')
       setLoading(false)
