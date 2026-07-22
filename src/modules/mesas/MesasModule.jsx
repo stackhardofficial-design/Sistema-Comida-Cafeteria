@@ -9,7 +9,7 @@ import { sb } from '../../lib/supabase'
 import Modal from '../../components/Modal'
 
 export default function MesasModule() {
-  const { tenantId, setCurrentContext, setCart, setDiscount } = useApp()
+  const { tenantId, setCurrentContext, setCart, setDiscount, refreshTrigger } = useApp()
   const [zones, setZones] = useState([])
   const [tables, setTables] = useState([])
   const [activeZone, setActiveZone] = useState(null) // null = Todos
@@ -44,7 +44,7 @@ export default function MesasModule() {
     setLoading(false)
   }, [tenantId])
 
-  useEffect(() => { loadData() }, [loadData])
+  useEffect(() => { loadData() }, [loadData, refreshTrigger])
 
   // Realtime subscription
   useEffect(() => {

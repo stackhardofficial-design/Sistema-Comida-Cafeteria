@@ -404,6 +404,7 @@ export default function ComandaPanel() {
       setTipMode('none')
       setCustomTip('')
       setPayMethod('cash')
+      triggerRefresh()
     } catch (e) {
       alert('Error al cerrar venta: ' + e.message)
     } finally {
