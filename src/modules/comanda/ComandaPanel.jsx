@@ -346,14 +346,14 @@ export default function ComandaPanel() {
     const newQty = item.qty + delta
     if (newQty <= 0) {
       if (item.dbItemId) await dbRemoveItem(item.dbItemId, currentContext?.orderId)
-      setCart(prev => prev.filter(i => i.product.id !== item.product.id))
+      setCart(prev => prev.filter(i => i.product?.id !== item.product?.id))
     } else {
       if (item.dbItemId && currentContext?.orderId) {
         const { sb } = await import('../../lib/supabase')
-        await sb.from('order_items').update({ quantity: newQty, total_price: newQty * item.product.price }).eq('id', item.dbItemId)
+        await sb.from('order_items').update({ quantity: newQty, total_price: newQty * (item.product?.price || 0) }).eq('id', item.dbItemId)
         await dbRecalcOrder(currentContext.orderId)
       }
-      setCart(prev => prev.map(i => i.product.id === item.product.id ? { ...i, qty: newQty } : i))
+      setCart(prev => prev.map(i => i.product?.id === item.product?.id ? { ...i, qty: newQty } : i))
     }
   }
 
@@ -732,13 +732,13 @@ export default function ComandaPanel() {
           cart.map((item, i) => (
             <div key={i} className="cart-item" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span className="cart-item-name">{item.product.name}</span>
+                <span className="cart-item-name">{item.product?.name || 'Producto eliminado'}</span>
                 <div className="qty-controls">
                   <button className="qty-btn" onClick={() => changeQty(item, -1)}>−</button>
                   <span className="qty-display">{item.qty}</span>
                   <button className="qty-btn" onClick={() => changeQty(item, 1)}>+</button>
                 </div>
-                <span className="cart-item-price">{fmtMoney(item.product.price * item.qty)}</span>
+                <span className="cart-item-price">{fmtMoney((item.product?.price || 0) * item.qty)}</span>
               </div>
               <input
                 type="text"
@@ -828,9 +828,9 @@ export default function ComandaPanel() {
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <div>
                       <span style={{ fontWeight: 600, marginRight: 8 }}>{item.qty}x</span>
-                      <span>{item.product.name}</span>
+                      <span>{item.product?.name || 'Producto eliminado'}</span>
                     </div>
-                    <span style={{ fontWeight: 500 }}>{fmtMoney(item.product.price * item.qty)}</span>
+                    <span style={{ fontWeight: 500 }}>{fmtMoney((item.product?.price || 0) * item.qty)}</span>
                   </div>
                   {item.notes && (
                     <div style={{ color: 'var(--text-secondary)', fontSize: '11px', marginTop: '4px', fontStyle: 'italic', paddingLeft: '24px' }}>
