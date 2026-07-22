@@ -287,8 +287,10 @@ export default function VentasModule() {
                 <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: 0 }}>Sin ventas para el período o filtros seleccionados.</p>
               </td></tr>
             ) : filteredOrders.map((o, i) => {
-              const typeLbl = TYPE_LABELS[o.order_type] || o.order_type
-              const typeColor = TYPE_COLORS[o.order_type] || '#64748b'
+              const isMostrador = o.order_type === 'dine_in' && !o.table_db_id
+              const effType = isMostrador ? 'takeaway' : o.order_type
+              const typeLbl = TYPE_LABELS[effType] || effType
+              const typeColor = TYPE_COLORS[effType] || '#64748b'
               const mesa = o.restaurant_tables?.name || null
               const client = o.customer_name || null
               const label = mesa && client ? `${mesa} · ${client}` : mesa || client || '—'
@@ -389,10 +391,10 @@ export default function VentasModule() {
                 <div style={{ marginTop: '8px' }}>
                   <span style={{
                     padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '700',
-                    background: TYPE_COLORS[selectedOrder.order_type] + '22',
-                    color: TYPE_COLORS[selectedOrder.order_type]
+                    background: TYPE_COLORS[selectedOrder.order_type === 'dine_in' && !selectedOrder.table_db_id ? 'takeaway' : selectedOrder.order_type] + '22',
+                    color: TYPE_COLORS[selectedOrder.order_type === 'dine_in' && !selectedOrder.table_db_id ? 'takeaway' : selectedOrder.order_type]
                   }}>
-                    {TYPE_LABELS[selectedOrder.order_type] || selectedOrder.order_type}
+                    {TYPE_LABELS[selectedOrder.order_type === 'dine_in' && !selectedOrder.table_db_id ? 'takeaway' : selectedOrder.order_type] || selectedOrder.order_type}
                   </span>
                 </div>
               </div>

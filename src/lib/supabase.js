@@ -166,7 +166,15 @@ export async function dbGetOrders(tenantId, filters = {}) {
     }
   }
   
-  if (filters.type) q = q.eq('order_type', filters.type)
+  if (filters.type) {
+    if (filters.type === 'dine_in') {
+      q = q.eq('order_type', 'dine_in').not('table_db_id', 'is', null)
+    } else if (filters.type === 'takeaway') {
+      q = q.eq('order_type', 'dine_in').is('table_db_id', null)
+    } else {
+      q = q.eq('order_type', filters.type)
+    }
+  }
   if (filters.from) q = q.gte('created_at', filters.from)
   if (filters.to) q = q.lte('created_at', filters.to)
   if (filters.limit) q = q.limit(filters.limit)

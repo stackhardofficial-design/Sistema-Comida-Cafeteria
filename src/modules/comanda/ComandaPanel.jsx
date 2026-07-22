@@ -222,7 +222,7 @@ export default function ComandaPanel() {
       } else {
         const order = await dbGetOrder(currentContext.orderId)
         await sb.from('orders').update({
-          order_type: 'takeaway',
+          order_type: 'dine_in',
           delivery_address_id: null
         }).eq('id', currentContext.orderId)
         

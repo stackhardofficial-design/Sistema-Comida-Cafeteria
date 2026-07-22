@@ -82,7 +82,7 @@ export default function MostradorModule() {
   async function handleCreateMostrador() {
     setCreating(true)
     try {
-      const order = await dbCreateOrder(tenantId, 'takeaway', null, customerName.trim(), customerPhone.trim() || null)
+      const order = await dbCreateOrder(tenantId, 'dine_in', null, customerName.trim(), customerPhone.trim() || null)
       setCurrentContext({ type: 'mostrador', orderId: order.id, customerName: customerName.trim() })
       setCart([])
       setDiscount({ type: 'none', value: 0 })
