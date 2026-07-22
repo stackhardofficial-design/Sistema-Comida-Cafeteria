@@ -43,8 +43,7 @@ export default function Login() {
     <div className="login-screen" style={{ background: 'var(--bg)' }}>
       <div className="login-box" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }}>
         <div className="login-logo" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
-          <img src="/logo-dark.jpg" alt="StackHard" className="logo-dark" style={{ width: '80px', height: '80px', borderRadius: '16px', objectFit: 'cover', marginBottom: '16px' }} />
-          <img src="/logo-light.jpg" alt="StackHard" className="logo-light" style={{ width: '80px', height: '80px', borderRadius: '16px', objectFit: 'cover', marginBottom: '16px' }} />
+          <img src={!document.body.classList.contains('light-mode') ? "/logo-dark.jpg" : "/logo-light.jpg"} alt="StackHard" style={{ width: '80px', height: '80px', borderRadius: '16px', objectFit: 'cover', marginBottom: '16px' }} />
           <h1 style={{ fontSize: '32px', fontWeight: '900', letterSpacing: '-1px', margin: '0 0 8px 0' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Stack</span><span style={{ color: 'var(--accent)' }}>Hard</span>
           </h1>

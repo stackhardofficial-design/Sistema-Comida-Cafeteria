@@ -19,10 +19,10 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  border-bottom: 1px solid rgba(255,255,255,.08);
+  border-bottom: 1px solid var(--border);
 }
 .logo-mark { font-size: 24px; }
-.logo-text { color: white; font-weight: 800; font-size: 16px; letter-spacing: -.3px; }
+.logo-text { color: var(--text-primary); font-weight: 800; font-size: 16px; letter-spacing: -.3px; }
 .sidebar-nav { flex: 1; padding: 8px 0; overflow-y: auto; }
 .nav-item {
   width: 100%;
@@ -33,32 +33,31 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: rgba(255,255,255,.6);
+  color: var(--text-secondary);
   font-size: 13.5px;
   text-align: left;
   transition: all .15s;
   border-left: 3px solid transparent;
 }
-.nav-item:hover { background: var(--sidebar-hover); color: rgba(255,255,255,.9); }
-.nav-item.active { background: var(--sidebar-active); color: white; border-left-color: var(--accent); }
+.nav-item:hover { background: var(--sidebar-hover); color: var(--text-primary); }
+.nav-item.active { background: var(--sidebar-active); color: var(--text-primary); border-left-color: var(--accent); }
 .nav-icon { font-size: 16px; width: 20px; text-align: center; }
 .nav-label { font-weight: 500; }
 .sidebar-user {
   padding: 14px 16px;
-  border-top: 1px solid rgba(255,255,255,.08);
+  border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
   gap: 10px;
 }
 .user-avatar { font-size: 28px; }
 .user-info { flex: 1; min-width: 0; }
-.user-name { display: block; color: white; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.user-role { display: block; color: rgba(255,255,255,.4); font-size: 11px; }
+.user-name { display: block; color: var(--text-primary); font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-role { display: block; color: var(--text-muted); font-size: 11px; }
 .user-clock { display: block; color: var(--accent); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .btn-logout {
   background: none;
-  border: 1px solid rgba(255,255,255,.2);
-  color: rgba(255,255,255,.5);
+  border: 1px solid var(--border); color: var(--text-secondary);
   cursor: pointer;
   padding: 4px 7px;
   border-radius: var(--radius-sm);
