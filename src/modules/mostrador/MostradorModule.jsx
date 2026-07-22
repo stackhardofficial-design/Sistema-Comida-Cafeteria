@@ -1,3 +1,4 @@
+import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
 import { useState, useEffect } from 'react'
 import { useApp } from '../../lib/AppContext'
 import { dbGetOrders, dbGetOrder, dbCreateOrder, dbCreateDeliveryOrder, fmtMoney, sb, dbGetZones, dbGetTables } from '../../lib/supabase'
@@ -302,7 +303,7 @@ export default function MostradorModule() {
       </div>
 
       {/* Modal Nuevo Pedido */}
-      <Modal show={newOrderModal} onClose={closeModal} title={step === 1 ? '🏪 Nuevo Pedido' : '🛵 Datos de Entrega'}>
+      <Modal show={newOrderModal} onClose={closeModal} title={step === 1 ? <><MonitorSmartphone size={16} style={{marginRight:6}}/> Nuevo Pedido</> : <><Bike size={16} style={{marginRight:6}}/> Datos de Entrega</>}>
         {step === 1 ? (
           <form onSubmit={handleStep1}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '16px' }}>
@@ -325,7 +326,7 @@ export default function MostradorModule() {
                     style={{ flex: 1, padding: '8px' }}
                     onClick={() => setOrderType('mostrador')}
                   >
-                    <span className="delivery-toggle-icon">🏪</span>
+                    <span className="delivery-toggle-icon"><MonitorSmartphone size={16} /></span>
                     <div>
                       <div className="delivery-toggle-label">Mostrador</div>
                       <div className="delivery-toggle-sub">Retira en local</div>
@@ -337,7 +338,7 @@ export default function MostradorModule() {
                     style={{ flex: 1, padding: '8px' }}
                     onClick={() => setOrderType('delivery')}
                   >
-                    <span className="delivery-toggle-icon">🛵</span>
+                    <span className="delivery-toggle-icon"><Bike size={16} /></span>
                     <div>
                       <div className="delivery-toggle-label">Delivery</div>
                       <div className="delivery-toggle-sub">Envío a domicilio</div>
@@ -366,7 +367,7 @@ export default function MostradorModule() {
                 Cancelar
               </button>
               <button type="submit" disabled={creating || !customerName.trim()} style={{ padding: '9px 20px', background: creating || !customerName.trim() ? '#94a3b8' : '#334155', color: 'white', border: 'none', borderRadius: '6px', cursor: creating || !customerName.trim() ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '700' }}>
-                {orderType !== 'mostrador' ? 'Siguiente →' : (creating ? 'Creando...' : '🏪 Crear Pedido')}
+                {orderType !== 'mostrador' ? 'Siguiente →' : (creating ? 'Creando...' : <><MonitorSmartphone size={16} style={{marginRight:6}}/> Crear Pedido</>)}
               </button>
             </div>
           </form>
@@ -537,7 +538,7 @@ function OrdersTable({ orders, emptyText, onSelect, isClosedTable }) {
                   <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                     {isReady ? (
                       <span style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '800', background: '#10b981', color: 'white' }}>
-                        ✅ LISTO
+                        <><Check size={16} style={{marginRight:4}} /> LISTO</>
                       </span>
                     ) : (
                       <button onClick={(e) => handleMarkReady(e, o.id)} style={{ padding: '4px 10px', borderRadius: '12px', border: '1px solid #f59e0b', background: '#fffbeb', color: '#d97706', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}>

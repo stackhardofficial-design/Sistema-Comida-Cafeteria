@@ -1,3 +1,4 @@
+import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
 import { useState, useEffect } from 'react'
 import { useApp } from '../../lib/AppContext'
 import {
@@ -278,7 +279,7 @@ export default function ProductosModule() {
                       </td>
                       <td>
                         <button className="btn-icon edit" onClick={() => openEditProd(p)} title="Editar">✏️</button>
-                        <button className="btn-icon del" onClick={() => deleteProduct(p)} title="Eliminar" style={{ marginLeft: '6px' }}>🗑️</button>
+                        <button className="btn-icon del" onClick={() => deleteProduct(p)} title="Eliminar" style={{ marginLeft: '6px' }}><Trash2 size={16} /></button>
                       </td>
                     </tr>
                   ))
@@ -314,7 +315,7 @@ export default function ProductosModule() {
                       <td style={{ fontWeight: '600' }}>{c.name}</td>
                       <td>{c.description || '-'}</td>
                       <td>
-                        <button className="btn-icon del" onClick={() => deleteCategory(c)} title="Eliminar">🗑️</button>
+                        <button className="btn-icon del" onClick={() => deleteCategory(c)} title="Eliminar"><Trash2 size={16} /></button>
                       </td>
                     </tr>
                   ))

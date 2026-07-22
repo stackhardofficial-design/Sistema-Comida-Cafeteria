@@ -1,3 +1,4 @@
+import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
 import { useState, useEffect } from 'react'
 import { useApp } from '../../lib/AppContext'
 import { dbGetActivityLogs, dbGetCustomers, fmtDate } from '../../lib/supabase'
@@ -208,7 +209,7 @@ CREATE POLICY "Allow ALL for tenant" ON public.activity_logs FOR ALL USING (true
           onChange={e => setFilterUser(e.target.value)}
           style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '13px' }}
         >
-          <option value="">👤 Todos los empleados</option>
+          <option value=""><User size={14} style={{marginRight:4}} /> Todos los empleados</option>
           {uniqueUsers.map(u => (
             <option key={u.id || u.name} value={u.id || ''}>{u.name}</option>
           ))}

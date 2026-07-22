@@ -1,3 +1,4 @@
+import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
 import { useState, useEffect } from 'react'
 import { useApp } from '../../lib/AppContext'
 import { dbGetOpenSession, dbOpenSession, dbCloseSession, fmtMoney, fmtDate, sb, logActivity } from '../../lib/supabase'
@@ -107,14 +108,14 @@ export default function CajaModule() {
   }
 
   const methodLabels = {
-    cash: '💵 Efectivo',
-    card: '💳 Tarjeta',
-    transfer: '🏦 Transferencia',
-    efectivo: '💵 Efectivo',
-    debito: '💳 Débito',
-    credito: '💳 Crédito',
+    cash: <><Banknote size={16} style={{marginRight: 6}} /> Efectivo</>,
+    card: <><CreditCard size={16} style={{marginRight: 6}} /> Tarjeta</>,
+    transfer: <><Banknote size={16} style={{marginRight: 6}} /> Transferencia</>,
+    efectivo: <><Banknote size={16} style={{marginRight: 6}} /> Efectivo</>,
+    debito: <><CreditCard size={16} style={{marginRight: 6}} /> Débito</>,
+    credito: <><CreditCard size={16} style={{marginRight: 6}} /> Crédito</>,
     mercadopago: '📱 MercadoPago',
-    transferencia: '🏦 Transferencia'
+    transferencia: <><Banknote size={16} style={{marginRight: 6}} /> Transferencia</>
   }
 
   const byMethod = {}

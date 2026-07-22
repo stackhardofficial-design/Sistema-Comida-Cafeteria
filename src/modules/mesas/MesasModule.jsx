@@ -1,3 +1,4 @@
+import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useApp } from '../../lib/AppContext'
 import {
@@ -360,7 +361,7 @@ function TableCard({ table, onSelect, onContextMenu }) {
         <>
           {order.customer_name && (
             <div className="table-customer" style={{ fontSize: 10, fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', padding: '0 4px', opacity: 0.9 }}>
-              👤 {order.customer_name}
+              <User size={14} style={{marginRight:4}} /> {order.customer_name}
             </div>
           )}
           <div className="table-amount">{fmtMoney(order.total_amount)}</div>

@@ -1,3 +1,4 @@
+import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '../../lib/AppContext'
 import {
@@ -24,7 +25,7 @@ const STATUS_GROUPS = [
     headerBg: '#eff6ff',
     badgeBg: '#bfdbfe',
     badgeColor: '#1d4ed8',
-    icon: '🛵',
+    icon: <Bike size={16} />,
     dotColor: '#3b82f6',
   },
   {
@@ -389,7 +390,7 @@ export default function DeliveryModule() {
       </div>
 
       {/* Modal Nuevo Pedido */}
-      <Modal show={newOrderModal} onClose={() => { setNewOrderModal(false); setFormError('') }} title="🛵 Nuevo Pedido Delivery">
+      <Modal show={newOrderModal} onClose={() => { setNewOrderModal(false); setFormError('') }} title={<><Bike size={16} style={{marginRight:6}}/> Nuevo Pedido Delivery</>}>
         <form onSubmit={handleCreateOrder}>
           <div className="del-form-grid" style={{ marginBottom: 16 }}>
             <div className="del-form-field" style={{ gridColumn: '1 / -1' }}>

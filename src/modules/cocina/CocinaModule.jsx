@@ -1,3 +1,4 @@
+import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
 import { useState, useEffect } from 'react'
 import { useApp } from '../../lib/AppContext'
 import { dbGetOrders, dbUpdateKitchenStatus, sb } from '../../lib/supabase'
@@ -46,9 +47,9 @@ export default function CocinaModule() {
   }
 
   function getOrderTypeInfo(o) {
-    if (o.order_type === 'delivery') return { label: 'DELIVERY', color: '#ef4444', icon: '🛵' }
-    if (o.order_type === 'dine_in' && o.table_db_id) return { label: `MESA: ${o.restaurant_tables?.name || '?' }`, color: '#3b82f6', icon: '🍽️' }
-    return { label: 'MOSTRADOR', color: '#f59e0b', icon: '🛍️' }
+    if (o.order_type === 'delivery') return { label: 'DELIVERY', color: '#ef4444', icon: <Bike size={16} /> }
+    if (o.order_type === 'dine_in' && o.table_db_id) return { label: `MESA: ${o.restaurant_tables?.name || '?' }`, color: '#3b82f6', icon: <Utensils size={16} /> }
+    return { label: 'MOSTRADOR', color: '#f59e0b', icon: <ShoppingBag size={16} /> }
   }
 
   function formatTime(isoStr) {
@@ -66,7 +67,7 @@ export default function CocinaModule() {
   return (
     <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '800' }}>🧑‍🍳 Pantalla de Cocina (KDS)</h1>
+        <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '800' }}><ChefHat size={28} style={{marginRight:10}} /> Pantalla de Cocina (KDS)</h1>
         <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-secondary)' }}>
           {orders.length} pedidos pendientes
         </div>
@@ -76,7 +77,7 @@ export default function CocinaModule() {
         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Cargando pedidos...</div>
       ) : orders.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-secondary)', background: 'var(--surface)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
-          <span style={{ fontSize: '40px', display: 'block', marginBottom: '16px' }}>🎉</span>
+          <span style={{ fontSize: '40px', display: 'block', marginBottom: '16px' }}><CheckCircle size={48} color="var(--green)" /></span>
           <h2 style={{ margin: 0 }}>¡No hay pedidos pendientes!</h2>
           <p>La cocina está al día.</p>
         </div>
@@ -112,8 +113,8 @@ export default function CocinaModule() {
                 {/* Cliente Info (Opcional) */}
                 {(o.customer_name || o.notes) && (
                   <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', background: 'var(--surface-2)', fontSize: '13px' }}>
-                    {o.customer_name && <div style={{ fontWeight: '600' }}>👤 {o.customer_name}</div>}
-                    {o.notes && <div style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>📝 {o.notes}</div>}
+                    {o.customer_name && <div style={{ fontWeight: '600' }}><User size={14} style={{marginRight:4}} /> {o.customer_name}</div>}
+                    {o.notes && <div style={{ color: 'var(--text-secondary)', marginTop: '4px' }}><FileText size={14} style={{marginRight:4}} /> {o.notes}</div>}
                   </div>
                 )}
 
@@ -138,14 +139,14 @@ export default function CocinaModule() {
                 {/* Pie Tarjeta */}
                 <div style={{ padding: '16px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)' }}>
                   <div style={{ fontSize: '13px', fontWeight: '700', color: waitColor }}>
-                    ⏱️ Hace {waitTime} min
+                    <Clock size={14} style={{marginRight:4}} /> Hace {waitTime} min
                   </div>
                   <button onClick={() => handleMarkReady(o.id)} style={{
                     padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#10b981', color: 'white', fontWeight: '800', fontSize: '14px', cursor: 'pointer', transition: 'transform 0.1s', boxShadow: '0 2px 4px rgba(16, 185, 129, 0.3)'
                   }}
                   onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
                   onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}>
-                    ✅ LISTO
+                    <><Check size={16} style={{marginRight:4}} /> LISTO</>
                   </button>
                 </div>
               </div>

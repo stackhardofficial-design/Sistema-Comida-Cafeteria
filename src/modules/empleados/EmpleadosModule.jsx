@@ -1,3 +1,4 @@
+import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '../../lib/AppContext'
 import {
@@ -10,8 +11,8 @@ import Modal from '../../components/Modal'
 
 const MODULE_OPTIONS = [
   { id: 'mesas',      label: '🪑 Mesas' },
-  { id: 'mostrador',  label: '🏪 Mostrador' },
-  { id: 'delivery',   label: '📦 Delivery' },
+  { id: 'mostrador',  label: '<MonitorSmartphone size={18} style={{marginRight:6}} /> Mostrador' },
+  { id: 'delivery',   label: '<Package size={18} style={{marginRight:6}} /> Delivery' },
   { id: 'ventas',     label: '📊 Ventas' },
   { id: 'caja',       label: '🏧 Caja' },
   { id: 'clientes',   label: '👥 Clientes' },
@@ -32,11 +33,11 @@ export default function EmpleadosModule() {
       {/* Header */}
       <div style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
         <div style={{ padding: '16px 24px 0', display: 'flex', alignItems: 'center' }}>
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '700' }}>👤 Empleados</h1>
+          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '700' }}><User size={14} style={{marginRight:4}} /> Empleados</h1>
         </div>
         <div style={{ display: 'flex', gap: 0, padding: '0 24px', marginTop: '12px' }}>
           {[
-            { id: 'empleados', label: '👤 Equipo' },
+            { id: 'empleados', label: '<User size={14} style={{marginRight:4}} /> Equipo' },
             { id: 'horas',     label: '⏱️ Horas Trabajadas' },
                       ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{
@@ -130,7 +131,7 @@ function TabEquipo({ tenantId }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <input placeholder="🔍 Buscar por nombre..." value={search} onChange={e => setSearch(e.target.value)}
+        <input placeholder="Buscar  Buscar por nombre..." value={search} onChange={e => setSearch(e.target.value)}
           style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px', width: '260px' }} />
         <button onClick={() => setShowNew(true)} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'white', fontWeight: '700', cursor: 'pointer' }}>
           + Nuevo Empleado
@@ -185,7 +186,7 @@ function TabEquipo({ tenantId }) {
       </div>
 
       {/* Modal: Nuevo Empleado */}
-      <Modal show={showNew} onClose={() => setShowNew(false)} title="➕ Nuevo Empleado">
+      <Modal show={showNew} onClose={() => setShowNew(false)} title={<><Plus size={16} style={{marginRight:6}}/> Nuevo Empleado</>}>
         <form onSubmit={handleCreate}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minWidth: '380px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
@@ -459,7 +460,7 @@ function TabHoras({ tenantId }) {
             <div style={{ display: 'flex', gap: '10px' }}>
               {[
                 { id: 'equal', label: '⚖️ Partes iguales', desc: 'Cada empleado recibe lo mismo' },
-                { id: 'hours', label: '⏱️ Por horas trabajadas', desc: 'Proporcional a las hs del período' },
+                { id: 'hours', label: <><Clock size={16} style={{marginRight:6}}/> Por horas trabajadas</>, desc: 'Proporcional a las hs del período' },
               ].map(m => (
                 <button key={m.id} onClick={() => setSplitMode(m.id)} style={{
                   padding: '10px 16px', borderRadius: '10px', border: '2px solid',
@@ -618,7 +619,7 @@ function TabHoras({ tenantId }) {
                           setForm({ user_id: h.user_id, work_date: h.work_date, time_in: h.time_in || '', time_out: h.time_out || '', notes: h.notes || '' })
                           setDupWarning(''); setModal(h)
                         }} style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '12px' }}>✏️</button>
-                        <button onClick={() => handleDelete(h.id)} style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #fee2e2', background: '#fff5f5', color: '#ef4444', cursor: 'pointer', fontSize: '12px' }}>🗑️</button>
+                        <button onClick={() => handleDelete(h.id)} style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #fee2e2', background: '#fff5f5', color: '#ef4444', cursor: 'pointer', fontSize: '12px' }}><Trash2 size={16} /></button>
                       </td>
                     </tr>
                   )

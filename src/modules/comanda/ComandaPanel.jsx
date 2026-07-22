@@ -1,3 +1,4 @@
+import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '../../lib/AppContext'
 import {
@@ -440,10 +441,10 @@ export default function ComandaPanel() {
 
   const contextLabel = currentContext
     ? currentContext.type === 'mesa'
-      ? `🪑 ${currentContext.tableName}`
+      ? "<><Grid size={16} style={{marginRight: 6}}/> " + currentContext.tableName + "</>"
       : currentContext.type === 'delivery'
         ? `🛵 ${currentContext.customerName || 'Delivery'}`
-        : `🏪 ${currentContext.customerName || 'Mostrador'}`
+        : "<><MonitorSmartphone size={16} style={{marginRight: 6}}/> " + (currentContext.customerName || 'Mostrador') + "</>"
     : null
 
   if (currentModule === 'mostrador' && loadingSession && currentContext?.type !== 'delivery') {
@@ -543,13 +544,13 @@ export default function ComandaPanel() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <span className="order-number">{currentContext?.orderId ? `#${currentContext.orderId.slice(-6).toUpperCase()}` : ''}</span>
-              {currentContext?.type === 'mesa' && <h2 className="table-name">🪑 {currentContext.tableName}</h2>}
-              {currentContext?.type === 'mostrador' && <h2 className="table-name">🏪 Mostrador</h2>}
+              {currentContext?.type === 'mesa' && <h2 className="table-name"><Grid size={18} style={{marginRight:6}} /> {currentContext.tableName}</h2>}
+              {currentContext?.type === 'mostrador' && <h2 className="table-name"><MonitorSmartphone size={18} style={{marginRight:6}} /> Mostrador</h2>}
               {currentContext?.type === 'delivery' && <h2 className="table-name">🛵 Delivery</h2>}
             </div>
           </div>
           <div className="client-name">
-            👤 {currentContext?.customerName || 'Consumidor Final'}
+            <User size={14} style={{marginRight:4}} /> {currentContext?.customerName || 'Consumidor Final'}
           </div>
         </div>
         {currentContext && ['mostrador', 'delivery'].includes(currentModule) && (
@@ -582,7 +583,7 @@ export default function ComandaPanel() {
               boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
             }}
           >
-            <span style={{ fontSize: '16px' }}>🪑</span> Asignar a una Mesa
+            <Grid size={16} style={{marginRight:6}} /> Asignar a una Mesa
           </button>
         </div>
       )}
@@ -688,7 +689,7 @@ export default function ComandaPanel() {
       {/* Search + Categories */}
       <div className="comanda-search-zone">
         <div className="search-bar">
-          <span>🔍</span>
+          <Search size={16} />
           <input
             placeholder="Buscar producto..."
             value={search}
@@ -778,7 +779,7 @@ export default function ComandaPanel() {
           <div className="total-grand"><span>TOTAL</span><span>{fmtMoney(grandTotal)}</span></div>
         </div>
         <div className="comanda-btns">
-          <button className="btn-discount" onClick={() => setDiscountModal(true)}>🏷️ Descuento</button>
+          <button className="btn-discount" onClick={() => setDiscountModal(true)}><><FileText size={16} style={{marginRight:6}}/> Descuento</></button>
           {isNewOrder ? (
             <button
               className="btn-cobrar"
@@ -803,7 +804,7 @@ export default function ComandaPanel() {
                   style={{ background: 'var(--border)', color: 'var(--text-primary)', marginTop: '4px' }}
                   onClick={clearCart}
                 >
-                  💾 GUARDAR Y VOLVER
+                  <><Check size={18} style={{marginRight:6}}/> GUARDAR Y VOLVER</>
                 </button>
               )}
             </>
@@ -879,7 +880,7 @@ export default function ComandaPanel() {
             <h3>Medio de Pago</h3>
             
             <div className="pay-methods" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-              {[['cash','💵 Efectivo'],['card','💳 Tarjeta'],['transfer','🏦 Transfer.']].map(([m, label]) => (
+              {[['cash',<><Banknote size={16} style={{marginRight:6}}/> Efectivo</>],['card',<><CreditCard size={16} style={{marginRight:6}}/> Tarjeta</>],['transfer',<><Banknote size={16} style={{marginRight:6}}/> Transfer.</>]].map(([m, label]) => (
                 <button 
                   key={m} 
                   className={`pay-method${payMethod === m ? ' selected' : ''}`} 
@@ -961,7 +962,7 @@ export default function ComandaPanel() {
                     <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg, #f8fafc)', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border)' }}>
                       <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                         <span style={{ fontSize: '18px' }}>
-                          {p.method === 'cash' ? '💵' : p.method === 'card' ? '💳' : '🏦'}
+                          {p.method === 'cash' ? <Banknote size={18} /> : p.method === 'card' ? <CreditCard size={18} /> : <Banknote size={18} />}
                         </span>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                           <span style={{ fontSize: '13px', fontWeight: 600 }}>
@@ -1007,7 +1008,7 @@ export default function ComandaPanel() {
                     cursor: (saving || !isReady) ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {saving ? 'Procesando...' : '✅ CERRAR VENTA'}
+                  {saving ? 'Procesando...' : '<><Check size={18} style={{marginRight:6}}/> CERRAR VENTA</>'}
                 </button>
               )
             })()}

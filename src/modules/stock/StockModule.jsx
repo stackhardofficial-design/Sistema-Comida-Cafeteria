@@ -1,3 +1,4 @@
+import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useApp } from '../../lib/AppContext'
 import {
@@ -87,7 +88,7 @@ function IngredientSearch({ ingredients, onSelect, excluded = [] }) {
         value={search}
         onChange={e => { setSearch(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)}
-        placeholder="🔍 Buscar ingrediente..."
+        placeholder="Buscar  Buscar ingrediente..."
         style={{
           width: '100%', padding: '8px 12px', borderRadius: '8px',
           border: '1px solid var(--border)', background: 'var(--surface)',
@@ -183,7 +184,7 @@ function TabControl({ tenantId }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
         {[
           { label: 'Total ingredientes', value: ingredients.length, icon: '🧂', color: '#6366f1' },
-          { label: 'Agotados', value: ingredients.filter(i => parseFloat(i.current_stock) === 0).length, icon: '❌', color: '#ef4444' },
+          { label: 'Agotados', value: ingredients.filter(i => parseFloat(i.current_stock) === 0).length, icon: <X size={16} style={{marginRight:6}} />, color: '#ef4444' },
           { label: 'Poco stock', value: ingredients.filter(i => { const s = parseFloat(i.current_stock), m = parseFloat(i.min_stock); return s > 0 && m > 0 && s <= m }).length, icon: '⚠️', color: '#f59e0b' },
         ].map(c => (
           <div key={c.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -197,9 +198,9 @@ function TabControl({ tenantId }) {
       </div>
 
       <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        <input placeholder="🔍 Buscar ingrediente..." value={search} onChange={e => setSearch(e.target.value)}
+        <input placeholder="Buscar  Buscar ingrediente..." value={search} onChange={e => setSearch(e.target.value)}
           style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px', minWidth: '200px' }} />
-        {[{ id: 'all', label: 'Todos' }, { id: 'ok', label: '✅ Disponibles' }, { id: 'poco', label: '⚠️ Poco stock' }, { id: 'agotados', label: '❌ Agotados' }].map(f => (
+        {[{ id: 'all', label: 'Todos' }, { id: 'ok', label: <><Check size={16} style={{marginRight:6}}/> Disponibles</> }, { id: 'poco', label: '⚠️ Poco stock' }, { id: 'agotados', label: <><X size={16} style={{marginRight:6}}/> Agotados</> }].map(f => (
           <button key={f.id} onClick={() => setFilter(f.id)} style={{
             padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)',
             background: filter === f.id ? 'var(--accent)' : 'var(--surface)',
@@ -337,8 +338,8 @@ function TabProductosStock({ tenantId }) {
     <div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
         {[
-          { label: 'Productos con stock', value: products.filter(p => p.stock_quantity !== null).length, icon: '📦', color: '#6366f1' },
-          { label: 'Agotados', value: products.filter(p => p.stock_quantity === 0).length, icon: '❌', color: '#ef4444' },
+          { label: 'Productos con stock', value: products.filter(p => p.stock_quantity !== null).length, icon: <Package size={16} style={{marginRight:6}} />, color: '#6366f1' },
+          { label: 'Agotados', value: products.filter(p => p.stock_quantity === 0).length, icon: <X size={16} style={{marginRight:6}} />, color: '#ef4444' },
           { label: 'Poco stock (<10)', value: products.filter(p => p.stock_quantity !== null && p.stock_quantity > 0 && p.stock_quantity <= 10).length, icon: '⚠️', color: '#f59e0b' },
         ].map(c => (
           <div key={c.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -352,9 +353,9 @@ function TabProductosStock({ tenantId }) {
       </div>
 
       <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        <input placeholder="🔍 Buscar producto..." value={search} onChange={e => setSearch(e.target.value)}
+        <input placeholder="Buscar  Buscar producto..." value={search} onChange={e => setSearch(e.target.value)}
           style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px', minWidth: '200px' }} />
-        {[{ id: 'all', label: 'Todos' }, { id: 'con_stock', label: '✅ Trackeados' }, { id: 'agotados', label: '❌ Agotados' }].map(f => (
+        {[{ id: 'all', label: 'Todos' }, { id: 'con_stock', label: <><Check size={16} style={{marginRight:6}}/> Trackeados</> }, { id: 'agotados', label: <><X size={16} style={{marginRight:6}}/> Agotados</> }].map(f => (
           <button key={f.id} onClick={() => setFilter(f.id)} style={{
             padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)',
             background: filter === f.id ? 'var(--accent)' : 'var(--surface)',
@@ -481,7 +482,7 @@ function TabIngredientes({ tenantId }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <input placeholder="🔍 Buscar ingrediente..." value={search} onChange={e => setSearch(e.target.value)}
+        <input placeholder="Buscar  Buscar ingrediente..." value={search} onChange={e => setSearch(e.target.value)}
           style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px', width: '260px' }} />
         <button onClick={openNew} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'white', fontWeight: '700', cursor: 'pointer' }}>
           + Nuevo Ingrediente
@@ -509,7 +510,7 @@ function TabIngredientes({ tenantId }) {
                     <td style={{ padding: '12px 16px' }}>{fmtMoney(i.cost || 0)}</td>
                     <td style={{ padding: '12px 16px', display: 'flex', gap: '8px' }}>
                       <button onClick={() => openEdit(i)} style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>✏️ Editar</button>
-                      <button onClick={() => handleDelete(i.id)} style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #fee2e2', background: '#fff5f5', color: '#ef4444', cursor: 'pointer', fontSize: '12px' }}>🗑️</button>
+                      <button onClick={() => handleDelete(i.id)} style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #fee2e2', background: '#fff5f5', color: '#ef4444', cursor: 'pointer', fontSize: '12px' }}><Trash2 size={16} /></button>
                     </td>
                   </tr>
                 ))}
@@ -608,7 +609,7 @@ function TabRecetas({ tenantId }) {
       {/* Left: product list */}
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
-          <input placeholder="🔍 Buscar producto..." value={searchProd} onChange={e => setSearchProd(e.target.value)}
+          <input placeholder="Buscar  Buscar producto..." value={searchProd} onChange={e => setSearchProd(e.target.value)}
             style={{ width: '100%', padding: '7px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', fontSize: '13px', boxSizing: 'border-box' }} />
           <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
             style={{ width: '100%', marginTop: '8px', padding: '7px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', fontSize: '12px' }}>
@@ -825,7 +826,7 @@ function TabRentabilidad({ tenantId }) {
       {section === 'products' && (
         <>
           <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
-            <input placeholder="🔍 Buscar producto..." value={searchProd} onChange={e => setSearchProd(e.target.value)}
+            <input placeholder="Buscar  Buscar producto..." value={searchProd} onChange={e => setSearchProd(e.target.value)}
               style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px', width: '220px' }} />
             <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
               style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px' }}>
@@ -939,7 +940,7 @@ function TabRentabilidad({ tenantId }) {
                       <button onClick={() => { setFcForm({ name: fc.name, amount: fc.amount, frequency: fc.frequency }); setFcModal(fc) }}
                         style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '12px' }}>✏️</button>
                       <button onClick={() => deleteFc(fc.id)}
-                        style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #fee2e2', background: '#fff5f5', color: '#ef4444', cursor: 'pointer', fontSize: '12px' }}>🗑️</button>
+                        style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #fee2e2', background: '#fff5f5', color: '#ef4444', cursor: 'pointer', fontSize: '12px' }}><Trash2 size={16} /></button>
                     </td>
                   </tr>
                 ))}
@@ -1006,10 +1007,10 @@ function TabMovimientos({ tenantId }) {
   }, [tenantId])
 
   const REASON_LABELS = {
-    venta:      { label: 'Venta', icon: '💳', color: '#ef4444' },
-    compra:     { label: 'Compra / Entrada', icon: '📦', color: '#10b981' },
+    venta:      { label: 'Venta', icon: <CreditCard size={16} style={{marginRight:6}} />, color: '#ef4444' },
+    compra:     { label: 'Compra / Entrada', icon: <Package size={16} style={{marginRight:6}} />, color: '#10b981' },
     ajuste:     { label: 'Ajuste Manual', icon: '✏️', color: '#6366f1' },
-    desperdicio:{ label: 'Desperdicio', icon: '🗑️', color: '#f59e0b' },
+    desperdicio:{ label: 'Desperdicio', icon: <Trash2 size={16} style={{marginRight:6}} />, color: '#f59e0b' },
   }
 
   const filtered = filter === 'all' ? movements : movements.filter(m => m.reason === filter)

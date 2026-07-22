@@ -1,13 +1,14 @@
+import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react'
 import { useApp } from '../../lib/AppContext'
 import { dbGetOrders, dbGetOrder, dbUpdateOrder, fmtMoney, fmtDate, sb } from '../../lib/supabase'
 import Modal from '../../components/Modal'
 
 const METHOD_LABELS = {
-  cash: '💵 Efectivo', card: '💳 Tarjeta', transfer: '🏦 Transferencia',
-  efectivo: '💵 Efectivo', debito: '💳 Débito', credito: '💳 Crédito', transferencia: '🏦 Transferencia'
+  cash: <><Banknote size={16} style={{marginRight: 6}} /> Efectivo</>, card: <><CreditCard size={16} style={{marginRight: 6}} /> Tarjeta</>, transfer: <><Banknote size={16} style={{marginRight: 6}} /> Transferencia</>,
+  efectivo: <><Banknote size={16} style={{marginRight: 6}} /> Efectivo</>, debito: <><CreditCard size={16} style={{marginRight: 6}} /> Débito</>, credito: <><CreditCard size={16} style={{marginRight: 6}} /> Crédito</>, transferencia: <><Banknote size={16} style={{marginRight: 6}} /> Transferencia</>
 }
-const TYPE_LABELS = { dine_in: '🪑 Mesa', takeaway: '🏪 Mostrador', delivery: '🛵 Delivery' }
+const TYPE_LABELS = { dine_in: <><Grid size={16} style={{marginRight: 6}} /> Mesa</>, takeaway: <><MonitorSmartphone size={16} style={{marginRight: 6}} /> Mostrador</>, delivery: <><Bike size={16} style={{marginRight: 6}} /> Delivery</> }
 const TYPE_COLORS = { dine_in: '#6366f1', takeaway: '#f59e0b', delivery: '#10b981' }
 
 function StatusBadge({ status }) {
@@ -217,7 +218,7 @@ export default function VentasModule() {
         <select value={filterType} onChange={e => setFilterType(e.target.value)} style={inputStyle}>
           <option value="">Canal: Todos</option>
           <option value="dine_in">🪑 Mesa</option>
-          <option value="takeaway">🏪 Mostrador</option>
+          <option value="takeaway"><MonitorSmartphone size={18} style={{marginRight:6}} /> Mostrador</option>
           <option value="delivery">🛵 Delivery</option>
         </select>
 
@@ -229,7 +230,7 @@ export default function VentasModule() {
         </select>
 
         <input
-          placeholder="🔍 Buscar cliente, ID..."
+          placeholder="Buscar  Buscar cliente, ID..."
           value={search}
           onChange={e => setSearch(e.target.value)}
           style={{ ...inputStyle, flex: 1, minWidth: '180px' }}
@@ -385,7 +386,7 @@ export default function VentasModule() {
                 </div>
                 {selectedOrder.customer_name && (
                   <div style={{ fontSize: '13px', fontWeight: '600', marginTop: '6px' }}>
-                    👤 {selectedOrder.customer_name}
+                    <User size={14} style={{marginRight:4}} /> {selectedOrder.customer_name}
                   </div>
                 )}
                 <div style={{ marginTop: '8px' }}>

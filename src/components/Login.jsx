@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { dbLogin, dbGetTenant, dbGetUserInfo } from '../lib/supabase'
 import { useApp } from '../lib/AppContext'
 
+import { Database } from 'lucide-react'
+
 export default function Login() {
   const { setUser, setTenantId, setUserRoles, setCurrentModule } = useApp()
   const [email, setEmail] = useState('')
@@ -38,12 +40,22 @@ export default function Login() {
   }
 
   return (
-    <div className="login-screen">
-      <div className="login-box">
-        <div className="login-logo">
-          <span className="logo-icon">🍽️</span>
-          <h1>StackHard POS</h1>
-          <p>Sistema de Gestión Gastronómica</p>
+    <div className="login-screen" style={{ background: 'var(--bg)' }}>
+      <div className="login-box" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }}>
+        <div className="login-logo" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
+          <div style={{
+            width: '64px', height: '64px', background: 'linear-gradient(135deg, #4f4f4f 0%, #333333 100%)',
+            borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '16px'
+          }}>
+            <Database size={36} color="#FF6600" />
+          </div>
+          <h1 style={{ fontSize: '32px', fontWeight: '900', letterSpacing: '-1px', margin: '0 0 8px 0' }}>
+            <span style={{ color: 'var(--text-secondary)' }}>Stack</span><span style={{ color: 'var(--accent)' }}>Hard</span>
+          </h1>
+          <p style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', textAlign: 'center', margin: 0 }}>
+            INGENIERÍA DE SISTEMAS &<br/>ARQUITECTURA DE SOFTWARE
+          </p>
         </div>
         <form onSubmit={handleLogin}>
           <div className="form-group">

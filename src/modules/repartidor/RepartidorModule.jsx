@@ -1,3 +1,4 @@
+import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '../../lib/AppContext'
 import { dbGetDeliveryOrders, dbUpdateOrder, sb, fmtMoney } from '../../lib/supabase'
@@ -101,7 +102,7 @@ function MapPreview({ address, mapsUrl }) {
             fontSize: '14px'
           }}
         >
-          🗺️ Ver Ubicación en Google Maps
+          <><MonitorCheck size={16} style={{marginRight:6}}/> Ver Ubicación en Google Maps</>
         </button>
       )}
     </div>
@@ -161,110 +162,6 @@ export default function RepartidorModule() {
     const desc = parts.length > 1 ? parts[0] : (ref.includes('http') ? '' : ref)
     const rawUrl = parts.length > 1 ? parts[1] : (ref.includes('http') ? ref : '')
 
-    return { phone, name, addressText, desc, mapsUrl: rawUrl.trim() }
-  }
-
-  const now = new Date()
-  const timeStr = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#0f172a', overflowY: 'auto' }}>
-      <style>{`
-        @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        .deliver-btn:active { transform: scale(0.97); }
-        .deliver-card { transition: box-shadow 0.2s; }
-        .deliver-card:hover { box-shadow: 0 8px 30px rgba(0,0,0,0.25) !important; }
-        .whatsapp-btn:hover { background: #15803d !important; }
-        .call-btn:hover { background: #1d4ed8 !important; }
-      `}</style>
-
-      {/* Header Premium */}
-      <div style={{
-        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-        padding: '20px 24px',
-        borderBottom: '1px solid rgba(255,255,255,0.07)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 10
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <h1 style={{ fontSize: '24px', fontWeight: '800', color: 'white', margin: 0, letterSpacing: '-0.5px' }}>
-              🛵 Repartidor
-            </h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
-              {orders.length > 0 && (
-                <span style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  background: 'rgba(249, 115, 22, 0.15)',
-                  color: '#fb923c',
-                  padding: '3px 10px',
-                  borderRadius: '20px',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  border: '1px solid rgba(249, 115, 22, 0.3)'
-                }}>
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fb923c', display: 'inline-block', animation: 'pulse-dot 1.5s infinite' }} />
-                  {orders.length} pendiente{orders.length !== 1 ? 's' : ''}
-                </span>
-              )}
-              <span style={{ color: '#64748b', fontSize: '12px' }}>{timeStr}</span>
-            </div>
-          </div>
-          <button
-            onClick={loadOrders}
-            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px 10px', color: '#94a3b8', cursor: 'pointer', fontSize: '16px' }}
-          >
-            ↻
-          </button>
-        </div>
-      </div>
-
-      {/* Lista de Pedidos */}
-      <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '60px', color: '#475569' }}>
-            <div style={{ fontSize: '32px', marginBottom: '12px' }}>⏳</div>
-            <p style={{ margin: 0, fontWeight: '600' }}>Cargando entregas...</p>
-          </div>
-        ) : orders.length === 0 ? (
-          <div style={{
-            textAlign: 'center',
-            padding: '60px 20px',
-            background: 'rgba(255,255,255,0.03)',
-            borderRadius: '16px',
-            border: '1px dashed rgba(255,255,255,0.1)'
-          }}>
-            <span style={{ fontSize: '56px', display: 'block', marginBottom: '16px' }}>🙌</span>
-            <h3 style={{ margin: '0 0 8px 0', color: '#e2e8f0', fontSize: '20px', fontWeight: '700' }}>¡Todo al día!</h3>
-            <p style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>No hay pedidos pendientes de entrega.</p>
-          </div>
-        ) : (
-          orders.map(order => {
-            const { phone, name, addressText, desc, mapsUrl } = getOrderInfo(order)
-            const isBeingDelivered = delivering === order.id
-            const orderTime = new Date(order.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
-            const waLink = phone ? `https://wa.me/${phone.replace(/[^0-9]/g, '')}` : null
-
-            return (
-              <div
-                key={order.id}
-                className="deliver-card"
-                style={{
-                  background: '#1e293b',
-                  borderRadius: '16px',
-                  overflow: 'hidden',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
-                }}
-              >
-                {/* Card Header */}
-                <div style={{
-                  padding: '16px 18px',
-                  background: 'rgba(255,255,255,0.03)',
-                  borderBottom: '1px solid rgba(255,255,255,0.06)',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center'
