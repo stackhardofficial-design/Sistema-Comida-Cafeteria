@@ -101,10 +101,10 @@ export default function ComandaPanel() {
   }, [tenantId])
 
   const refreshProds = useCallback(() => {
-    if (tenantId && activeCategory) {
-      dbGetProducts(tenantId, activeCategory).then(setProducts)
+    if (tenantId) {
+      dbGetProducts(tenantId).then(setProducts)
     }
-  }, [tenantId, activeCategory])
+  }, [tenantId])
 
   useEffect(() => {
     refreshCats()
@@ -151,9 +151,11 @@ export default function ComandaPanel() {
     }
   }
 
-  const filteredProducts = search
-    ? products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
-    : products
+  const filteredProducts = products.filter(p => {
+    const matchSearch = search ? p.name.toLowerCase().includes(search.toLowerCase()) : true
+    const matchCategory = activeCategory ? p.category_id === activeCategory : true
+    return matchSearch && matchCategory
+  })
 
   async function saveDeliveryInfo(street, desc, maps) {
     if (!currentContext?.orderId) return
@@ -562,13 +564,10 @@ export default function ComandaPanel() {
           <input
             placeholder="Buscar producto..."
             value={search}
-            onChange={e => {
-              setSearch(e.target.value)
-              if (e.target.value) dbGetProducts(tenantId).then(setProducts)
-            }}
+            onChange={e => setSearch(e.target.value)}
           />
         </div>
-        {!activeCategory || search ? (
+        {!activeCategory && !search ? (
           <div className="category-grid">
             {categories.map(c => (
               <button key={c.id} className="cat-btn" onClick={() => { setActiveCategory(c.id); setSearch('') }}>
@@ -679,7 +678,7 @@ export default function ComandaPanel() {
           <div className="modal-right">
             <h3>Medio de Pago</h3>
             <div className="pay-methods">
-              {[['efectivo','💵 Efectivo'],['debito','💳 Débito'],['credito','💳 Crédito'],['mercadopago','📱 MercadoPago'],['transferencia','🏦 Transfer.']].map(([m, label]) => (
+              {[['efectivo','💵 Efectivo'],['debito','💳 Débito'],['credito','💳 Crédito'],['transferencia','🏦 Transfer.']].map(([m, label]) => (
                 <button key={m} className={`pay-method${payMethod === m ? ' selected' : ''}`} onClick={() => setPayMethod(m)}>{label}</button>
               ))}
             </div>
