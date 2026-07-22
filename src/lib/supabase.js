@@ -516,10 +516,15 @@ export async function dbAdjustIngredientStock(tenantId, ingredientId, amount, re
 export async function dbDeductStockForOrder(tenantId, orderId) {
   try {
     const { data: items } = await sb.from('order_items')
-      .select('product_id, quantity').eq('order_id', orderId)
+      .select('product_id, quantity, products(id, stock_quantity)').eq('order_id', orderId)
     if (!items || items.length === 0) return
 
     for (const item of items) {
+      if (item.products && item.products.stock_quantity !== null) {
+        const newStock = Math.max(0, item.products.stock_quantity - item.quantity)
+        await sb.from('products').update({ stock_quantity: newStock, updated_at: new Date().toISOString() }).eq('id', item.product_id)
+      }
+
       const { data: recipe } = await sb.from('product_ingredients')
         .select('ingredient_id, quantity, ingredients(id, current_stock, unit)')
         .eq('product_id', item.product_id)
