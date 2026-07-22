@@ -3,7 +3,8 @@ import { useApp } from '../../lib/AppContext'
 import {
   dbGetCategories, dbGetProducts, dbAddItem, dbRemoveItem,
   dbCreateOrder, dbUpdateOrder, dbUpdateTable, dbCreatePayment,
-  dbGetOpenSession, dbOpenSession, fmtMoney, dbRecalcOrder, sb, logActivity
+  dbGetOpenSession, dbOpenSession, fmtMoney, dbRecalcOrder, sb, logActivity,
+  dbGetZones, dbGetTables, dbGetOrder
 } from '../../lib/supabase'
 import Modal from '../../components/Modal'
 
@@ -40,6 +41,14 @@ export default function ComandaPanel() {
   const [delivDesc, setDelivDesc] = useState('')
   const [delivMapsUrl, setDelivMapsUrl] = useState('')
   const [delivExpanded, setDelivExpanded] = useState(false)
+
+  // Estados para trasladar a mesa
+  const [assignTableModal, setAssignTableModal] = useState(false)
+  const [zones, setZones] = useState([])
+  const [tables, setTables] = useState([])
+  const [selectedZone, setSelectedZone] = useState(null)
+  const [selectedTable, setSelectedTable] = useState(null)
+  const [loadingTables, setLoadingTables] = useState(false)
 
   async function loadSession() {
     if (!tenantId) return
@@ -213,7 +222,7 @@ export default function ComandaPanel() {
       } else {
         const order = await dbGetOrder(currentContext.orderId)
         await sb.from('orders').update({
-          order_type: 'dine_in',
+          order_type: 'takeaway',
           delivery_address_id: null
         }).eq('id', currentContext.orderId)
         
@@ -224,6 +233,52 @@ export default function ComandaPanel() {
       triggerRefresh()
     } catch (e) {
       console.error('Error al cambiar tipo de pedido:', e)
+    }
+  }
+
+  async function openAssignTable() {
+    setAssignTableModal(true)
+    setLoadingTables(true)
+    try {
+      const [z, t] = await Promise.all([dbGetZones(tenantId), dbGetTables(tenantId)])
+      setZones(z)
+      setTables(t)
+      if (z.length > 0) setSelectedZone(z[0].id)
+    } catch (e) {
+      console.error('Error loading tables:', e)
+    } finally {
+      setLoadingTables(false)
+    }
+  }
+
+  async function handleAssignTable() {
+    if (!selectedTable) return
+    setAssigning(true)
+    try {
+      const order = await dbGetOrder(currentContext.orderId)
+      await sb.from('orders').update({
+        order_type: 'dine_in',
+        table_db_id: selectedTable.id,
+        delivery_address_id: null
+      }).eq('id', currentContext.orderId)
+
+      if (order.delivery_address_id) {
+        await sb.from('delivery_addresses').delete().eq('id', order.delivery_address_id)
+      }
+
+      setCurrentContext({
+        type: 'mesa',
+        orderId: currentContext.orderId,
+        tableName: selectedTable.name,
+        tableDbId: selectedTable.id
+      })
+      
+      setAssignTableModal(false)
+      triggerRefresh()
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setAssigning(false)
     }
   }
 
@@ -460,14 +515,28 @@ export default function ComandaPanel() {
       {/* Header */}
       <div className="comanda-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <span className="comanda-title">
-            {currentContext ? contextLabel : 'Selecciona una mesa'}
-          </span>
-          {currentContext && (
-            <span className="comanda-context">
-              {currentContext.orderId ? `🔴 Pedido activo (#${currentContext.orderId.slice(-6).toUpperCase()})` : '🟢 Nuevo Pedido'}
-            </span>
-          )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span className="order-number">{currentContext?.orderId ? `#${currentContext.orderId.slice(-6).toUpperCase()}` : ''}</span>
+              {currentContext?.type === 'mesa' && <h2 className="table-name">🪑 {currentContext.tableName}</h2>}
+              {currentContext?.type === 'mostrador' && <h2 className="table-name">🏪 Mostrador</h2>}
+              {currentContext?.type === 'delivery' && <h2 className="table-name">🛵 Delivery</h2>}
+            </div>
+            {currentContext?.type === 'mostrador' && currentContext?.orderId && (
+              <button 
+                onClick={openAssignTable}
+                style={{
+                  background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', 
+                  padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer'
+                }}
+              >
+                Trasladar a Mesa
+              </button>
+            )}
+          </div>
+          <div className="client-name">
+            👤 {currentContext?.customerName || 'Consumidor Final'}
+          </div>
         </div>
         {currentContext && (currentContext.type === 'mostrador' || currentContext.type === 'delivery') && (
           <button 
