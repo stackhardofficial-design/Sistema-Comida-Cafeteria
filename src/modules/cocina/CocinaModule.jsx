@@ -1,5 +1,6 @@
 import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
 import { useState, useEffect } from 'react'
+import Modal from '../../components/Modal'
 import { useApp } from '../../lib/AppContext'
 import { dbGetOrders, dbUpdateKitchenStatus, sb } from '../../lib/supabase'
 
@@ -7,6 +8,7 @@ export default function CocinaModule() {
   const { tenantId } = useApp()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
+  const [selectedOrder, setSelectedOrder] = useState(null)
 
   const loadData = async () => {
     if (!tenantId) return
@@ -91,8 +93,7 @@ export default function CocinaModule() {
             else if (waitTime >= 10) waitColor = '#f59e0b' // yellow if > 10m
 
             return (
-              <div key={o.id} style={{ 
-                background: 'var(--surface)', 
+              <div key={o.id} onClick={() => setSelectedOrder(o)} style={{ cursor: 'pointer', background: 'var(--surface)', 
                 border: `2px solid ${typeInfo.color}`, 
                 borderRadius: '12px', 
                 display: 'flex', 
@@ -141,7 +142,7 @@ export default function CocinaModule() {
                   <div style={{ fontSize: '13px', fontWeight: '700', color: waitColor }}>
                     <Clock size={14} style={{marginRight:4}} /> Hace {waitTime} min
                   </div>
-                  <button onClick={() => handleMarkReady(o.id)} style={{
+                  <button onClick={(e) => { e.stopPropagation(); handleMarkReady(o.id); }} style={{
                     padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#10b981', color: 'white', fontWeight: '800', fontSize: '14px', cursor: 'pointer', transition: 'transform 0.1s', boxShadow: '0 2px 4px rgba(16, 185, 129, 0.3)'
                   }}
                   onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
