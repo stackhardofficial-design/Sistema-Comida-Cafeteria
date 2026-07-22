@@ -167,12 +167,12 @@ function TabControl({ tenantId }) {
     return { label: 'Disponible', color: '#10b981', bg: '#d1fae5' }
   }
 
-  async function handleAdjust() {
+  async function handleAdjust(reason) {
     if (!editItem || editStock === '') return
     setSaving(true)
     try {
       const amount = parseFloat(editStock)
-      await dbAdjustIngredientStock(tenantId, editItem.id, amount, editReason, editItem.current_stock)
+      await dbAdjustIngredientStock(tenantId, editItem.id, amount, reason, editItem.current_stock)
       setEditItem(null); setEditStock(''); load()
     } catch (e) { alert('Error: ' + e.message) }
     finally { setSaving(false) }
@@ -234,7 +234,7 @@ function TabControl({ tenantId }) {
                       </td>
                       <td style={{ padding: '12px 16px' }}>{fmtMoney(i.cost || 0)}</td>
                       <td style={{ padding: '12px 16px' }}>
-                        <button onClick={() => { setEditItem(i); setEditStock(''); setEditReason('compra') }}
+                        <button onClick={() => { setEditItem(i); setEditStock(''); }}
                           style={{ padding: '5px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '12px', color: 'var(--accent)', fontWeight: '600' }}>
                           Ajustar Stock
                         </button>
@@ -249,32 +249,26 @@ function TabControl({ tenantId }) {
       <Modal show={!!editItem} onClose={() => setEditItem(null)} title={`Ajustar Stock: ${editItem?.name}`}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '320px' }}>
           <div>
-            <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '6px', color: 'var(--text-secondary)' }}>Tipo de movimiento</label>
-            <select value={editReason} onChange={e => setEditReason(e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px' }}>
-              <option value="compra">📦 Entrada (Compra)</option>
-              <option value="ajuste">✏️ Ajuste manual</option>
-              <option value="desperdicio">🗑️ Salida (Desperdicio)</option>
-            </select>
-          </div>
-          <div>
             <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '6px', color: 'var(--text-secondary)' }}>
-              Cantidad ({editItem?.unit})
+              Cantidad a sumar o restar ({editItem?.unit})
             </label>
-            <input type="number" min="0" step="0.001" value={editStock} onChange={e => setEditStock(e.target.value)}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '14px', fontWeight: '600', boxSizing: 'border-box' }}
-              autoFocus />
-            <p style={{ margin: '6px 0 0', fontSize: '11px', color: 'var(--text-secondary)' }}>
+            <input type="number" min="0.001" step="0.001" value={editStock} onChange={e => setEditStock(e.target.value)} placeholder="Ej: 1.5"
+              style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '16px', textAlign: 'center' }} autoFocus />
+            <p style={{ margin: '8px 0 0', fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center' }}>
               Stock actual: <strong>{parseFloat(editItem?.current_stock || 0)} {editItem?.unit}</strong>
-              {editStock && <> → nuevo: <strong style={{ color: 'var(--accent)' }}>{(parseFloat(editItem?.current_stock || 0) + (editReason === 'desperdicio' ? -1 : 1) * parseFloat(editStock || 0)).toFixed(3)} {editItem?.unit}</strong></>}
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-            <button onClick={() => setEditItem(null)} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer' }}>Cancelar</button>
-            <button onClick={handleAdjust} disabled={!editStock || saving}
-              style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'white', fontWeight: '700', cursor: 'pointer', opacity: !editStock || saving ? 0.6 : 1 }}>
-              {saving ? 'Guardando...' : 'Confirmar'}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '8px' }}>
+            <button onClick={() => handleAdjust('compra')} disabled={saving || !editStock || editStock <= 0} 
+              style={{ padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--green)', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', justifyContent: 'center', gap: '8px', opacity: (saving || !editStock) ? 0.6 : 1 }}>
+              ➕ Sumar Stock
+            </button>
+            <button onClick={() => handleAdjust('desperdicio')} disabled={saving || !editStock || editStock <= 0} 
+              style={{ padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--red)', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', justifyContent: 'center', gap: '8px', opacity: (saving || !editStock) ? 0.6 : 1 }}>
+              ➖ Restar Stock
             </button>
           </div>
+          <button onClick={() => setEditItem(null)} disabled={saving} style={{ padding: '10px 16px', borderRadius: '8px', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)', width: '100%' }}>Cancelar</button>
         </div>
       </Modal>
     </div>
@@ -320,12 +314,12 @@ function TabProductosStock({ tenantId }) {
     return { label: 'Disponible', color: '#10b981', bg: '#d1fae5' }
   }
 
-  async function handleAdjust() {
+  async function handleAdjust(reason) {
     if (!editItem || editStock === '') return
     setSaving(true)
     try {
       const amount = parseFloat(editStock)
-      await dbAdjustProductStock(tenantId, editItem.id, amount, editReason, editItem.stock_quantity)
+      await dbAdjustProductStock(tenantId, editItem.id, amount, reason, editItem.stock_quantity)
       setEditItem(null); setEditStock(''); load()
     } catch (e) { alert('Error: ' + e.message) }
     finally { setSaving(false) }
@@ -394,7 +388,7 @@ function TabProductosStock({ tenantId }) {
                         <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', background: status.bg, color: status.color }}>{status.label}</span>
                       </td>
                       <td style={{ padding: '12px 16px', display: 'flex', gap: '8px' }}>
-                        <button onClick={() => { setEditItem(p); setEditStock(''); setEditReason('ajuste') }}
+                        <button onClick={() => { setEditItem(p); setEditStock(''); }}
                           style={{ padding: '5px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '12px', color: 'var(--accent)', fontWeight: '600' }}>
                           Ajustar
                         </button>
@@ -415,31 +409,28 @@ function TabProductosStock({ tenantId }) {
       <Modal show={!!editItem} onClose={() => setEditItem(null)} title={`Ajustar Stock: ${editItem?.name}`}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '320px' }}>
           <div>
-            <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '6px', color: 'var(--text-secondary)' }}>Tipo de movimiento</label>
-            <select value={editReason} onChange={e => setEditReason(e.target.value)}
-              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}>
-              <option value="ajuste">Entrada (Ajuste/Compra)</option>
-              <option value="desperdicio">Salida (Desperdicio/Pérdida)</option>
-            </select>
-          </div>
-          <div>
             <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '6px', color: 'var(--text-secondary)' }}>
-              {editReason === 'desperdicio' ? 'Cantidad a restar' : 'Cantidad a sumar/iniciar'}
+              Cantidad a sumar o restar
             </label>
-            <input type="number" value={editStock} onChange={e => setEditStock(e.target.value)} placeholder="Ej: 10"
-              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} autoFocus />
+            <input type="number" min="1" step="1" value={editStock} onChange={e => setEditStock(e.target.value)} placeholder="Ej: 10"
+              style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '16px', textAlign: 'center' }} autoFocus />
             {editItem?.stock_quantity === null && (
-              <div style={{ marginTop: '6px', fontSize: '11px', color: 'var(--text-secondary)' }}>
-                ℹ️ Al agregar una cantidad, este producto pasará a trackearse automáticamente.
+              <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                ℹ️ Al realizar el ajuste, este producto pasará a trackearse automáticamente.
               </div>
             )}
           </div>
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '8px' }}>
-            <button onClick={() => setEditItem(null)} disabled={saving} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', color: 'var(--text)' }}>Cancelar</button>
-            <button onClick={handleAdjust} disabled={saving} style={{ padding: '10px 16px', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '600', cursor: 'pointer' }}>
-              {saving ? 'Guardando...' : 'Confirmar Ajuste'}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '8px' }}>
+            <button onClick={() => handleAdjust('ajuste')} disabled={saving || !editStock || editStock <= 0} 
+              style={{ padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--green)', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', justifyContent: 'center', gap: '8px', opacity: (saving || !editStock) ? 0.6 : 1 }}>
+              ➕ Sumar Stock
+            </button>
+            <button onClick={() => handleAdjust('desperdicio')} disabled={saving || !editStock || editStock <= 0} 
+              style={{ padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--red)', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', justifyContent: 'center', gap: '8px', opacity: (saving || !editStock) ? 0.6 : 1 }}>
+              ➖ Restar Stock
             </button>
           </div>
+          <button onClick={() => setEditItem(null)} disabled={saving} style={{ padding: '10px 16px', borderRadius: '8px', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)', width: '100%' }}>Cancelar</button>
         </div>
       </Modal>
     </div>
