@@ -93,7 +93,7 @@ export default function CocinaModule() {
           <p>La cocina está al día.</p>
         </div>
       ) : (
-        <div style={{ columnCount: 'auto', columnWidth: '320px', columnGap: '20px', overflowY: 'auto', paddingRight: '4px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px', overflowY: 'auto', alignContent: 'start', alignItems: 'start' }}>
           {orders.map(o => {
             const typeInfo = getOrderTypeInfo(o)
             const waitTime = getWaitTimeMinutes(o.created_at)
@@ -102,7 +102,7 @@ export default function CocinaModule() {
             else if (waitTime >= 10) waitColor = '#f59e0b' // yellow if > 10m
 
             return (
-              <div key={o.id} style={{ breakInside: 'avoid', marginBottom: '20px', background: 'var(--surface)', 
+              <div key={o.id} style={{ background: 'var(--surface)', 
                 border: `2px solid ${typeInfo.color}`, 
                 borderRadius: '12px', 
                 display: 'flex', 
@@ -111,7 +111,7 @@ export default function CocinaModule() {
                 overflow: 'hidden'
               }}>
                 {/* Cabecera Tarjeta */}
-                <div style={{ background: typeInfo.color, color: 'white', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ background: typeInfo.color, color: 'white', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ fontWeight: '800', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span>{typeInfo.icon}</span> {typeInfo.label}
                   </div>
@@ -122,14 +122,14 @@ export default function CocinaModule() {
 
                 {/* Cliente Info (Opcional) */}
                 {(o.customer_name || o.notes) && (
-                  <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', background: 'var(--surface-2)', fontSize: '13px' }}>
+                  <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--border)', background: 'var(--surface-2)', fontSize: '13px' }}>
                     {o.customer_name && <div style={{ fontWeight: '600' }}><User size={14} style={{marginRight:4}} /> {o.customer_name}</div>}
                     {o.notes && <div style={{ color: 'var(--text-secondary)', marginTop: '4px' }}><FileText size={14} style={{marginRight:4}} /> {o.notes}</div>}
                   </div>
                 )}
 
                 {/* Lista de Items */}
-                <div style={{ padding: '16px', flex: 1 }}>
+                <div style={{ padding: '12px', flex: 1 }}>
                   {o.order_items?.length > 0 ? (
                     <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', gap: '12px' }}>
                       {o.order_items.map(item => (
@@ -147,7 +147,7 @@ export default function CocinaModule() {
                 </div>
 
                 {/* Pie Tarjeta */}
-                <div style={{ padding: '16px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)' }}>
+                <div style={{ padding: '12px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)' }}>
                   <div style={{ fontSize: '13px', fontWeight: '700', color: waitColor }}>
                     <Clock size={14} style={{marginRight:4}} /> Hace {waitTime} min
                   </div>

@@ -740,34 +740,40 @@ export default function ComandaPanel() {
                 </div>
                 <span className="cart-item-price">{fmtMoney((item.product?.price || 0) * item.qty)}</span>
               </div>
-              <input
-                type="text"
-                placeholder="Ej. sin cebolla..."
-                value={item.notes || ''}
-                onChange={(e) => {
-                  const val = e.target.value
-                  setCart(prev => prev.map((it, idx) => idx === i ? { ...it, notes: val } : it))
-                }}
-                onBlur={async (e) => {
-                  if (item.dbItemId && currentContext?.orderId) {
-                    try {
-                      const { sb } = await import('../../lib/supabase')
-                      await sb.from('order_items').update({ notes: e.target.value }).eq('id', item.dbItemId)
-                    } catch(err) { console.error(err) }
-                  }
-                }}
-                style={{
-                  marginTop: '6px', padding: '6px 8px', fontSize: '11px', borderRadius: '4px',
-                  border: '1px dashed var(--border)', background: 'var(--bg)', color: 'var(--text-primary)',
-                  width: '100%', boxSizing: 'border-box'
-                }}
-              />
+              
             </div>
           ))
         )}
       </div>
 
+      
+      {/* Notas Generales del Pedido */}
+      {cart.length > 0 && (
+        <div style={{ padding: '0 16px 16px 16px', borderBottom: '1px solid var(--border)' }}>
+          <textarea
+            placeholder="Notas del pedido (ej. sin cebolla en todo)..."
+            defaultValue={cart.find(i => i.notes)?.notes || ''}
+            onBlur={async (e) => {
+              const val = e.target.value;
+              const firstItem = cart[0];
+              if (firstItem && firstItem.dbItemId) {
+                try {
+                  const { sb } = await import('../../lib/supabase');
+                  await sb.from('order_items').update({ notes: val }).eq('id', firstItem.dbItemId);
+                  setCart(prev => prev.map((it, idx) => idx === 0 ? { ...it, notes: val } : it));
+                } catch(err) { console.error(err); }
+              }
+            }}
+            style={{
+              width: '100%', padding: '10px', fontSize: '13px', borderRadius: '6px',
+              border: '1px dashed var(--border)', background: 'var(--bg)', color: 'var(--text-primary)',
+              resize: 'vertical', minHeight: '60px', fontFamily: 'inherit'
+            }}
+          />
+        </div>
+      )}
       {/* Footer */}
+
       <div className="comanda-footer">
         <div className="comanda-totals">
           <div className="total-row"><span>Subtotal</span><span>{fmtMoney(cartTotal)}</span></div>
@@ -830,11 +836,7 @@ export default function ComandaPanel() {
                     </div>
                     <span style={{ fontWeight: 500 }}>{fmtMoney((item.product?.price || 0) * item.qty)}</span>
                   </div>
-                  {item.notes && (
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '11px', marginTop: '4px', fontStyle: 'italic', paddingLeft: '24px' }}>
-                      * {item.notes}
-                    </div>
-                  )}
+                  
                 </div>
               ))}
             </div>

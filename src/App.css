@@ -387,7 +387,7 @@
 .caja-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
 .caja-card { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; }
 .caja-card-header { padding: 12px 16px; font-size: 13px; font-weight: 700; border-bottom: 1px solid var(--border); }
-.caja-card-header.ingresos { background: #f0fdf4; color: var(--green-border); }
+.caja-card-header.ingresos { background: var(--surface-2); color: var(--green); border-bottom: 1px solid var(--green); }
 .caja-row { display: flex; justify-content: space-between; padding: 8px 16px; font-size: 13px; border-bottom: 1px solid var(--border); }
 .caja-row:last-child { border-bottom: none; }
 .caja-row.total { font-weight: 800; }
