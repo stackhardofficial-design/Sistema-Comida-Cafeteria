@@ -33,7 +33,7 @@ export default function Sidebar() {
   }
 
   const displayName = user?.email?.split('@')[0] || 'Admin'
-  const isOwner = userRoles.includes('owner')
+  const isOwner = userRoles.includes('owner') || userRoles.includes('super_admin')
   const displayRole = isOwner ? 'Administrador' : 'Empleado'
 
   // Filter items based on userRoles

@@ -30,7 +30,7 @@ export default function EmpleadosModule() {
   const [errorMsg, setErrorMsg] = useState('')
 
   // Check if current user is owner
-  const isOwner = userRoles.includes('owner')
+  const isOwner = userRoles.includes('owner') || userRoles.includes('super_admin')
 
   async function loadEmployees() {
     if (!tenantId || !isOwner) return

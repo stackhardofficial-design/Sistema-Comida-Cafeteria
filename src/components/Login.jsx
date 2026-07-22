@@ -18,10 +18,10 @@ export default function Login() {
       if (err) throw err
       
       const userInfo = await dbGetUserInfo(data.user.id)
-      if (userInfo && userInfo.roles) {
+      if (userInfo && userInfo.roles && userInfo.roles.length > 0) {
         setUserRoles(userInfo.roles)
-      } else if (userInfo && userInfo.role === 'owner') {
-        setUserRoles(['owner'])
+      } else if (userInfo && (userInfo.role === 'owner' || userInfo.role === 'super_admin')) {
+        setUserRoles([userInfo.role])
       }
       
       setUser(data.user)

@@ -24,11 +24,11 @@ function AppShell() {
       if (data?.session?.user) {
         setUser(data.session.user)
         const userInfo = await dbGetUserInfo(data.session.user.id)
-        if (userInfo && userInfo.roles) {
+        if (userInfo && userInfo.roles && userInfo.roles.length > 0) {
           setUserRoles(userInfo.roles)
-        } else if (userInfo && userInfo.role === 'owner') {
-          // Fallback if roles array is empty but is owner
-          setUserRoles(['owner'])
+        } else if (userInfo && (userInfo.role === 'owner' || userInfo.role === 'super_admin')) {
+          // Fallback if roles array is empty but is owner/super_admin
+          setUserRoles([userInfo.role])
         }
         const tenant = await dbGetTenant()
         if (tenant) setTenantId(tenant.id)
