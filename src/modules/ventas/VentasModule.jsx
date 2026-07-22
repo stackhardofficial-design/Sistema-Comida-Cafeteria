@@ -13,6 +13,8 @@ const TYPE_COLORS = { dine_in: '#6366f1', takeaway: '#f59e0b', delivery: '#10b98
 function StatusBadge({ status }) {
   const map = {
     paid: { label: 'Pagado', color: '#10b981', bg: '#d1fae5' },
+    delivered: { label: 'Pagado / Entregado', color: '#10b981', bg: '#d1fae5' },
+    in_transit: { label: 'En Camino', color: '#3b82f6', bg: '#dbeafe' },
     open: { label: 'Abierto', color: '#f59e0b', bg: '#fef3c7' },
     cancelled: { label: 'Anulado', color: '#ef4444', bg: '#fee2e2' },
   }
@@ -127,14 +129,17 @@ export default function VentasModule() {
   }, [orders, search, filterMethod])
 
   // Stats
-  const totalRevenue = filteredOrders.filter(o => o.status === 'paid').reduce((s, o) => s + parseFloat(o.total_amount || 0), 0)
-  const paidCount = filteredOrders.filter(o => o.status === 'paid').length
-  const openCount = filteredOrders.filter(o => o.status === 'open').length
+  const isPaid = o => o.status === 'paid' || o.status === 'delivered'
+  const isOpen = o => o.status === 'open' || o.status === 'in_transit'
+  
+  const totalRevenue = filteredOrders.filter(isPaid).reduce((s, o) => s + parseFloat(o.total_amount || 0), 0)
+  const paidCount = filteredOrders.filter(isPaid).length
+  const openCount = filteredOrders.filter(isOpen).length
   const cancelledCount = filteredOrders.filter(o => o.status === 'cancelled').length
   const avgTicket = paidCount ? totalRevenue / paidCount : 0
   const totalItems = filteredOrders.reduce((s, o) => s + (o.order_items || []).length, 0)
   const byMethod = {}
-  filteredOrders.filter(o => o.status === 'paid').forEach(o => {
+  filteredOrders.filter(isPaid).forEach(o => {
     (o.payments || []).forEach(p => {
       const k = METHOD_LABELS[p.payment_method] || p.payment_method
       byMethod[k] = (byMethod[k] || 0) + parseFloat(p.amount)
@@ -204,8 +209,8 @@ export default function VentasModule() {
 
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={inputStyle}>
           <option value="">Estado: Todos</option>
-          <option value="paid">✅ Pagado</option>
-          <option value="open">🟡 Abierto</option>
+          <option value="paid,delivered">✅ Pagado / Entregado</option>
+          <option value="open,in_transit">🟡 Abierto / En Camino</option>
           <option value="cancelled">❌ Anulado</option>
         </select>
 
@@ -289,7 +294,7 @@ export default function VentasModule() {
               const label = mesa && client ? `${mesa} · ${client}` : mesa || client || '—'
               const itemCount = (o.order_items || []).length
               const methodsSummary = [...new Set((o.payments || []).map(p => METHOD_LABELS[p.payment_method] || p.payment_method))].join(' + ') || '—'
-              const closedAt = o.status === 'paid' || o.status === 'cancelled' ? o.updated_at : null
+              const closedAt = (o.status === 'paid' || o.status === 'delivered' || o.status === 'cancelled') ? o.updated_at : null
 
               return (
                 <tr key={o.id} style={{

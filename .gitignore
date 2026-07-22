@@ -3,3 +3,9 @@ node_modules
 dist
 .gemini
 *.local
+
+# Script files
+*.cjs
+temp.json
+check_*.js
+StackHard datos.txt
