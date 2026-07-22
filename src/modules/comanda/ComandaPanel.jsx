@@ -25,7 +25,8 @@ export default function ComandaPanel() {
   const [payMethod, setPayMethod] = useState('cash')
   const [payAmount, setPayAmount] = useState('')
   const [payments, setPayments] = useState([])
-  const [includeTip, setIncludeTip] = useState(false)
+  const [tipMode, setTipMode] = useState('none') // 'none', '10', 'custom'
+  const [customTip, setCustomTip] = useState('')
   const [saving, setSaving] = useState(false)
   const [assigning, setAssigning] = useState(false)
 
@@ -361,10 +362,10 @@ export default function ComandaPanel() {
     setSaving(true)
     try {
       const session = await dbGetOpenSession(tenantId)
-      const finalTotal = includeTip ? grandTotal * 1.1 : grandTotal
+      const calculatedTip = tipMode === '10' ? grandTotal * 0.1 : (tipMode === 'custom' ? parseFloat(customTip) || 0 : 0)
       const totalPaid = payments.reduce((s, p) => s + p.amount - (p.change || 0), 0)
-      // Tip = todo lo que supere el total de la venta (propina del 10% si includeTip, o excedente manual)
-      const tipTotal = Math.max(0, totalPaid - grandTotal)
+      
+      const tipTotal = calculatedTip
       // Attach tip_amount proportionally to each payment
       const paymentsWithTip = payments.map((p, idx) => ({
         ...p,
@@ -400,7 +401,8 @@ export default function ComandaPanel() {
       setPayModal(false)
       setPayments([])
       setPayAmount('')
-      setIncludeTip(false)
+      setTipMode('none')
+      setCustomTip('')
       setPayMethod('cash')
     } catch (e) {
       alert('Error al cerrar venta: ' + e.message)
@@ -821,20 +823,21 @@ export default function ComandaPanel() {
                 <span>Total sin propina:</span>
                 <span>{fmtMoney(grandTotal)}</span>
               </div>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--text-secondary)', marginTop: '8px' }}>
-                <span>Propina sugerida (10%):</span>
-                <span>{fmtMoney(grandTotal * 0.1)}</span>
+              <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600 }}>Propina a registrar:</span>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button onClick={() => setTipMode('none')} style={{ flex: 1, padding: '8px 4px', fontSize: '12px', borderRadius: '6px', border: '1px solid', borderColor: tipMode === 'none' ? 'var(--accent)' : 'var(--border)', background: tipMode === 'none' ? 'var(--accent)' : 'var(--surface)', color: tipMode === 'none' ? 'white' : 'var(--text)', cursor: 'pointer', fontWeight: 600 }}>0%</button>
+                  <button onClick={() => setTipMode('10')} style={{ flex: 1, padding: '8px 4px', fontSize: '12px', borderRadius: '6px', border: '1px solid', borderColor: tipMode === '10' ? 'var(--accent)' : 'var(--border)', background: tipMode === '10' ? 'var(--accent)' : 'var(--surface)', color: tipMode === '10' ? 'white' : 'var(--text)', cursor: 'pointer', fontWeight: 600 }}>10% ({fmtMoney(grandTotal * 0.1)})</button>
+                  <button onClick={() => { setTipMode('custom'); setCustomTip('') }} style={{ flex: 1, padding: '8px 4px', fontSize: '12px', borderRadius: '6px', border: '1px solid', borderColor: tipMode === 'custom' ? 'var(--accent)' : 'var(--border)', background: tipMode === 'custom' ? 'var(--accent)' : 'var(--surface)', color: tipMode === 'custom' ? 'white' : 'var(--text)', cursor: 'pointer', fontWeight: 600 }}>Monto...</button>
+                </div>
+                {tipMode === 'custom' && (
+                  <input type="number" placeholder="Monto exacto de propina" value={customTip} onChange={e => setCustomTip(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--accent)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 'bold' }} autoFocus />
+                )}
               </div>
-              
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '4px', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)' }}>
-                <input type="checkbox" checked={includeTip} onChange={e => setIncludeTip(e.target.checked)} />
-                <span style={{ fontSize: '13px', fontWeight: 500 }}>Cobrar total con propina</span>
-              </label>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: 'bold', marginTop: '12px', color: 'var(--accent)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: 'bold', marginTop: '16px', color: 'var(--accent)', borderTop: '2px dashed var(--border)', paddingTop: '16px' }}>
                 <span>TOTAL A PAGAR:</span>
-                <span>{fmtMoney(includeTip ? grandTotal * 1.1 : grandTotal)}</span>
+                <span>{fmtMoney(grandTotal + (tipMode === '10' ? grandTotal * 0.1 : (tipMode === 'custom' ? parseFloat(customTip) || 0 : 0)))}</span>
               </div>
             </div>
           </div>
@@ -860,7 +863,7 @@ export default function ComandaPanel() {
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <span style={{ fontSize: '14px', fontWeight: 600 }}>Saldo Restante:</span>
                 <span style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--red)' }}>
-                  {fmtMoney(Math.max(0, (includeTip ? grandTotal * 1.1 : grandTotal) - payments.reduce((sum, p) => sum + p.amount - (p.change || 0), 0)))}
+                  {fmtMoney(Math.max(0, (grandTotal + (tipMode === '10' ? grandTotal * 0.1 : (tipMode === 'custom' ? parseFloat(customTip) || 0 : 0))) - payments.reduce((sum, p) => sum + p.amount - (p.change || 0), 0)))}
                 </span>
               </div>
               
@@ -878,7 +881,8 @@ export default function ComandaPanel() {
                   onClick={() => {
                     const amt = parseFloat(payAmount)
                     if (amt <= 0) return
-                    const currentBalance = (includeTip ? grandTotal * 1.1 : grandTotal) - payments.reduce((sum, p) => sum + p.amount - (p.change || 0), 0)
+                    const calculatedTotal = grandTotal + (tipMode === '10' ? grandTotal * 0.1 : (tipMode === 'custom' ? parseFloat(customTip) || 0 : 0))
+                    const currentBalance = calculatedTotal - payments.reduce((sum, p) => sum + p.amount - (p.change || 0), 0)
                     let change = 0
                     if (payMethod === 'cash' && amt > currentBalance) {
                       change = amt - currentBalance
