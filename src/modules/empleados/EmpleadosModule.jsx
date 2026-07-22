@@ -38,8 +38,7 @@ export default function EmpleadosModule() {
           {[
             { id: 'empleados', label: '👤 Equipo' },
             { id: 'horas',     label: '⏱️ Horas Trabajadas' },
-            { id: 'propinas',  label: '💸 Propinas' },
-          ].map(t => (
+                      ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{
               padding: '8px 16px', background: 'none', border: 'none', whiteSpace: 'nowrap',
               borderBottom: tab === t.id ? '2px solid var(--accent)' : '2px solid transparent',
@@ -53,7 +52,7 @@ export default function EmpleadosModule() {
       <div style={{ flex: 1, overflow: 'auto', padding: '24px' }}>
         {tab === 'empleados' && <TabEquipo tenantId={tenantId} />}
         {tab === 'horas'     && <TabHoras tenantId={tenantId} />}
-        {tab === 'propinas'  && <TabPropinas tenantId={tenantId} />}
+        
       </div>
     </div>
   )
@@ -283,21 +282,78 @@ function TabHoras({ tenantId }) {
   const [saving, setSaving] = useState(false)
   const [dupWarning, setDupWarning] = useState('')
 
+  // Distribution state
+  const [tips, setTips] = useState([])
+  const [showDist, setShowDist] = useState(false)
+  const [selectedEmps, setSelectedEmps] = useState([])
+  const [splitMode, setSplitMode] = useState('equal') // 'equal' | 'hours'
+  const [copied, setCopied] = useState(false)
+
   const load = useCallback(async () => {
     if (!tenantId) return
     setLoading(true)
-    const [emps, hrs] = await Promise.all([
+    const [emps, hrs, tps] = await Promise.all([
       dbGetEmployees(tenantId),
       dbGetEmployeeHours(tenantId, {
         userId: filterEmp !== 'all' ? filterEmp : undefined,
         from: filterFrom || undefined,
         to: filterTo || undefined,
+      }),
+      dbGetTips(tenantId, {
+        from: filterFrom || undefined,
+        to: filterTo || undefined,
+        limit: 300
       })
     ])
     setEmployees(emps)
     setHours(hrs)
+    setTips(tps)
     setLoading(false)
   }, [tenantId, filterEmp, filterFrom, filterTo])
+  
+  // Calculate distribution
+  const totalTips = tips.reduce((s, t) => s + (parseFloat(t.tip_amount) || 0), 0)
+  const empHoursMap = (() => {
+    const map = {}
+    hours.forEach(h => { map[h.user_id] = (map[h.user_id] || 0) + parseFloat(h.hours_worked || 0) })
+    return map
+  })()
+
+  const distribution = (() => {
+    if (selectedEmps.length === 0 || totalTips === 0) return []
+    const selected = employees.filter(e => selectedEmps.includes(e.id))
+    if (splitMode === 'equal') {
+      const perPerson = totalTips / selected.length
+      return selected.map(e => ({ emp: e, amount: perPerson, pct: 100 / selected.length, hours: null }))
+    }
+    if (splitMode === 'hours') {
+      const totalH = selected.reduce((s, e) => s + (empHoursMap[e.id] || 0), 0)
+      if (totalH === 0) {
+        const perPerson = totalTips / selected.length
+        return selected.map(e => ({ emp: e, amount: perPerson, pct: 100 / selected.length, hours: 0 }))
+      }
+      return selected.map(e => {
+        const h = empHoursMap[e.id] || 0
+        const pct = (h / totalH) * 100
+        return { emp: e, amount: (pct / 100) * totalTips, pct, hours: h }
+      })
+    }
+    return []
+  })()
+
+  function copyToClipboard() {
+    const period = filterFrom || filterTo ? `${filterFrom || '...'} al ${filterTo || '...'}` : 'período histórico'
+    const lines = [
+      `💸 Distribución de Propinas — ${period}`,
+      `Total: ${fmtMoney(totalTips)}`,
+      `Modo: ${splitMode === 'equal' ? 'Partes iguales' : 'Proporcional por horas'}`,
+      '',
+      ...distribution.map(d => `• ${d.emp.first_name} ${d.emp.last_name}:  ${fmtMoney(d.amount)}${d.hours !== null ? `  (${d.hours.toFixed(1)}h)` : ''}`)
+    ]
+    navigator.clipboard.writeText(lines.join('\n'))
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   useEffect(() => { load() }, [load])
 
@@ -365,16 +421,127 @@ function TabHoras({ tenantId }) {
 
   return (
     <div>
-      {/* Summary cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '14px', marginBottom: '24px' }}>
-        {summaryByEmp.map(({ emp, totalH, totalPay }) => (
-          <div key={emp.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '14px' }}>
-            <div style={{ fontWeight: '700', marginBottom: '6px' }}>{emp.first_name} {emp.last_name}</div>
-            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Horas: <strong style={{ color: 'var(--accent)' }}>{totalH.toFixed(1)}h</strong></div>
-            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>A pagar: <strong style={{ color: '#10b981' }}>{fmtMoney(totalPay)}</strong></div>
-            {emp.hourly_rate > 0 && <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>({fmtMoney(emp.hourly_rate)}/h)</div>}
+      {/* Distribucion de Propinas Panel */}
+      {showDist && totalTips > 0 && (
+        <div style={{ background: 'var(--surface)', border: '2px solid var(--accent)', borderRadius: '16px', padding: '24px', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div>
+              <h3 style={{ margin: '0 0 4px', fontSize: '16px', fontWeight: '800' }}>⚖️ Repartir {fmtMoney(totalTips)}</h3>
+              <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
+                {filterFrom || filterTo ? `Del ${filterFrom || '...'} al ${filterTo || '...'}` : 'Período histórico completo'}
+              </p>
+            </div>
+            {distribution.length > 0 && (
+              <button onClick={copyToClipboard}
+                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: copied ? '#10b981' : 'none', color: copied ? 'white' : 'var(--text)', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.2s' }}>
+                {copied ? '✅ Copiado!' : '📋 Copiar resumen'}
+              </button>
+            )}
           </div>
-        ))}
+
+          <div style={{ marginBottom: '20px' }}>
+            <p style={{ margin: '0 0 10px', fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Modo de reparto</p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              {[
+                { id: 'equal', label: '⚖️ Partes iguales', desc: 'Cada empleado recibe lo mismo' },
+                { id: 'hours', label: '⏱️ Por horas trabajadas', desc: 'Proporcional a las hs del período' },
+              ].map(m => (
+                <button key={m.id} onClick={() => setSplitMode(m.id)} style={{
+                  padding: '10px 16px', borderRadius: '10px', border: '2px solid',
+                  borderColor: splitMode === m.id ? 'var(--accent)' : 'var(--border)',
+                  background: splitMode === m.id ? 'var(--accent)' : 'none',
+                  color: splitMode === m.id ? 'white' : 'var(--text)',
+                  cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s'
+                }}>
+                  <div style={{ fontWeight: '700', fontSize: '13px' }}>{m.label}</div>
+                  <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '2px' }}>{m.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {distribution.length > 0 && (
+            <div>
+              <p style={{ margin: '0 0 12px', fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Resultado del reparto
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                {distribution.map(({ emp, amount, pct, hours }) => (
+                  <div key={emp.id} style={{
+                    background: 'linear-gradient(135deg, #10b981, #059669)',
+                    borderRadius: '12px', padding: '16px', color: 'white'
+                  }}>
+                    <div style={{ fontSize: '12px', opacity: 0.85, marginBottom: '4px' }}>
+                      {emp.first_name} {emp.last_name}
+                      {hours !== null && <span style={{ marginLeft: '6px', opacity: 0.7 }}>({hours.toFixed(1)}h)</span>}
+                    </div>
+                    <div style={{ fontSize: '28px', fontWeight: '800', letterSpacing: '-0.5px' }}>{fmtMoney(amount)}</div>
+                    <div style={{ marginTop: '8px' }}>
+                      <div style={{ height: '4px', background: 'rgba(255,255,255,0.25)', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', background: 'white', borderRadius: '2px' }} />
+                      </div>
+                      <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '4px' }}>{pct.toFixed(1)}% del total</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {selectedEmps.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)', fontSize: '13px' }}>
+              👆 Seleccioná empleados abajo para ver cómo se reparten las propinas
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Summary cards with selection */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+        <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '700' }}>Resumen de Horas y Propinas</h4>
+        {totalTips > 0 && (
+          <button onClick={() => { setShowDist(v => !v); setSplitMode('equal') }}
+            style={{ padding: '6px 14px', borderRadius: '8px', border: 'none', background: showDist ? '#f59e0b' : 'var(--accent)', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '12px', transition: 'all 0.15s' }}>
+            {showDist ? '✕ Cerrar reparto' : `💸 Repartir ${fmtMoney(totalTips)} en propinas`}
+          </button>
+        )}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+        {summaryByEmp.map(({ emp, totalH, totalPay }) => {
+          const isSelected = selectedEmps.includes(emp.id)
+          return (
+            <div 
+              key={emp.id} 
+              onClick={() => showDist && setSelectedEmps(prev => prev.includes(emp.id) ? prev.filter(id => id !== emp.id) : [...prev, emp.id])}
+              style={{ 
+                background: 'var(--surface)', 
+                border: `2px solid ${showDist && isSelected ? 'var(--accent)' : 'var(--border)'}`, 
+                borderRadius: '12px', 
+                padding: '14px',
+                cursor: showDist ? 'pointer' : 'default',
+                transition: 'all 0.15s',
+                position: 'relative'
+              }}
+            >
+              {showDist && (
+                <div style={{ position: 'absolute', top: '14px', right: '14px', width: '20px', height: '20px', borderRadius: '4px', border: `2px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`, background: isSelected ? 'var(--accent)' : 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {isSelected && <span style={{ color: 'white', fontSize: '12px', fontWeight: 'bold' }}>✓</span>}
+                </div>
+              )}
+              <div style={{ fontWeight: '700', marginBottom: '6px', fontSize: '14px' }}>{emp.first_name} {emp.last_name}</div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Horas</div>
+                  <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--accent)' }}>{totalH.toFixed(1)}h</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>A pagar</div>
+                  <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#10b981' }}>{fmtMoney(totalPay)}</div>
+                </div>
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       {/* Filters + Action */}
@@ -503,348 +670,3 @@ function TabHoras({ tenantId }) {
 }
 
 
-// ─── TAB PROPINAS ─────────────────────────────────────────────────────────────
-function TabPropinas({ tenantId }) {
-  const [employees, setEmployees] = useState([])
-  const [tips, setTips] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [filterFrom, setFilterFrom] = useState('')
-  const [filterTo, setFilterTo] = useState('')
-
-  // Distribution state
-  const [showDist, setShowDist] = useState(false)
-  const [selectedEmps, setSelectedEmps] = useState([])
-  const [splitMode, setSplitMode] = useState('equal') // 'equal' | 'hours'
-  const [empHoursMap, setEmpHoursMap] = useState({}) // userId -> totalHours
-  const [copied, setCopied] = useState(false)
-
-  const load = useCallback(async () => {
-    if (!tenantId) return
-    setLoading(true)
-    try {
-      const [data, emps] = await Promise.all([
-        dbGetTips(tenantId, {
-          from: filterFrom || undefined,
-          to: filterTo || undefined,
-          limit: 300
-        }),
-        dbGetEmployees(tenantId)
-      ])
-      setTips(data)
-      setEmployees(emps.filter(e => e.role !== 'owner'))
-    } catch (e) { console.error(e) }
-    finally { setLoading(false) }
-  }, [tenantId, filterFrom, filterTo])
-
-  // Load hours for employees in the same date range for proportional split
-  useEffect(() => {
-    if (!tenantId || !showDist || splitMode !== 'hours') return
-    dbGetEmployeeHours(tenantId, { from: filterFrom || undefined, to: filterTo || undefined })
-      .then(hrs => {
-        const map = {}
-        hrs.forEach(h => {
-          map[h.user_id] = (map[h.user_id] || 0) + parseFloat(h.hours_worked || 0)
-        })
-        setEmpHoursMap(map)
-      })
-  }, [tenantId, showDist, splitMode, filterFrom, filterTo])
-
-  useEffect(() => { load() }, [load])
-
-  const totalTips = tips.reduce((s, t) => s + (parseFloat(t.tip_amount) || 0), 0)
-
-  const METHOD_LABELS = {
-    cash:     { label: 'Efectivo', icon: '💵', color: '#10b981' },
-    card:     { label: 'Tarjeta',  icon: '💳', color: '#6366f1' },
-    transfer: { label: 'Transfer.',icon: '🏦', color: '#f59e0b' },
-  }
-
-  // Toggle employee selection for distribution
-  function toggleEmp(id) {
-    setSelectedEmps(prev => prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id])
-  }
-
-  // Calculate distribution
-  const distribution = (() => {
-    if (selectedEmps.length === 0 || totalTips === 0) return []
-    const selected = employees.filter(e => selectedEmps.includes(e.id))
-
-    if (splitMode === 'equal') {
-      const perPerson = totalTips / selected.length
-      return selected.map(e => ({ emp: e, amount: perPerson, pct: 100 / selected.length, hours: null }))
-    }
-
-    if (splitMode === 'hours') {
-      const totalH = selected.reduce((s, e) => s + (empHoursMap[e.id] || 0), 0)
-      if (totalH === 0) {
-        // Fall back to equal if no hours logged
-        const perPerson = totalTips / selected.length
-        return selected.map(e => ({ emp: e, amount: perPerson, pct: 100 / selected.length, hours: 0 }))
-      }
-      return selected.map(e => {
-        const h = empHoursMap[e.id] || 0
-        const pct = (h / totalH) * 100
-        return { emp: e, amount: (pct / 100) * totalTips, pct, hours: h }
-      })
-    }
-
-    return []
-  })()
-
-  function copyToClipboard() {
-    const period = filterFrom || filterTo
-      ? `${filterFrom || '...'} al ${filterTo || '...'}`
-      : 'período histórico'
-    const lines = [
-      `💸 Distribución de Propinas — ${period}`,
-      `Total: ${fmtMoney(totalTips)}`,
-      `Modo: ${splitMode === 'equal' ? 'Partes iguales' : 'Proporcional por horas'}`,
-      '',
-      ...distribution.map(d =>
-        `• ${d.emp.first_name} ${d.emp.last_name}:  ${fmtMoney(d.amount)}${d.hours !== null ? `  (${d.hours.toFixed(1)}h)` : ''}`
-      )
-    ]
-    navigator.clipboard.writeText(lines.join('\n'))
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  return (
-    <div>
-      {/* Summary cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
-        <div style={{ background: 'linear-gradient(135deg, #10b981, #059669)', borderRadius: '12px', padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ fontSize: '32px' }}>💸</span>
-          <div>
-            <div style={{ fontSize: '26px', fontWeight: '800', color: 'white' }}>{fmtMoney(totalTips)}</div>
-            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)' }}>Total {filterFrom || filterTo ? 'en periodo' : 'histórico'}</div>
-          </div>
-        </div>
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ fontSize: '28px' }}>📊</span>
-          <div>
-            <div style={{ fontSize: '24px', fontWeight: '800', color: '#6366f1' }}>{tips.length}</div>
-            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Transacciones con propina</div>
-          </div>
-        </div>
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{ fontSize: '28px' }}>💰</span>
-          <div>
-            <div style={{ fontSize: '24px', fontWeight: '800', color: '#f59e0b' }}>
-              {tips.length > 0 ? fmtMoney(totalTips / tips.length) : '--'}
-            </div>
-            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Propina promedio</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters row */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-        <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Desde:</span>
-        <input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)}
-          style={{ padding: '7px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px' }} />
-        <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>hasta:</span>
-        <input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)}
-          style={{ padding: '7px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px' }} />
-        {(filterFrom || filterTo) && (
-          <button onClick={() => { setFilterFrom(''); setFilterTo('') }}
-            style={{ padding: '7px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '12px', color: 'var(--text-secondary)' }}>
-            ✕ Limpiar
-          </button>
-        )}
-        <div style={{ flex: 1 }} />
-        {totalTips > 0 && (
-          <button onClick={() => { setShowDist(v => !v); setSelectedEmps([]); setSplitMode('equal') }}
-            style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: showDist ? '#f59e0b' : 'var(--accent)', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '13px', transition: 'all 0.15s' }}>
-            {showDist ? '✕ Cerrar reparto' : '⚖️ Repartir propinas'}
-          </button>
-        )}
-      </div>
-
-      {/* ── DISTRIBUTION PANEL ── */}
-      {showDist && totalTips > 0 && (
-        <div style={{ background: 'var(--surface)', border: '2px solid var(--accent)', borderRadius: '16px', padding: '24px', marginBottom: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <div>
-              <h3 style={{ margin: '0 0 4px', fontSize: '16px', fontWeight: '800' }}>⚖️ Repartir {fmtMoney(totalTips)}</h3>
-              <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
-                {filterFrom || filterTo ? `Del ${filterFrom || '...'} al ${filterTo || '...'}` : 'Período histórico completo'}
-              </p>
-            </div>
-            {distribution.length > 0 && (
-              <button onClick={copyToClipboard}
-                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: copied ? '#10b981' : 'none', color: copied ? 'white' : 'var(--text)', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.2s' }}>
-                {copied ? '✅ Copiado!' : '📋 Copiar resumen'}
-              </button>
-            )}
-          </div>
-
-          {/* Split mode selector */}
-          <div style={{ marginBottom: '20px' }}>
-            <p style={{ margin: '0 0 10px', fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Modo de reparto</p>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              {[
-                { id: 'equal', label: '⚖️ Partes iguales', desc: 'Cada empleado recibe lo mismo' },
-                { id: 'hours', label: '⏱️ Por horas trabajadas', desc: 'Proporcional a las hs del período' },
-              ].map(m => (
-                <button key={m.id} onClick={() => setSplitMode(m.id)} style={{
-                  padding: '10px 16px', borderRadius: '10px', border: '2px solid',
-                  borderColor: splitMode === m.id ? 'var(--accent)' : 'var(--border)',
-                  background: splitMode === m.id ? 'var(--accent)' : 'none',
-                  color: splitMode === m.id ? 'white' : 'var(--text)',
-                  cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s'
-                }}>
-                  <div style={{ fontWeight: '700', fontSize: '13px' }}>{m.label}</div>
-                  <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '2px' }}>{m.desc}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Employee selection */}
-          <div style={{ marginBottom: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <p style={{ margin: 0, fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Seleccioná los empleados ({selectedEmps.length} seleccionados)
-              </p>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setSelectedEmps(employees.map(e => e.id))}
-                  style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '11px', color: 'var(--accent)', fontWeight: '600' }}>
-                  Todos
-                </button>
-                <button onClick={() => setSelectedEmps([])}
-                  style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '11px', color: 'var(--text-secondary)' }}>
-                  Ninguno
-                </button>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              {employees.map(emp => {
-                const sel = selectedEmps.includes(emp.id)
-                const hours = empHoursMap[emp.id] || 0
-                return (
-                  <button key={emp.id} onClick={() => toggleEmp(emp.id)} style={{
-                    padding: '10px 16px', borderRadius: '10px', border: '2px solid',
-                    borderColor: sel ? 'var(--accent)' : 'var(--border)',
-                    background: sel ? 'var(--accent)' : 'none',
-                    color: sel ? 'white' : 'var(--text)',
-                    cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s', minWidth: '130px'
-                  }}>
-                    <div style={{ fontWeight: '700', fontSize: '13px' }}>
-                      {sel ? '✓ ' : ''}{emp.first_name} {emp.last_name}
-                    </div>
-                    {splitMode === 'hours' && (
-                      <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '2px' }}>
-                        {hours > 0 ? `${hours.toFixed(1)}h en período` : 'Sin horas registradas'}
-                      </div>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Result */}
-          {distribution.length > 0 && (
-            <div>
-              <p style={{ margin: '0 0 12px', fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Resultado del reparto
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
-                {distribution.map(({ emp, amount, pct, hours }) => (
-                  <div key={emp.id} style={{
-                    background: 'linear-gradient(135deg, #10b981, #059669)',
-                    borderRadius: '12px', padding: '16px', color: 'white'
-                  }}>
-                    <div style={{ fontSize: '12px', opacity: 0.85, marginBottom: '4px' }}>
-                      {emp.first_name} {emp.last_name}
-                      {hours !== null && <span style={{ marginLeft: '6px', opacity: 0.7 }}>({hours.toFixed(1)}h)</span>}
-                    </div>
-                    <div style={{ fontSize: '28px', fontWeight: '800', letterSpacing: '-0.5px' }}>{fmtMoney(amount)}</div>
-                    <div style={{ marginTop: '8px' }}>
-                      <div style={{ height: '4px', background: 'rgba(255,255,255,0.25)', borderRadius: '2px', overflow: 'hidden' }}>
-                        <div style={{ width: `${pct}%`, height: '100%', background: 'white', borderRadius: '2px' }} />
-                      </div>
-                      <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '4px' }}>{pct.toFixed(1)}% del total</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Check: sum should equal totalTips */}
-              <div style={{ marginTop: '14px', padding: '10px 14px', borderRadius: '8px', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', color: '#059669', fontWeight: '600' }}>
-                  Total a repartir
-                </span>
-                <span style={{ fontSize: '16px', fontWeight: '800', color: '#059669' }}>
-                  {fmtMoney(distribution.reduce((s, d) => s + d.amount, 0))} / {fmtMoney(totalTips)}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {selectedEmps.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)', fontSize: '13px' }}>
-              👆 Seleccioná los empleados para ver cómo se reparten las propinas
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Tips table */}
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ background: 'var(--surface-2, #f8fafc)' }}>
-              {['Medio de pago', 'Monto pagado', 'Propina', 'Fecha', 'Orden'].map(h => (
-                <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? <tr><td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Cargando...</td></tr>
-              : tips.length === 0 ? (
-                <tr><td colSpan={5} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-                  <span style={{ fontSize: '32px', display: 'block', marginBottom: '8px' }}>💸</span>
-                  Sin propinas registradas. Aparecerán acá automáticamente cuando el pago de una venta supere el total.
-                </td></tr>
-              ) : tips.map(t => {
-                const info = METHOD_LABELS[t.payment_method] || { label: t.payment_method, icon: '💰', color: '#64748b' }
-                const date = new Date(t.created_at)
-                return (
-                  <tr key={t.id} style={{ borderTop: '1px solid var(--border)' }}>
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '18px' }}>{info.icon}</span>
-                        <span style={{ fontWeight: '600', color: info.color }}>{info.label}</span>
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px 16px', fontWeight: '700' }}>{fmtMoney(t.amount)}</td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{ fontWeight: '800', fontSize: '15px', color: '#10b981' }}>{fmtMoney(t.tip_amount)}</span>
-                    </td>
-                    <td style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontSize: '12px' }}>
-                      {date.toLocaleDateString('es-AR')} {date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })}
-                    </td>
-                    <td style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      #{t.order_id?.slice(0, 8) || '--'}
-                    </td>
-                  </tr>
-                )
-              })}
-          </tbody>
-          {tips.length > 0 && (
-            <tfoot>
-              <tr style={{ background: 'var(--surface-2, #f8fafc)', borderTop: '2px solid var(--border)' }}>
-                <td style={{ padding: '12px 16px', fontWeight: '800', fontSize: '13px' }}>TOTAL</td>
-                <td colSpan={1}></td>
-                <td style={{ padding: '12px 16px', fontWeight: '800', fontSize: '16px', color: '#10b981' }}>{fmtMoney(totalTips)}</td>
-                <td colSpan={2}></td>
-              </tr>
-            </tfoot>
-          )}
-        </table>
-      </div>
-    </div>
-  )
-}
