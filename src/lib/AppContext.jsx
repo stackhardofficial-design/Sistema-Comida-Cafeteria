@@ -3,12 +3,32 @@ import { createContext, useContext, useState, useCallback } from 'react'
 const AppContext = createContext(null)
 
 export function AppProvider({ children }) {
+  const getInitialModule = () => {
+    const path = window.location.pathname.replace(/^\/+/, '')
+    const validModules = ['mesas', 'mostrador', 'delivery', 'ventas', 'caja', 'clientes', 'productos', 'empleados', 'historial', 'stock', 'configuracion']
+    return validModules.includes(path) ? path : 'mesas'
+  }
+  
   const [user, setUser] = useState(null)
   const [userRoles, setUserRoles] = useState([])
   const [tenantId, setTenantId] = useState(null)
-  const [currentModule, setCurrentModule] = useState('mesas')
+  const [currentModule, _setCurrentModule] = useState(getInitialModule)
   const [cart, setCart] = useState([])
   const [discount, setDiscount] = useState({ type: 'none', value: 0 })
+
+  const setCurrentModule = useCallback((mod) => {
+    _setCurrentModule(mod)
+    window.history.pushState(null, '', `/${mod}`)
+  }, [])
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.replace(/^\/+/, '')
+      _setCurrentModule(path || 'mesas')
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
   const [currentContext, setCurrentContext] = useState(null)
   // { type: 'mesa'|'mostrador'|'delivery', tableDbId, tableName, orderId }
 
