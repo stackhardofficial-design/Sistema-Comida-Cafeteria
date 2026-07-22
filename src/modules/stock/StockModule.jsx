@@ -4,7 +4,7 @@ import {
   dbGetIngredients, dbCreateIngredient, dbUpdateIngredient, dbDeleteIngredient,
   dbGetProductIngredients, dbSetProductIngredients,
   dbGetStockMovements, dbGetProducts, dbGetCategories,
-  dbAdjustIngredientStock, dbUpdateProduct,
+  dbAdjustIngredientStock, dbAdjustProductStock, dbUpdateProduct,
   dbGetFixedCosts, dbCreateFixedCost, dbUpdateFixedCost, dbDeleteFixedCost,
   fmtMoney
 } from '../../lib/supabase'
@@ -25,7 +25,8 @@ export default function StockModule() {
         </div>
         <div style={{ display: 'flex', gap: 0, padding: '0 24px', marginTop: '12px', overflowX: 'auto' }}>
           {[
-            { id: 'control',      label: '📊 Control de Stock' },
+            { id: 'control',      label: '📊 Control de Ingredientes' },
+            { id: 'productos',    label: '📦 Stock de Productos' },
             { id: 'ingredientes', label: '🧂 Ingredientes' },
             { id: 'recetas',      label: '🍽️ Ingredientes por Producto' },
             { id: 'rentabilidad', label: '💰 Costos y Rentabilidad' },
@@ -45,6 +46,7 @@ export default function StockModule() {
 
       <div style={{ flex: 1, overflow: 'auto', padding: '24px' }}>
         {tab === 'control'      && <TabControl tenantId={tenantId} />}
+        {tab === 'productos'    && <TabProductosStock tenantId={tenantId} />}
         {tab === 'ingredientes' && <TabIngredientes tenantId={tenantId} />}
         {tab === 'recetas'      && <TabRecetas tenantId={tenantId} />}
         {tab === 'rentabilidad' && <TabRentabilidad tenantId={tenantId} />}
@@ -271,6 +273,171 @@ function TabControl({ tenantId }) {
             <button onClick={handleAdjust} disabled={!editStock || saving}
               style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'white', fontWeight: '700', cursor: 'pointer', opacity: !editStock || saving ? 0.6 : 1 }}>
               {saving ? 'Guardando...' : 'Confirmar'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  )
+}
+// ─── TAB STOCK DE PRODUCTOS ───────────────────────────────────────────────────
+function TabProductosStock({ tenantId }) {
+  const [products, setProducts] = useState([])
+  const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState('all')
+  const [loading, setLoading] = useState(true)
+  const [editItem, setEditItem] = useState(null)
+  const [editStock, setEditStock] = useState('')
+  const [editReason, setEditReason] = useState('ajuste')
+  const [saving, setSaving] = useState(false)
+
+  const load = useCallback(async () => {
+    if (!tenantId) return
+    setLoading(true)
+    const data = await dbGetProducts(tenantId)
+    setProducts(data)
+    setLoading(false)
+  }, [tenantId])
+
+  useEffect(() => { load() }, [load])
+
+  const filtered = products.filter(p => {
+    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || (p.sku || '').toLowerCase().includes(search.toLowerCase())
+    const stock = p.stock_quantity
+    
+    // Filter out products that don't have direct stock tracked, UNLESS searching explicitly
+    if (filter === 'all' && stock === null) return true // Show all by default so they can init stock
+    if (filter === 'con_stock' && stock === null) return false // Only those with explicit stock
+    if (filter === 'agotados' && (stock === null || stock > 0)) return false
+
+    return matchSearch
+  })
+
+  function getStockStatus(p) {
+    if (p.stock_quantity === null) return { label: 'No trackeado', color: 'var(--text-secondary)', bg: 'var(--surface-2)' }
+    if (p.stock_quantity === 0) return { label: 'Agotado', color: '#ef4444', bg: '#fee2e2' }
+    if (p.stock_quantity <= 10) return { label: 'Poco stock', color: '#f59e0b', bg: '#fef3c7' }
+    return { label: 'Disponible', color: '#10b981', bg: '#d1fae5' }
+  }
+
+  async function handleAdjust() {
+    if (!editItem || editStock === '') return
+    setSaving(true)
+    try {
+      const amount = parseFloat(editStock)
+      await dbAdjustProductStock(tenantId, editItem.id, amount, editReason, editItem.stock_quantity)
+      setEditItem(null); setEditStock(''); load()
+    } catch (e) { alert('Error: ' + e.message) }
+    finally { setSaving(false) }
+  }
+
+  async function handleStopTracking(prod) {
+    if(!confirm(`¿Dejar de trackear stock para ${prod.name}? (Su stock actual de ${prod.stock_quantity} se perderá y dependerá de recetas si tiene)`)) return
+    try {
+      await dbUpdateProduct(prod.id, { stock_quantity: null })
+      load()
+    } catch (e) { alert('Error: ' + e.message) }
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        {[
+          { label: 'Productos con stock', value: products.filter(p => p.stock_quantity !== null).length, icon: '📦', color: '#6366f1' },
+          { label: 'Agotados', value: products.filter(p => p.stock_quantity === 0).length, icon: '❌', color: '#ef4444' },
+          { label: 'Poco stock (<10)', value: products.filter(p => p.stock_quantity !== null && p.stock_quantity > 0 && p.stock_quantity <= 10).length, icon: '⚠️', color: '#f59e0b' },
+        ].map(c => (
+          <div key={c.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '28px' }}>{c.icon}</span>
+            <div>
+              <div style={{ fontSize: '24px', fontWeight: '800', color: c.color }}>{c.value}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{c.label}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+        <input placeholder="🔍 Buscar producto..." value={search} onChange={e => setSearch(e.target.value)}
+          style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px', minWidth: '200px' }} />
+        {[{ id: 'all', label: 'Todos' }, { id: 'con_stock', label: '✅ Trackeados' }, { id: 'agotados', label: '❌ Agotados' }].map(f => (
+          <button key={f.id} onClick={() => setFilter(f.id)} style={{
+            padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)',
+            background: filter === f.id ? 'var(--accent)' : 'var(--surface)',
+            color: filter === f.id ? 'white' : 'var(--text-secondary)',
+            cursor: 'pointer', fontSize: '12px', fontWeight: filter === f.id ? '700' : '500', transition: 'all 0.15s'
+          }}>{f.label}</button>
+        ))}
+      </div>
+
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ background: 'var(--surface-2, #f8fafc)' }}>
+              {['SKU', 'Producto', 'Categoría', 'Stock', 'Estado', 'Acciones'].map(h => (
+                <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? <tr><td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Cargando...</td></tr>
+              : filtered.length === 0 ? <tr><td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Sin productos</td></tr>
+                : filtered.map(p => {
+                  const status = getStockStatus(p)
+                  return (
+                    <tr key={p.id} style={{ borderTop: '1px solid var(--border)' }}>
+                      <td style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontSize: '12px' }}><code>{p.sku || '-'}</code></td>
+                      <td style={{ padding: '12px 16px', fontWeight: '600' }}>{p.name}</td>
+                      <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{p.categories?.name || '-'}</td>
+                      <td style={{ padding: '12px 16px', fontWeight: '700', color: status.color }}>{p.stock_quantity !== null ? p.stock_quantity : '∞'}</td>
+                      <td style={{ padding: '12px 16px' }}>
+                        <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', background: status.bg, color: status.color }}>{status.label}</span>
+                      </td>
+                      <td style={{ padding: '12px 16px', display: 'flex', gap: '8px' }}>
+                        <button onClick={() => { setEditItem(p); setEditStock(''); setEditReason('ajuste') }}
+                          style={{ padding: '5px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '12px', color: 'var(--accent)', fontWeight: '600' }}>
+                          Ajustar
+                        </button>
+                        {p.stock_quantity !== null && (
+                          <button onClick={() => handleStopTracking(p)}
+                            style={{ padding: '5px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '12px', color: 'var(--red)', fontWeight: '600' }}>
+                            Dejar de trackear
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+          </tbody>
+        </table>
+      </div>
+
+      <Modal show={!!editItem} onClose={() => setEditItem(null)} title={`Ajustar Stock: ${editItem?.name}`}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '320px' }}>
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '6px', color: 'var(--text-secondary)' }}>Tipo de movimiento</label>
+            <select value={editReason} onChange={e => setEditReason(e.target.value)}
+              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}>
+              <option value="ajuste">Entrada (Ajuste/Compra)</option>
+              <option value="desperdicio">Salida (Desperdicio/Pérdida)</option>
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '6px', color: 'var(--text-secondary)' }}>
+              {editReason === 'desperdicio' ? 'Cantidad a restar' : 'Cantidad a sumar/iniciar'}
+            </label>
+            <input type="number" value={editStock} onChange={e => setEditStock(e.target.value)} placeholder="Ej: 10"
+              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }} autoFocus />
+            {editItem?.stock_quantity === null && (
+              <div style={{ marginTop: '6px', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                ℹ️ Al agregar una cantidad, este producto pasará a trackearse automáticamente.
+              </div>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '8px' }}>
+            <button onClick={() => setEditItem(null)} disabled={saving} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', cursor: 'pointer', color: 'var(--text)' }}>Cancelar</button>
+            <button onClick={handleAdjust} disabled={saving} style={{ padding: '10px 16px', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: '600', cursor: 'pointer' }}>
+              {saving ? 'Guardando...' : 'Confirmar Ajuste'}
             </button>
           </div>
         </div>

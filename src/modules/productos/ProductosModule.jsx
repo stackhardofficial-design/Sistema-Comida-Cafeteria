@@ -115,7 +115,7 @@ export default function ProductosModule() {
   function openNewProd() {
     setEditingProd(null)
     setPName('')
-    setPSku('')
+    setPSku('PRD-' + Math.random().toString(36).substring(2, 8).toUpperCase())
     setPCat(categories[0]?.id || '')
     setPPrice('')
     setPActive('true')
