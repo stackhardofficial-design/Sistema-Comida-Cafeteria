@@ -509,6 +509,10 @@ function TabHoras({ tenantId }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '14px', marginBottom: '24px' }}>
         {summaryByEmp.map(({ emp, totalH, totalPay }) => {
           const isSelected = selectedEmps.includes(emp.id)
+          const distData = showDist ? distribution.find(d => d.emp.id === emp.id) : null
+          const empTip = distData ? distData.amount : 0
+          const finalPay = totalPay + empTip
+          
           return (
             <div 
               key={emp.id} 
@@ -536,7 +540,12 @@ function TabHoras({ tenantId }) {
                 </div>
                 <div>
                   <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>A pagar</div>
-                  <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#10b981' }}>{fmtMoney(totalPay)}</div>
+                  <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#10b981' }}>{fmtMoney(finalPay)}</div>
+                  {empTip > 0 && (
+                    <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      ({fmtMoney(totalPay)} + {fmtMoney(empTip)})
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
