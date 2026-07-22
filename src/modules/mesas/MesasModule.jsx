@@ -343,7 +343,7 @@ export default function MesasModule() {
 // ===== TABLE CARD =====
 function TableCard({ table, onSelect, onContextMenu }) {
   const status = table.status || 'free'
-  const order = table.orders?.find(o => o.status === 'open' || o.status === 'billing')
+  const order = status === 'free' ? null : table.orders?.find(o => o.status === 'open' || o.status === 'billing')
   const shape = table.shape === 'circle' ? ' circle' : ''
   const num = table.name.replace(/[^0-9]/g, '') || table.name
   const statusLabel = status === 'free' ? 'Libre' : status === 'billing' ? 'Cobrando' : 'Ocupada'
