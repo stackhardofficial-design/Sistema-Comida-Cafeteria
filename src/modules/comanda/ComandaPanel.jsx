@@ -507,7 +507,7 @@ export default function ComandaPanel() {
     )
   }
 
-  if ((currentModule === 'mostrador' || currentModule === 'delivery') && (!currentContext || (currentContext.type !== 'mostrador' && currentContext.type !== 'delivery'))) {
+  if ((currentModule === 'mostrador' || currentModule === 'delivery') && !currentContext) {
     const isMostrador = currentModule === 'mostrador'
     return (
       <aside className="comanda-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
