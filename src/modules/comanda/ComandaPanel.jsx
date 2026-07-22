@@ -867,34 +867,58 @@ export default function ComandaPanel() {
                 </span>
               </div>
               
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input 
-                  type="number" 
-                  placeholder="Monto a pagar" 
-                  value={payAmount} 
-                  onChange={e => setPayAmount(e.target.value)}
-                  style={{ flex: 1, padding: '12px', borderRadius: '6px', border: '1px solid var(--border)' }}
-                />
-                <button 
-                  className="btn btn-primary"
-                  disabled={!payAmount || parseFloat(payAmount) <= 0}
-                  onClick={() => {
-                    const amt = parseFloat(payAmount)
-                    if (amt <= 0) return
-                    const calculatedTotal = grandTotal + (tipMode === '10' ? grandTotal * 0.1 : (tipMode === 'custom' ? parseFloat(customTip) || 0 : 0))
-                    const currentBalance = calculatedTotal - payments.reduce((sum, p) => sum + p.amount - (p.change || 0), 0)
-                    let change = 0
-                    if (payMethod === 'cash' && amt > currentBalance) {
-                      change = amt - currentBalance
-                    }
-                    setPayments([...payments, { method: payMethod, amount: amt, change }])
-                    setPayAmount('')
-                  }}
-                  style={{ padding: '0 16px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600' }}
-                >
-                  Añadir
-                </button>
-              </div>
+              {(() => {
+                const currentAmt = parseFloat(payAmount) || 0;
+                const calculatedTotal = grandTotal + (tipMode === '10' ? grandTotal * 0.1 : (tipMode === 'custom' ? parseFloat(customTip) || 0 : 0));
+                const currentBalance = calculatedTotal - payments.reduce((sum, p) => sum + p.amount - (p.change || 0), 0);
+                const change = currentAmt > currentBalance ? currentAmt - currentBalance : 0;
+                
+                return (
+                  <>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input 
+                        type="number" 
+                        placeholder="Monto a pagar" 
+                        value={payAmount} 
+                        onChange={e => setPayAmount(e.target.value)}
+                        style={{ flex: 1, padding: '12px', borderRadius: '6px', border: '1px solid var(--border)' }}
+                      />
+                      <button 
+                        className="btn btn-primary"
+                        disabled={!payAmount || parseFloat(payAmount) <= 0}
+                        onClick={() => {
+                          const amt = parseFloat(payAmount)
+                          if (amt <= 0) return
+                          let finalChange = 0
+                          if (payMethod === 'cash' && amt > currentBalance) {
+                            finalChange = amt - currentBalance
+                          }
+                          setPayments([...payments, { method: payMethod, amount: amt, change: finalChange }])
+                          setPayAmount('')
+                        }}
+                        style={{ padding: '0 16px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600' }}
+                      >
+                        Añadir
+                      </button>
+                    </div>
+                    {change > 0 && payMethod === 'cash' && (
+                      <div style={{ marginTop: '8px', padding: '10px', background: '#ecfdf5', border: '1px solid #10b981', borderRadius: '6px', fontSize: '13px', color: '#065f46', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>Vuelto calculado: <strong>{fmtMoney(change)}</strong></span>
+                        <button 
+                          onClick={() => {
+                            setTipMode('custom')
+                            const currentTip = tipMode === 'custom' ? (parseFloat(customTip) || 0) : (tipMode === '10' ? grandTotal * 0.1 : 0)
+                            setCustomTip((currentTip + change).toString())
+                          }}
+                          style={{ padding: '6px 12px', background: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '12px' }}
+                        >
+                          ¿Vuelto como propina?
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
             </div>
 
             {payments.length > 0 && (
