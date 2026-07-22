@@ -77,7 +77,7 @@ export default function ClientesModule() {
                     <td style={{ color: 'var(--text-secondary)' }}>{c.email || '-'}</td>
                     <td>{c.phone || '-'}</td>
                     <td>{c.created_at ? fmtDate(c.created_at) : '-'}</td>
-                    <td>-</td>
+                    <td style={{ fontWeight: 'bold' }}>{c.orders_count || 1}</td>
                   </tr>
                 ))
               ) : (

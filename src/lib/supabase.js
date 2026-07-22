@@ -327,12 +327,33 @@ export async function dbUpdateDeliveryAddress(addressId, payload) {
 
 // ===== CUSTOMERS =====
 export async function dbGetCustomers(tenantId) {
-  const { data } = await sb.from('users')
-    .select('*')
+  const { data, error } = await sb.from('orders')
+    .select('id, created_at, customer_name, customer_phone')
     .eq('tenant_id', tenantId)
+    .not('customer_name', 'is', null)
     .order('created_at', { ascending: false })
-    .limit(100)
-  return data || []
+
+  if (error || !data) return []
+
+  const clientsMap = {}
+  for (const order of data) {
+    if (!order.customer_name) continue
+    const key = `${order.customer_name.trim().toLowerCase()}-${(order.customer_phone || '').trim()}`
+    if (!clientsMap[key]) {
+      clientsMap[key] = {
+        id: order.id,
+        name: order.customer_name,
+        phone: order.customer_phone,
+        email: null,
+        created_at: order.created_at,
+        orders_count: 1
+      }
+    } else {
+      clientsMap[key].orders_count += 1
+    }
+  }
+
+  return Object.values(clientsMap)
 }
 
 // ===== HELPERS =====
