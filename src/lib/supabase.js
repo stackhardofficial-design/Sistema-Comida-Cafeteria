@@ -154,7 +154,8 @@ export async function dbGetOrder(orderId) {
 }
 
 export async function dbGetOrders(tenantId, filters = {}) {
-  let q = sb.from('orders').select('*, order_items(id)')
+  let q = sb.from('orders')
+    .select('*, order_items(id, quantity, unit_price, total_price, products(name)), payments(payment_method, amount, change_amount), restaurant_tables(name)')
     .eq('tenant_id', tenantId).order('created_at', { ascending: false })
   if (filters.status) q = q.eq('status', filters.status)
   if (filters.type) q = q.eq('order_type', filters.type)
