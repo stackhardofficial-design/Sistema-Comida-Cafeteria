@@ -437,12 +437,33 @@ export async function dbSetProductIngredients(tenantId, productId, rows) {
 // ===== STOCK: MOVEMENTS =====
 export async function dbGetStockMovements(tenantId, limit = 300) {
   const { data, error } = await sb.from('stock_movements')
-    .select('*, ingredients(name, unit)')
+    .select('*')
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false })
     .limit(limit)
   if (error) throw error
-  return data || []
+  
+  if (!data || data.length === 0) return []
+
+  // Map ingredients manually since item_id is polymorphic
+  const ingredientIds = data.filter(m => m.item_type === 'ingredient').map(m => m.item_id)
+  if (ingredientIds.length > 0) {
+    const { data: ingredientsData } = await sb.from('ingredients')
+      .select('id, name, unit')
+      .in('id', [...new Set(ingredientIds)])
+    
+    if (ingredientsData) {
+      const ingMap = {}
+      ingredientsData.forEach(i => ingMap[i.id] = i)
+      data.forEach(m => {
+        if (m.item_type === 'ingredient') {
+          m.ingredients = ingMap[m.item_id]
+        }
+      })
+    }
+  }
+
+  return data
 }
 
 export async function dbAdjustIngredientStock(tenantId, ingredientId, amount, reason, previousStock) {
