@@ -76,7 +76,7 @@ export default function CajaModule() {
     if (!session) return
     const closing = parseFloat(closingAmount) || 0
     const efectivo = payments
-      .filter(p => p.payment_method === 'efectivo')
+      .filter(p => p.payment_method === 'cash' || p.payment_method === 'efectivo')
       .reduce((s, p) => s + parseFloat(p.amount), 0)
     const expected = parseFloat(session.opening_amount || 0) + efectivo
 
@@ -97,6 +97,9 @@ export default function CajaModule() {
   }
 
   const methodLabels = {
+    cash: '💵 Efectivo',
+    card: '💳 Tarjeta',
+    transfer: '🏦 Transferencia',
     efectivo: '💵 Efectivo',
     debito: '💳 Débito',
     credito: '💳 Crédito',
@@ -111,7 +114,7 @@ export default function CajaModule() {
   })
 
   const totalIngresos = Object.values(byMethod).reduce((s, v) => s + v, 0)
-  const ingresosEfectivo = byMethod['efectivo'] || 0
+  const ingresosEfectivo = (byMethod['cash'] || 0) + (byMethod['efectivo'] || 0)
   const totalEgresos = 0
   const saldoInicial = parseFloat(session?.opening_amount || 0)
   const saldoTeorico = saldoInicial + ingresosEfectivo - totalEgresos

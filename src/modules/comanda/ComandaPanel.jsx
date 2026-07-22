@@ -21,8 +21,10 @@ export default function ComandaPanel() {
   const [search, setSearch] = useState('')
   const [payModal, setPayModal] = useState(false)
   const [discountModal, setDiscountModal] = useState(false)
-  const [payMethod, setPayMethod] = useState('efectivo')
-  const [cashIn, setCashIn] = useState('')
+  const [payMethod, setPayMethod] = useState('cash')
+  const [payAmount, setPayAmount] = useState('')
+  const [payments, setPayments] = useState([])
+  const [includeTip, setIncludeTip] = useState(false)
   const [saving, setSaving] = useState(false)
   const [assigning, setAssigning] = useState(false)
 
@@ -282,19 +284,22 @@ export default function ComandaPanel() {
   }
 
   async function closeSale() {
-    if (!currentContext?.orderId || grandTotal === 0) return
+    if (!currentContext?.orderId || payments.length === 0) return
     setSaving(true)
     try {
       const session = await dbGetOpenSession(tenantId)
-      await dbCreatePayment(tenantId, currentContext.orderId, [{ method: payMethod, amount: grandTotal }], session?.id)
+      await dbCreatePayment(tenantId, currentContext.orderId, payments, session?.id)
+      
       await dbUpdateOrder(currentContext.orderId, { status: 'paid', discount_amount: discountAmount })
       if (currentContext.tableDbId) {
         await dbUpdateTable(currentContext.tableDbId, { status: 'free', current_order_id: null })
       }
       clearCart()
       setPayModal(false)
-      setPayMethod('efectivo')
-      setCashIn('')
+      setPayments([])
+      setPayAmount('')
+      setIncludeTip(false)
+      setPayMethod('cash')
     } catch (e) {
       alert('Error al cerrar venta: ' + e.message)
     } finally {
@@ -327,8 +332,6 @@ export default function ComandaPanel() {
       setAssigning(false)
     }
   }
-
-  const change = (parseFloat(cashIn) || 0) - grandTotal
 
   const contextLabel = currentContext
     ? currentContext.type === 'mesa'
@@ -659,40 +662,172 @@ export default function ComandaPanel() {
         </div>
       </div>
 
-      {/* Payment Modal */}
-      <Modal show={payModal} onClose={() => setPayModal(false)} wide>
+      {/* Payment Modal (Multi-Pago y Ticket) */}
+      <Modal show={payModal} onClose={() => { setPayModal(false); setPayments([]); setPayAmount(''); setIncludeTip(false); }} wide>
         <div className="payment-modal">
-          <div className="modal-left">
-            <h2>Resumen del Pedido</h2>
-            {cart.map((item, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
-                <span>{item.qty}x {item.product.name}</span>
-                <span>{fmtMoney(item.product.price * item.qty)}</span>
-              </div>
-            ))}
-            <div style={{ paddingTop: 12 }}>
-              <div style={{ fontSize: 12, textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: 600 }}>TOTAL A PAGAR</div>
-              <div className="payment-total-big">{fmtMoney(grandTotal)}</div>
+          {/* TICKET PROFESIONAL */}
+          <div className="modal-left" style={{ background: 'var(--surface, #fff)', padding: '24px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+            <div style={{ textAlign: 'center', marginBottom: '20px', borderBottom: '2px dashed var(--border)', paddingBottom: '16px' }}>
+              <h2 style={{ margin: '0 0 8px 0', fontSize: '20px' }}>TICKET DE VENTA</h2>
+              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Comprobante interno</div>
             </div>
-          </div>
-          <div className="modal-right">
-            <h3>Medio de Pago</h3>
-            <div className="pay-methods">
-              {[['efectivo','💵 Efectivo'],['debito','💳 Débito'],['credito','💳 Crédito'],['transferencia','🏦 Transfer.']].map(([m, label]) => (
-                <button key={m} className={`pay-method${payMethod === m ? ' selected' : ''}`} onClick={() => setPayMethod(m)}>{label}</button>
+            
+            <div style={{ flex: 1, overflowY: 'auto', marginBottom: '16px', maxHeight: '30vh' }}>
+              {cart.map((item, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
+                  <div>
+                    <span style={{ fontWeight: 600, marginRight: 8 }}>{item.qty}x</span>
+                    <span>{item.product.name}</span>
+                  </div>
+                  <span style={{ fontWeight: 500 }}>{fmtMoney(item.product.price * item.qty)}</span>
+                </div>
               ))}
             </div>
-            {payMethod === 'efectivo' && (
-              <div className="cash-section">
-                <label>Paga con</label>
-                <input type="number" placeholder="0.00" value={cashIn} onChange={e => setCashIn(e.target.value)} />
-                {cashIn && <div className="change-display"><span>Vuelto:</span><span className="change-amount">{fmtMoney(Math.max(0, change))}</span></div>}
+
+            <div style={{ paddingTop: '16px', borderTop: '2px dashed var(--border)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                <span>Subtotal:</span>
+                <span>{fmtMoney(cartTotal)}</span>
+              </div>
+              {discountAmount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--red)' }}>
+                  <span>Descuento:</span>
+                  <span>-{fmtMoney(discountAmount)}</span>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: 'bold' }}>
+                <span>Total sin propina:</span>
+                <span>{fmtMoney(grandTotal)}</span>
+              </div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--text-secondary)', marginTop: '8px' }}>
+                <span>Propina sugerida (10%):</span>
+                <span>{fmtMoney(grandTotal * 0.1)}</span>
+              </div>
+              
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '4px', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                <input type="checkbox" checked={includeTip} onChange={e => setIncludeTip(e.target.checked)} />
+                <span style={{ fontSize: '13px', fontWeight: 500 }}>Cobrar total con propina</span>
+              </label>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: 'bold', marginTop: '12px', color: 'var(--accent)' }}>
+                <span>TOTAL A PAGAR:</span>
+                <span>{fmtMoney(includeTip ? grandTotal * 1.1 : grandTotal)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* MULTI PAGOS */}
+          <div className="modal-right" style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingLeft: '16px' }}>
+            <h3>Medio de Pago</h3>
+            
+            <div className="pay-methods" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+              {[['cash','💵 Efectivo'],['card','💳 Tarjeta'],['transfer','🏦 Transfer.']].map(([m, label]) => (
+                <button 
+                  key={m} 
+                  className={`pay-method${payMethod === m ? ' selected' : ''}`} 
+                  onClick={() => setPayMethod(m)}
+                  style={{ padding: '12px 8px', fontSize: '13px', borderRadius: '6px' }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ background: 'var(--bg, #f8fafc)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                <span style={{ fontSize: '14px', fontWeight: 600 }}>Saldo Restante:</span>
+                <span style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--red)' }}>
+                  {fmtMoney(Math.max(0, (includeTip ? grandTotal * 1.1 : grandTotal) - payments.reduce((sum, p) => sum + p.amount - (p.change || 0), 0)))}
+                </span>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input 
+                  type="number" 
+                  placeholder="Monto a pagar" 
+                  value={payAmount} 
+                  onChange={e => setPayAmount(e.target.value)}
+                  style={{ flex: 1, padding: '12px', borderRadius: '6px', border: '1px solid var(--border)' }}
+                />
+                <button 
+                  className="btn btn-primary"
+                  disabled={!payAmount || parseFloat(payAmount) <= 0}
+                  onClick={() => {
+                    const amt = parseFloat(payAmount)
+                    if (amt <= 0) return
+                    const currentBalance = (includeTip ? grandTotal * 1.1 : grandTotal) - payments.reduce((sum, p) => sum + p.amount - (p.change || 0), 0)
+                    let change = 0
+                    if (payMethod === 'cash' && amt > currentBalance) {
+                      change = amt - currentBalance
+                    }
+                    setPayments([...payments, { method: payMethod, amount: amt, change }])
+                    setPayAmount('')
+                  }}
+                  style={{ padding: '0 16px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600' }}
+                >
+                  Añadir
+                </button>
+              </div>
+            </div>
+
+            {payments.length > 0 && (
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'var(--text-secondary)' }}>Pagos Añadidos:</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {payments.map((p, idx) => (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg, #f8fafc)', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '18px' }}>
+                          {p.method === 'cash' ? '💵' : p.method === 'card' ? '💳' : '🏦'}
+                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 600 }}>
+                            {p.method === 'cash' ? 'Efectivo' : p.method === 'card' ? 'Tarjeta' : 'Transferencia'}
+                          </span>
+                          {p.change > 0 && <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Vuelto: {fmtMoney(p.change)}</span>}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ fontWeight: 600 }}>{fmtMoney(p.amount)}</span>
+                        <button 
+                          style={{ background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: '16px' }}
+                          onClick={() => setPayments(payments.filter((_, i) => i !== idx))}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
-            <button className="btn-close-sale" onClick={closeSale} disabled={saving}>
+
+            <button 
+              className="btn-close-sale" 
+              onClick={closeSale} 
+              disabled={saving || payments.length === 0 || ((includeTip ? grandTotal * 1.1 : grandTotal) - payments.reduce((sum, p) => sum + p.amount - (p.change || 0), 0) > 0.01)}
+              style={{ 
+                marginTop: 'auto', 
+                background: (saving || payments.length === 0 || ((includeTip ? grandTotal * 1.1 : grandTotal) - payments.reduce((sum, p) => sum + p.amount - (p.change || 0), 0) > 0.01)) ? 'var(--border)' : 'var(--green)',
+                color: 'white',
+                padding: '16px',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: 'bold',
+                fontSize: '16px',
+                cursor: (saving || payments.length === 0 || ((includeTip ? grandTotal * 1.1 : grandTotal) - payments.reduce((sum, p) => sum + p.amount - (p.change || 0), 0) > 0.01)) ? 'not-allowed' : 'pointer'
+              }}
+            >
               {saving ? 'Procesando...' : '✅ CERRAR VENTA'}
             </button>
-            <button className="btn-cancel-modal" onClick={() => setPayModal(false)}>Cancelar</button>
+            <button 
+              className="btn-cancel-modal" 
+              onClick={() => { setPayModal(false); setPayments([]); setPayAmount(''); setIncludeTip(false); }}
+              style={{ padding: '12px', background: 'transparent', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', cursor: 'pointer' }}
+            >
+              Cancelar
+            </button>
           </div>
         </div>
       </Modal>
