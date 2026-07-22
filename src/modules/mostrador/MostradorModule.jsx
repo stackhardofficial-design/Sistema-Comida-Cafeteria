@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useApp } from '../../lib/AppContext'
-import { dbGetOrders, dbGetOrder, dbCreateOrder, dbCreateDeliveryOrder, fmtMoney, sb } from '../../lib/supabase'
+import { dbGetOrders, dbGetOrder, dbCreateOrder, dbCreateDeliveryOrder, fmtMoney, sb, dbGetZones, dbGetTables } from '../../lib/supabase'
 import Modal from '../../components/Modal'
 
 export default function MostradorModule() {
@@ -12,10 +12,16 @@ export default function MostradorModule() {
 
   // Modal de nuevo pedido - paso 1: datos del cliente
   const [newOrderModal, setNewOrderModal] = useState(false)
-  const [step, setStep] = useState(1) // 1: cliente | 2: delivery info
+  const [step, setStep] = useState(1) // 1: cliente | 2: delivery | 3: mesa
   const [customerName, setCustomerName] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
-  const [isDelivery, setIsDelivery] = useState(false)
+  const [orderType, setOrderType] = useState('mostrador') // mostrador | delivery | mesa
+  
+  const [zones, setZones] = useState([])
+  const [tables, setTables] = useState([])
+  const [selectedZone, setSelectedZone] = useState(null)
+  const [selectedTable, setSelectedTable] = useState(null)
+  const [loadingTables, setLoadingTables] = useState(false)
   // Paso 2: datos de delivery (opcionales)
   const [delivStreet, setDelivStreet] = useState('')
   const [delivDesc, setDelivDesc] = useState('')
@@ -50,16 +56,29 @@ export default function MostradorModule() {
     return () => sb.removeChannel(ch)
   }, [tenantId])
 
-  function openModal() {
+  async function openModal() {
     setCustomerName('')
     setCustomerPhone('')
-    setIsDelivery(false)
+    setOrderType('mostrador')
     setDelivStreet('')
     setDelivDesc('')
     setDelivMapsUrl('')
     setFormError('')
     setStep(1)
+    setSelectedTable(null)
     setNewOrderModal(true)
+    
+    setLoadingTables(true)
+    try {
+      const [z, t] = await Promise.all([dbGetZones(tenantId), dbGetTables(tenantId)])
+      setZones(z)
+      setTables(t)
+      if (z.length > 0) setSelectedZone(z[0].id)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoadingTables(false)
+    }
   }
 
   function closeModal() {
@@ -72,8 +91,10 @@ export default function MostradorModule() {
     e.preventDefault()
     if (!customerName.trim()) { setFormError('El nombre del cliente es requerido.'); return }
     setFormError('')
-    if (isDelivery) {
+    if (orderType === 'delivery') {
       setStep(2)
+    } else if (orderType === 'mesa') {
+      setStep(3)
     } else {
       handleCreateMostrador()
     }
@@ -119,6 +140,31 @@ export default function MostradorModule() {
       closeModal()
     } catch (e) {
       setFormError('Error al crear pedido: ' + e.message)
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  async function handleCreateMesa(e) {
+    e.preventDefault()
+    if (!selectedTable) return
+    setCreating(true)
+    setFormError('')
+    try {
+      const order = await dbCreateOrder(tenantId, 'dine_in', selectedTable.id, customerName.trim(), customerPhone.trim() || null)
+      setCurrentContext({ 
+        type: 'mesa', 
+        orderId: order.id, 
+        customerName: customerName.trim(), 
+        tableName: selectedTable.name, 
+        tableDbId: selectedTable.id 
+      })
+      setCart([])
+      setDiscount({ type: 'none', value: 0 })
+      setOpenOrders(prev => [order, ...prev])
+      closeModal()
+    } catch (e) {
+      setFormError('Error al crear pedido en mesa: ' + e.message)
     } finally {
       setCreating(false)
     }
@@ -261,9 +307,9 @@ export default function MostradorModule() {
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button
                     type="button"
-                    className={`delivery-toggle${!isDelivery ? ' active' : ''}`}
-                    style={{ flex: 1 }}
-                    onClick={() => setIsDelivery(false)}
+                    className={`delivery-toggle${orderType === 'mostrador' ? ' active' : ''}`}
+                    style={{ flex: 1, padding: '8px' }}
+                    onClick={() => setOrderType('mostrador')}
                   >
                     <span className="delivery-toggle-icon">🏪</span>
                     <div>
@@ -273,14 +319,26 @@ export default function MostradorModule() {
                   </button>
                   <button
                     type="button"
-                    className={`delivery-toggle${isDelivery ? ' active' : ''}`}
-                    style={{ flex: 1 }}
-                    onClick={() => setIsDelivery(true)}
+                    className={`delivery-toggle${orderType === 'delivery' ? ' active' : ''}`}
+                    style={{ flex: 1, padding: '8px' }}
+                    onClick={() => setOrderType('delivery')}
                   >
                     <span className="delivery-toggle-icon">🛵</span>
                     <div>
                       <div className="delivery-toggle-label">Delivery</div>
                       <div className="delivery-toggle-sub">Envío a domicilio</div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    className={`delivery-toggle${orderType === 'mesa' ? ' active' : ''}`}
+                    style={{ flex: 1, padding: '8px' }}
+                    onClick={() => setOrderType('mesa')}
+                  >
+                    <span className="delivery-toggle-icon">🪑</span>
+                    <div>
+                      <div className="delivery-toggle-label">Mesa</div>
+                      <div className="delivery-toggle-sub">Consumo local</div>
                     </div>
                   </button>
                 </div>
@@ -294,11 +352,11 @@ export default function MostradorModule() {
                 Cancelar
               </button>
               <button type="submit" disabled={creating || !customerName.trim()} style={{ padding: '9px 20px', background: creating || !customerName.trim() ? '#94a3b8' : '#334155', color: 'white', border: 'none', borderRadius: '6px', cursor: creating || !customerName.trim() ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '700' }}>
-                {isDelivery ? 'Siguiente →' : (creating ? 'Creando...' : '🏪 Crear Pedido')}
+                {orderType !== 'mostrador' ? 'Siguiente →' : (creating ? 'Creando...' : '🏪 Crear Pedido')}
               </button>
             </div>
           </form>
-        ) : (
+        ) : step === 2 ? (
           <form onSubmit={handleCreateDelivery}>
             <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', fontSize: '13px', color: '#9a3412' }}>
               🛵 Pedido delivery para <strong>{customerName}</strong>{customerPhone && ` · ${customerPhone}`}
@@ -327,6 +385,75 @@ export default function MostradorModule() {
               </button>
               <button type="submit" disabled={creating} style={{ padding: '9px 20px', background: creating ? '#94a3b8' : '#f97316', color: 'white', border: 'none', borderRadius: '6px', cursor: creating ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '700' }}>
                 {creating ? 'Creando...' : '🛵 Crear Pedido Delivery'}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <form onSubmit={handleCreateMesa}>
+            <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', fontSize: '13px', color: '#065f46' }}>
+              🪑 Pedido en mesa para <strong>{customerName}</strong>{customerPhone && ` · ${customerPhone}`}
+            </div>
+
+            {loadingTables ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>Cargando zonas...</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                  {zones.map(z => (
+                    <button
+                      key={z.id}
+                      type="button"
+                      onClick={() => setSelectedZone(z.id)}
+                      style={{
+                        padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap',
+                        background: selectedZone === z.id ? 'var(--accent)' : '#f1f5f9',
+                        color: selectedZone === z.id ? 'white' : '#475569',
+                        fontWeight: '600', fontSize: '13px'
+                      }}
+                    >
+                      {z.name}
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '12px', maxHeight: '300px', overflowY: 'auto' }}>
+                  {tables.filter(t => t.zone_id === selectedZone).length > 0 ? (
+                    tables.filter(t => t.zone_id === selectedZone).map(t => {
+                      const isOpen = t.orders?.some(o => o.status === 'open' || o.status === 'in_transit')
+                      return (
+                        <div
+                          key={t.id}
+                          onClick={() => !isOpen && setSelectedTable(t)}
+                          style={{
+                            background: isOpen ? '#fee2e2' : (selectedTable?.id === t.id ? '#d1fae5' : '#f8fafc'),
+                            border: `2px solid ${isOpen ? '#fca5a5' : (selectedTable?.id === t.id ? '#10b981' : '#e2e8f0')}`,
+                            borderRadius: '12px', padding: '16px 8px', textAlign: 'center', cursor: isOpen ? 'not-allowed' : 'pointer',
+                            opacity: isOpen ? 0.6 : 1, transition: 'all 0.15s'
+                          }}
+                        >
+                          <div style={{ fontSize: '20px', marginBottom: '4px' }}>{isOpen ? '🍽️' : '🪑'}</div>
+                          <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#1e293b' }}>{t.name}</div>
+                          <div style={{ fontSize: '10px', color: isOpen ? '#ef4444' : '#10b981', fontWeight: '700', marginTop: '4px' }}>
+                            {isOpen ? 'OCUPADA' : 'LIBRE'}
+                          </div>
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <div style={{ gridColumn: '1 / -1', padding: '24px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
+                      No hay mesas en esta zona.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button type="button" onClick={() => setStep(1)} style={{ padding: '9px 16px', background: '#f1f5f9', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#64748b' }}>
+                ← Atrás
+              </button>
+              <button type="submit" disabled={creating || !selectedTable} style={{ padding: '9px 20px', background: creating || !selectedTable ? '#94a3b8' : 'var(--accent)', color: 'white', border: 'none', borderRadius: '6px', cursor: creating || !selectedTable ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '700' }}>
+                {creating ? 'Creando...' : '🪑 Asignar Mesa'}
               </button>
             </div>
           </form>

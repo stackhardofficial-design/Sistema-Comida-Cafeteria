@@ -522,17 +522,6 @@ export default function ComandaPanel() {
               {currentContext?.type === 'mostrador' && <h2 className="table-name">🏪 Mostrador</h2>}
               {currentContext?.type === 'delivery' && <h2 className="table-name">🛵 Delivery</h2>}
             </div>
-            {currentContext?.type === 'mostrador' && currentContext?.orderId && (
-              <button 
-                onClick={openAssignTable}
-                style={{
-                  background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', 
-                  padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer'
-                }}
-              >
-                Trasladar a Mesa
-              </button>
-            )}
           </div>
           <div className="client-name">
             👤 {currentContext?.customerName || 'Consumidor Final'}
@@ -555,6 +544,23 @@ export default function ComandaPanel() {
           </button>
         )}
       </div>
+
+      {/* Acción Prominente: Trasladar a Mesa (Solo Mostrador) */}
+      {currentContext?.type === 'mostrador' && currentContext?.orderId && (
+        <div style={{ padding: '12px 16px', background: '#f8fafc', borderBottom: '1px solid var(--border)' }}>
+          <button 
+            onClick={openAssignTable}
+            style={{
+              width: '100%', padding: '12px', background: 'var(--accent)', color: 'white', 
+              border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', 
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+          >
+            <span style={{ fontSize: '16px' }}>🪑</span> Asignar a una Mesa
+          </button>
+        </div>
+      )}
 
       {/* Sección Desplegable de Datos de Delivery */}
       {currentContext && (currentContext.type === 'mostrador' || currentContext.type === 'delivery') && (
