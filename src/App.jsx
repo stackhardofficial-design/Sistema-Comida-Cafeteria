@@ -12,6 +12,7 @@ import CajaModule from './modules/caja/CajaModule'
 import ProductosModule from './modules/productos/ProductosModule'
 import ClientesModule from './modules/clientes/ClientesModule'
 import EmpleadosModule from './modules/empleados/EmpleadosModule'
+import RepartidorModule from './modules/repartidor/RepartidorModule'
 import './App.css'
 
 function AppShell() {
@@ -55,6 +56,7 @@ function AppShell() {
     productos: <ProductosModule />,
     clientes: <ClientesModule />,
     empleados: <EmpleadosModule />,
+    repartidor: <RepartidorModule />,
   }
 
   return (
