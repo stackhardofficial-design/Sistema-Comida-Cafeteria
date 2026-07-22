@@ -1,4 +1,4 @@
-import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
+import {    Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock , TrendingDown , ArrowDown , PenSquare } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '../../lib/AppContext'
 import {
@@ -479,7 +479,7 @@ export default function ComandaPanel() {
           </button>
         </div>
 
-        <Modal show={openCajaModal} onClose={() => setOpenCajaModal(false)} title="🔓 Abrir Caja">
+        <Modal show={openCajaModal} onClose={() => setOpenCajaModal(false)} title={<><Unlock size={16} style={{marginRight:6}}/> Abrir Caja</>}>
           <div>
             <div className="form-row" style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600' }}>Saldo Inicial (cambio en caja)</label>
@@ -503,7 +503,7 @@ export default function ComandaPanel() {
               <button 
                 className="btn btn-secondary" 
                 onClick={() => setOpenCajaModal(false)}
-                style={{ padding: '8px 14px', background: '#e2e8f0', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                style={{ padding: '8px 14px', background: 'var(--border)', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
               >
                 Cancelar
                </button>
@@ -526,7 +526,7 @@ export default function ComandaPanel() {
     return (
       <aside className="comanda-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '24px', textAlign: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '32px' }}>{isMostrador ? '🏪' : '🛵'}</span>
+          <span style={{ fontSize: '32px' }}>{isMostrador ? '' : '🛵'}</span>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
             {isMostrador ? 'Seleccioná un pedido del mostrador' : 'Seleccioná un pedido de delivery'}
           </p>
@@ -573,7 +573,7 @@ export default function ComandaPanel() {
 
       {/* Acción Prominente: Trasladar a Mesa (Solo Mostrador) */}
       {currentContext?.type === 'mostrador' && currentContext?.orderId && (
-        <div style={{ padding: '12px 16px', background: '#f8fafc', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ padding: '12px 16px', background: 'var(--bg)', borderBottom: '1px solid var(--border)' }}>
           <button 
             onClick={openAssignTable}
             style={{
@@ -590,7 +590,7 @@ export default function ComandaPanel() {
 
       {/* Sección Desplegable de Datos de Delivery */}
       {currentContext && (currentContext.type === 'mostrador' || currentContext.type === 'delivery') && (
-        <div style={{ borderBottom: '1px solid var(--border)', background: '#f8fafc' }}>
+        <div style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg)' }}>
           <button 
             onClick={() => setDelivExpanded(!delivExpanded)}
             style={{ 
@@ -603,7 +603,7 @@ export default function ComandaPanel() {
               alignItems: 'center', 
               fontSize: '12px', 
               fontWeight: 'bold', 
-              color: '#475569', 
+              color: 'var(--text-secondary)', 
               cursor: 'pointer' 
             }}
           >
@@ -616,7 +616,7 @@ export default function ComandaPanel() {
           {delivExpanded && (
             <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px', borderTop: '1px solid var(--border)' }}>
               {currentContext.type === 'mostrador' && (
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '600', color: '#1e293b', cursor: 'pointer' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', cursor: 'pointer' }}>
                   <input 
                     type="checkbox" 
                     checked={isDeliveryOrder} 
@@ -629,51 +629,51 @@ export default function ComandaPanel() {
               {isDeliveryOrder && (
                 <>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase' }}>Dirección *</label>
+                    <label style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Dirección *</label>
                     <input 
                       type="text" 
                       placeholder="Calle y altura..." 
                       value={delivStreet}
                       onChange={e => setDelivStreet(e.target.value)}
                       onBlur={() => saveDeliveryInfo(delivStreet, delivDesc, delivMapsUrl)}
-                      style={{ padding: '7px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', background: 'white', color: '#334155' }}
+                      style={{ padding: '7px 10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '13px', outline: 'none', background: 'var(--surface)', color: 'var(--text-secondary)' }}
                     />
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase' }}>Descripción / Indicaciones</label>
+                    <label style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Descripción / Indicaciones</label>
                     <input 
                       type="text" 
                       placeholder="Piso, depto, color de puerta..." 
                       value={delivDesc}
                       onChange={e => setDelivDesc(e.target.value)}
                       onBlur={() => saveDeliveryInfo(delivStreet, delivDesc, delivMapsUrl)}
-                      style={{ padding: '7px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', background: 'white', color: '#334155' }}
+                      style={{ padding: '7px 10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '13px', outline: 'none', background: 'var(--surface)', color: 'var(--text-secondary)' }}
                     />
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase' }}>Enlace de Google Maps</label>
+                    <label style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Enlace de Google Maps</label>
                     <input 
                       type="text" 
                       placeholder="https://maps.app.goo.gl/..." 
                       value={delivMapsUrl}
                       onChange={e => setDelivMapsUrl(e.target.value)}
                       onBlur={() => saveDeliveryInfo(delivStreet, delivDesc, delivMapsUrl)}
-                      style={{ padding: '7px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px', outline: 'none', background: 'white', color: '#334155' }}
+                      style={{ padding: '7px 10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '13px', outline: 'none', background: 'var(--surface)', color: 'var(--text-secondary)' }}
                     />
                   </div>
 
                   {(delivMapsUrl || delivStreet) && (
                     <div style={{ marginTop: '4px' }}>
-                      <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
                         Vista previa de ubicación:
                       </span>
                       <iframe 
                         width="100%" 
                         height="160" 
                         frameBorder="0" 
-                        style={{ border: 0, borderRadius: '8px', background: '#e2e8f0' }} 
+                        style={{ border: 0, borderRadius: '8px', background: 'var(--border)' }} 
                         src={`https://maps.google.com/maps?q=${encodeURIComponent(delivMapsUrl ? delivMapsUrl : delivStreet)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                         allowFullScreen
                       />

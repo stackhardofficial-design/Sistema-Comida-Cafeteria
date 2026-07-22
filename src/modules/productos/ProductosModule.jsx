@@ -1,4 +1,4 @@
-import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
+import {    Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock , TrendingDown , Unlock , ArrowDown } from 'lucide-react';
 import { useState, useEffect } from 'react'
 import { useApp } from '../../lib/AppContext'
 import {
@@ -278,7 +278,7 @@ export default function ProductosModule() {
                         </span>
                       </td>
                       <td>
-                        <button className="btn-icon edit" onClick={() => openEditProd(p)} title="Editar">✏️</button>
+                        <button className="btn-icon edit" onClick={() => openEditProd(p)} title="Editar"><PenSquare size={16} style={{marginRight:6}}/></button>
                         <button className="btn-icon del" onClick={() => deleteProduct(p)} title="Eliminar" style={{ marginLeft: '6px' }}><Trash2 size={16} /></button>
                       </td>
                     </tr>
@@ -287,7 +287,7 @@ export default function ProductosModule() {
                   <tr>
                     <td colSpan={6} style={{ textAlign: 'center', padding: '32px' }}>
                       <div className="empty-state">
-                        <span className="empty-icon">📦</span>
+                        <span className="empty-icon"><Package size={16} style={{marginRight:6}}/></span>
                         <p>Sin productos registrados</p>
                       </div>
                     </td>

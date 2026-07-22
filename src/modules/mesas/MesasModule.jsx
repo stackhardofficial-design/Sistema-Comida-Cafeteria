@@ -1,4 +1,4 @@
-import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
+import {     Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock , PenSquare , TrendingDown , Unlock , ArrowDown } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useApp } from '../../lib/AppContext'
 import {
@@ -276,9 +276,8 @@ export default function MesasModule() {
             setEditTable(ctxMenu.table)
             setTableModal(true)
             setCtxMenu(null)
-          }}>✏️ Editar Mesa</button>
-          <button className="ctx-item danger" onClick={() => deleteTable(ctxMenu.table.id)}>
-            🗑️ Eliminar
+          }}><PenSquare size={16} style={{marginRight:6}}/> Editar Mesa</button>
+          <button className="ctx-item danger" onClick={() => deleteTable(ctxMenu.table.id)}><Trash2 size={16} style={{marginRight:6}}/> Eliminar
           </button>
         </div>
       )}
@@ -325,7 +324,7 @@ export default function MesasModule() {
               Sin nombre
             </button>
             <button type="submit" className="btn btn-primary">
-              ✅ Abrir Mesa
+              Abrir Mesa
             </button>
           </div>
         </form>

@@ -1,4 +1,4 @@
-import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
+import {      Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock , Save , PenSquare , TrendingDown , Unlock , ArrowDown } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react'
 import { useApp } from '../../lib/AppContext'
 import { dbGetOrders, dbGetOrder, dbUpdateOrder, fmtMoney, fmtDate, sb } from '../../lib/supabase'
@@ -19,7 +19,7 @@ function StatusBadge({ status }) {
     open: { label: 'Abierto', color: '#f59e0b', bg: '#fef3c7' },
     cancelled: { label: 'Anulado', color: '#ef4444', bg: '#fee2e2' },
   }
-  const s = map[status] || { label: status, color: '#64748b', bg: '#f1f5f9' }
+  const s = map[status] || { label: status, color: 'var(--text-muted)', bg: '#f1f5f9' }
   return (
     <span style={{
       padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700',
@@ -210,9 +210,9 @@ export default function VentasModule() {
 
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={inputStyle}>
           <option value="">Estado: Todos</option>
-          <option value="paid,delivered">✅ Pagado / Entregado</option>
+          <option value="paid,delivered">Pagado / Entregado</option>
           <option value="open,in_transit">🟡 Abierto / En Camino</option>
-          <option value="cancelled">❌ Anulado</option>
+          <option value="cancelled"><X size={16} style={{marginRight:6}}/> Anulado</option>
         </select>
 
         <select value={filterType} onChange={e => setFilterType(e.target.value)} style={inputStyle}>
@@ -224,7 +224,7 @@ export default function VentasModule() {
 
         <select value={filterMethod} onChange={e => setFilterMethod(e.target.value)} style={inputStyle}>
           <option value="">Pago: Todos</option>
-          <option value="cash">💵 Efectivo</option>
+          <option value="cash"><Banknote size={16} style={{marginRight:6}}/> Efectivo</option>
           <option value="card">💳 Tarjeta</option>
           <option value="transfer">🏦 Transferencia</option>
         </select>
@@ -246,11 +246,11 @@ export default function VentasModule() {
 
       {/* STATS */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
-        <StatCard icon="💰" label="Ingresos" value={fmtMoney(totalRevenue)} color="#10b981" />
+        <StatCard icon="" label="Ingresos" value={fmtMoney(totalRevenue)} color="#10b981" />
         <StatCard icon="🧾" label="Ventas cerradas" value={paidCount} color="#6366f1" />
         <StatCard icon="📋" label="Ticket promedio" value={fmtMoney(avgTicket)} color="#f59e0b" />
         <StatCard icon="🟡" label="En curso" value={openCount} color="#f59e0b" />
-        <StatCard icon="❌" label="Anuladas" value={cancelledCount} color="#ef4444" />
+        <StatCard icon="" label="Anuladas" value={cancelledCount} color="#ef4444" />
         <StatCard icon="🍽️" label="Artículos vendidos" value={totalItems} color="#8b5cf6" />
       </div>
 
@@ -484,7 +484,7 @@ export default function VentasModule() {
       </Modal>
 
       {/* MODAL PIN */}
-      <Modal show={pinModal} onClose={() => setPinModal(false)} title="🔐 Confirmar Anulación">
+      <Modal show={pinModal} onClose={() => setPinModal(false)} title={<><Lock size={16} style={{marginRight:6}}/> Confirmar Anulación</>}>
         <div>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
             Esta acción anulará la venta y no puede deshacerse. Ingresá el PIN de administrador para confirmar.

@@ -1,4 +1,4 @@
-import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
+import {      Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock , Save , PenSquare , TrendingDown , Unlock , ArrowDown } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '../../lib/AppContext'
 import {
@@ -35,7 +35,7 @@ const STATUS_GROUPS = [
     headerBg: '#fefce8',
     badgeBg: '#fef08a',
     badgeColor: '#713f12',
-    icon: '✅',
+    icon: '',
     dotColor: '#eab308',
   },
 ]
@@ -158,7 +158,7 @@ export default function DeliveryModule() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#f8fafc', overflowY: 'auto', padding: '24px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', overflowY: 'auto', padding: '24px' }}>
       <style>{`
         .del-table-row:hover { background: #f1f5f9 !important; }
         .del-btn-move {
@@ -237,7 +237,7 @@ export default function DeliveryModule() {
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1 style={{ fontSize: '20px', fontWeight: '800', color: '#1e293b', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <h1 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
           Delivery
         </h1>
         <button
@@ -289,10 +289,10 @@ export default function DeliveryModule() {
               </div>
 
               {/* Table */}
-              <div style={{ background: 'white', border: '1px solid #e2e8f0', borderTop: 'none', borderRadius: '0 0 8px 8px', overflow: 'hidden' }}>
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 8px 8px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
                   <thead>
-                    <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#94a3b8', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' }}>
+                    <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase' }}>
                       <th style={{ padding: '8px 12px' }}>ID</th>
                       <th style={{ padding: '8px 12px' }}>Hora Inicio</th>
                       <th style={{ padding: '8px 12px' }}>Dirección</th>
@@ -306,7 +306,7 @@ export default function DeliveryModule() {
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td colSpan={8} style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>Cargando...</td>
+                        <td colSpan={8} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando...</td>
                       </tr>
                     ) : visible.length > 0 ? (
                       visible.map(order => {
@@ -316,21 +316,21 @@ export default function DeliveryModule() {
                           <tr
                             key={order.id}
                             className="del-table-row"
-                            style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.1s' }}
+                            style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.1s' }}
                           >
                             <td style={{ padding: '10px 12px' }}>
                               <button className="del-btn-open" onClick={() => openOrder(order)}>
                                 #{order.id.slice(-6).toUpperCase()}
                               </button>
                             </td>
-                            <td style={{ padding: '10px 12px', color: '#64748b', whiteSpace: 'nowrap' }}>{orderTime}</td>
-                            <td style={{ padding: '10px 12px', color: '#475569', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <td style={{ padding: '10px 12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{orderTime}</td>
+                            <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {addr?.street_address || order.notes || '—'}
                             </td>
-                            <td style={{ padding: '10px 12px', color: '#64748b', whiteSpace: 'nowrap' }}>
+                            <td style={{ padding: '10px 12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                               {order.customer_phone || '—'}
                             </td>
-                            <td style={{ padding: '10px 12px', fontWeight: '600', color: '#334155' }}>
+                            <td style={{ padding: '10px 12px', fontWeight: '600', color: 'var(--text-secondary)' }}>
                               {order.customer_name || 'Sin nombre'}
                             </td>
                             {group.key !== 'delivered' && (
@@ -338,7 +338,7 @@ export default function DeliveryModule() {
                                 {fmtTimer(order.created_at)}
                               </td>
                             )}
-                            <td style={{ padding: '10px 12px', fontWeight: '700', textAlign: 'right', color: '#1e293b', whiteSpace: 'nowrap' }}>
+                            <td style={{ padding: '10px 12px', fontWeight: '700', textAlign: 'right', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                               {fmtMoney(order.total_amount)}
                             </td>
                             <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
@@ -357,11 +357,11 @@ export default function DeliveryModule() {
                                   style={{ background: '#d1fae5', color: '#065f46' }}
                                   onClick={e => { e.stopPropagation(); moveOrder(order.id, 'delivered') }}
                                 >
-                                  ✅ Entregado
+                                  Entregado
                                 </button>
                               )}
                               {group.key === 'delivered' && (
-                                <span style={{ color: '#94a3b8', fontSize: '11px' }}>—</span>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>—</span>
                               )}
                             </td>
                           </tr>
@@ -369,7 +369,7 @@ export default function DeliveryModule() {
                       })
                     ) : (
                       <tr>
-                        <td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8', fontStyle: 'italic' }}>
+                        <td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
                           No hay pedidos
                         </td>
                       </tr>
@@ -377,7 +377,7 @@ export default function DeliveryModule() {
                   </tbody>
                 </table>
                 {hasMore && (
-                  <div style={{ padding: '12px', textAlign: 'center', borderTop: '1px solid #f1f5f9' }}>
+                  <div style={{ padding: '12px', textAlign: 'center', borderTop: '1px solid var(--border)' }}>
                     <button className="del-show-more" onClick={() => showMore(group.key)}>
                       Mostrar más resultados
                     </button>
@@ -460,7 +460,7 @@ export default function DeliveryModule() {
             <button
               type="button"
               onClick={() => { setNewOrderModal(false); setFormError('') }}
-              style={{ padding: '9px 16px', background: '#f1f5f9', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#64748b' }}
+              style={{ padding: '9px 16px', background: 'var(--bg)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)' }}
             >
               Cancelar
             </button>

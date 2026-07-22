@@ -1,4 +1,4 @@
-import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
+import {    Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock , TrendingDown , ArrowDown , PenSquare } from 'lucide-react';
 import { useState, useEffect } from 'react'
 import { useApp } from '../../lib/AppContext'
 import { dbGetOpenSession, dbOpenSession, dbCloseSession, fmtMoney, fmtDate, sb, logActivity } from '../../lib/supabase'
@@ -137,7 +137,7 @@ export default function CajaModule() {
         {session ? (
           <button className="btn btn-primary" style={{ background: 'var(--red)' }} onClick={() => setCierreModal(true)}>🔒 Cerrar Turno</button>
         ) : (
-          <button className="btn btn-primary" onClick={() => setAbrirModal(true)}>🔓 Abrir Caja</button>
+          <button className="btn btn-primary" onClick={() => setAbrirModal(true)}><Unlock size={16} style={{marginRight:6}}/> Abrir Caja</button>
         )}
       </div>
 
@@ -208,7 +208,7 @@ export default function CajaModule() {
       </div>
 
       {/* Modal Abrir Caja */}
-      <Modal show={abrirModal} onClose={() => setAbrirModal(false)} title="🔓 Abrir Caja">
+      <Modal show={abrirModal} onClose={() => setAbrirModal(false)} title={<><Unlock size={16} style={{marginRight:6}}/> Abrir Caja</>}>
         <div>
           <div className="form-row">
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px' }}>Saldo Inicial (cambio en caja)</label>

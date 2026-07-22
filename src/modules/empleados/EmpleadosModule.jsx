@@ -1,4 +1,4 @@
-import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
+import {     Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock , PenSquare , TrendingDown , Unlock , ArrowDown } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '../../lib/AppContext'
 import {
@@ -10,12 +10,12 @@ import { fmtMoney, dbGetTenant } from '../../lib/supabase'
 import Modal from '../../components/Modal'
 
 const MODULE_OPTIONS = [
-  { id: 'mesas',      label: '🪑 Mesas' },
+  { id: 'mesas',      label: <><Grid size={16} style={{marginRight:6}}/> Mesas</> },
   { id: 'mostrador',  label: '<MonitorSmartphone size={18} style={{marginRight:6}} /> Mostrador' },
   { id: 'delivery',   label: '<Package size={18} style={{marginRight:6}} /> Delivery' },
   { id: 'ventas',     label: '📊 Ventas' },
   { id: 'caja',       label: '🏧 Caja' },
-  { id: 'clientes',   label: '👥 Clientes' },
+  { id: 'clientes',   label: <><Users size={16} style={{marginRight:6}}/> Clientes</> },
   { id: 'productos',  label: '🍽️ Productos' },
 ]
 
@@ -38,7 +38,7 @@ export default function EmpleadosModule() {
         <div style={{ display: 'flex', gap: 0, padding: '0 24px', marginTop: '12px' }}>
           {[
             { id: 'empleados', label: '<User size={14} style={{marginRight:4}} /> Equipo' },
-            { id: 'horas',     label: '⏱️ Horas Trabajadas' },
+            { id: 'horas',     label: <><Clock size={16} style={{marginRight:6}}/> Horas Trabajadas</> },
                       ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{
               padding: '8px 16px', background: 'none', border: 'none', whiteSpace: 'nowrap',
@@ -169,8 +169,7 @@ function TabEquipo({ tenantId }) {
                       {emp.role !== 'owner' && (
                         <>
                           <button onClick={() => setEditEmp({ ...emp, hourly_rate: emp.hourly_rate || '' })}
-                            style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
-                            ✏️ Editar
+                            style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}><PenSquare size={16} style={{marginRight:6}}/> Editar
                           </button>
                           <button onClick={() => toggleStatus(emp)}
                             style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '12px', color: emp.is_active ? '#dc2626' : '#16a34a', fontWeight: '600' }}>
@@ -245,7 +244,7 @@ function TabEquipo({ tenantId }) {
       </Modal>
 
       {/* Modal: Editar permisos y sueldo */}
-      <Modal show={!!editEmp} onClose={() => setEditEmp(null)} title={`✏️ Editar: ${editEmp?.first_name} ${editEmp?.last_name}`}>
+      <Modal show={!!editEmp} onClose={() => setEditEmp(null)} title={` Editar: ${editEmp?.first_name} ${editEmp?.last_name}`}>
         {editEmp && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: '380px' }}>
             <div>
@@ -272,7 +271,7 @@ function TabEquipo({ tenantId }) {
               <button onClick={() => setEditEmp(null)} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer' }}>Cancelar</button>
               <button onClick={saveEdit} disabled={saving}
                 style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'white', fontWeight: '700', cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
-                {saving ? 'Guardando...' : '💾 Guardar'}
+                {saving ? 'Guardando...' : <><Save size={16} style={{marginRight:6}}/> Guardar</>}
               </button>
             </div>
           </div>
@@ -450,7 +449,7 @@ function TabHoras({ tenantId }) {
             {distribution.length > 0 && (
               <button onClick={copyToClipboard}
                 style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: copied ? '#10b981' : 'none', color: copied ? 'white' : 'var(--text)', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.2s' }}>
-                {copied ? '✅ Copiado!' : '📋 Copiar resumen'}
+                {copied ? <><Check size={16} style={{marginRight:6}}/> Copiado!</> : <><FileText size={16} style={{marginRight:6}}/> Copiar resumen</>}
               </button>
             )}
           </div>
@@ -494,7 +493,7 @@ function TabHoras({ tenantId }) {
                     <div style={{ fontSize: '28px', fontWeight: '800', letterSpacing: '-0.5px' }}>{fmtMoney(amount)}</div>
                     <div style={{ marginTop: '8px' }}>
                       <div style={{ height: '4px', background: 'rgba(255,255,255,0.25)', borderRadius: '2px', overflow: 'hidden' }}>
-                        <div style={{ width: `${pct}%`, height: '100%', background: 'white', borderRadius: '2px' }} />
+                        <div style={{ width: `${pct}%`, height: '100%', background: 'var(--surface)', borderRadius: '2px' }} />
                       </div>
                       <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '4px' }}>{pct.toFixed(1)}% del total</div>
                     </div>
@@ -618,7 +617,7 @@ function TabHoras({ tenantId }) {
                         <button onClick={() => {
                           setForm({ user_id: h.user_id, work_date: h.work_date, time_in: h.time_in || '', time_out: h.time_out || '', notes: h.notes || '' })
                           setDupWarning(''); setModal(h)
-                        }} style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '12px' }}>✏️</button>
+                        }} style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '12px' }}><PenSquare size={16} style={{marginRight:6}}/></button>
                         <button onClick={() => handleDelete(h.id)} style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #fee2e2', background: '#fff5f5', color: '#ef4444', cursor: 'pointer', fontSize: '12px' }}><Trash2 size={16} /></button>
                       </td>
                     </tr>
@@ -629,7 +628,7 @@ function TabHoras({ tenantId }) {
       </div>
 
       {/* Modal */}
-      <Modal show={!!modal} onClose={() => setModal(null)} title={modal === 'new' ? '⏱️ Registrar Turno' : '✏️ Editar Turno'}>
+      <Modal show={!!modal} onClose={() => setModal(null)} title={modal === 'new' ? ' Registrar Turno' : ' Editar Turno'}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', minWidth: '340px' }}>
           {modal === 'new' && (
             <div>
@@ -668,7 +667,7 @@ function TabHoras({ tenantId }) {
           {/* Auto-calculated hours preview */}
           {calculatedHours !== null && (
             <div style={{ padding: '12px 16px', borderRadius: '10px', background: calculatedHours > 0 ? 'rgba(99,102,241,0.08)' : '#fee2e2', border: `1px solid ${calculatedHours > 0 ? 'var(--accent)' : '#ef4444'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>⏱️ Horas calculadas</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}><Clock size={16} style={{marginRight:6}}/> Horas calculadas</span>
               <span style={{ fontSize: '20px', fontWeight: '800', color: calculatedHours > 0 ? 'var(--accent)' : '#ef4444' }}>
                 {calculatedHours > 0 ? `${calculatedHours.toFixed(2)}h` : '⚠️ Revisar horarios'}
               </span>

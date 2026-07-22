@@ -1,21 +1,21 @@
-import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
+import {   Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock , TrendingDown , ArrowDown } from 'lucide-react';
 import { useState, useEffect } from 'react'
 import { useApp } from '../../lib/AppContext'
 import { dbGetActivityLogs, dbGetCustomers, fmtDate } from '../../lib/supabase'
 
 const ACTION_LABELS = {
   CLOSE_SALE: { label: '💳 Venta Cerrada', color: '#10b981', bg: '#d1fae5' },
-  OPEN_SESSION: { label: '🔓 Caja Abierta', color: '#3b82f6', bg: '#dbeafe' },
+  OPEN_SESSION: { label: <><Unlock size={16} style={{marginRight:6}}/> Caja Abierta</>, color: '#3b82f6', bg: '#dbeafe' },
   CLOSE_SESSION: { label: '🔒 Caja Cerrada', color: '#6366f1', bg: '#ede9fe' },
   LOGIN: { label: '🔑 Inicio de Sesión', color: '#f59e0b', bg: '#fef3c7' },
   CREATE_ORDER: { label: '📋 Pedido Creado', color: '#8b5cf6', bg: '#ede9fe' },
-  CANCEL_ORDER: { label: '❌ Pedido Cancelado', color: '#ef4444', bg: '#fee2e2' },
-  EDIT_PRODUCT: { label: '✏️ Producto Editado', color: '#64748b', bg: '#f1f5f9' },
-  DELETE_PRODUCT: { label: '🗑️ Producto Eliminado', color: '#ef4444', bg: '#fee2e2' },
+  CANCEL_ORDER: { label: <><X size={16} style={{marginRight:6}}/> Pedido Cancelado</>, color: '#ef4444', bg: '#fee2e2' },
+  EDIT_PRODUCT: { label: <><PenSquare size={16} style={{marginRight:6}}/> Producto Editado</>, color: 'var(--text-muted)', bg: '#f1f5f9' },
+  DELETE_PRODUCT: { label: <><Trash2 size={16} style={{marginRight:6}}/> Producto Eliminado</>, color: '#ef4444', bg: '#fee2e2' },
 }
 
 function ActionBadge({ action }) {
-  const info = ACTION_LABELS[action] || { label: action, color: '#64748b', bg: '#f1f5f9' }
+  const info = ACTION_LABELS[action] || { label: action, color: 'var(--text-muted)', bg: '#f1f5f9' }
   return (
     <span style={{
       display: 'inline-block',
@@ -136,7 +136,7 @@ export default function HistorialModule() {
             </a>
           </p>
           <pre style={{
-            textAlign: 'left', background: '#1e293b', color: '#94a3b8', padding: '16px',
+            textAlign: 'left', background: '#1e293b', color: 'var(--text-muted)', padding: '16px',
             borderRadius: '8px', fontSize: '11px', overflow: 'auto', maxHeight: '300px'
           }}>{`CREATE TABLE IF NOT EXISTS public.activity_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -184,7 +184,7 @@ CREATE POLICY "Allow ALL for tenant" ON public.activity_logs FOR ALL USING (true
         {[
           { label: 'Total Registros', value: logs.length, color: '#6366f1', icon: '📋' },
           { label: 'Ventas Cerradas', value: totalVentas, color: '#10b981', icon: '💳' },
-          { label: 'Aperturas de Caja', value: totalAperturas, color: '#3b82f6', icon: '🔓' },
+          { label: 'Aperturas de Caja', value: totalAperturas, color: '#3b82f6', icon: '' },
           { label: 'Cierres de Caja', value: totalCierres, color: '#8b5cf6', icon: '🔒' },
         ].map(stat => (
           <div key={stat.label} style={{

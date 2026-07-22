@@ -1,4 +1,4 @@
-import { Bike, MonitorCheck, MessageSquare, MonitorSmartphone, Check } from 'lucide-react';
+import {                       Bike, MonitorCheck, MessageSquare, MonitorSmartphone, Check , Grid , Users , TrendingUp , X , Save , Banknote , FileText , Plus , PenSquare , Trash2 , ShieldAlert , History , TrendingDown , Lock , Unlock , Package , ArrowDown , ArrowLeft , ShoppingBag , Send , Minus , Clock } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '../../lib/AppContext'
 import { dbGetDeliveryOrders, dbUpdateOrder, sb, fmtMoney } from '../../lib/supabase'
@@ -60,7 +60,7 @@ function MapPreview({ address, mapsUrl }) {
                 fontWeight: '700',
                 cursor: 'pointer',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
-                color: '#475569'
+                color: 'var(--text-secondary)'
               }}
             >
               {expanded ? '⊖' : '⊕'}
@@ -102,7 +102,7 @@ function MapPreview({ address, mapsUrl }) {
             fontSize: '14px'
           }}
         >
-          🗺️ Ver Ubicación en Google Maps
+          <><MonitorCheck size={16} style={{marginRight:6}}/> Ver Ubicación en Google Maps</>
         </button>
       )}
     </div>
@@ -216,7 +216,7 @@ export default function RepartidorModule() {
           </div>
           <button
             onClick={loadOrders}
-            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px 10px', color: '#94a3b8', cursor: 'pointer', fontSize: '16px' }}
+            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px 10px', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '16px' }}
           >
             ↻
           </button>
@@ -226,7 +226,7 @@ export default function RepartidorModule() {
       {/* Lista de Pedidos */}
       <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '60px', color: '#475569' }}>
+          <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-secondary)' }}>
             <div style={{ fontSize: '32px', marginBottom: '12px' }}>⏳</div>
             <p style={{ margin: 0, fontWeight: '600' }}>Cargando entregas...</p>
           </div>
@@ -283,7 +283,7 @@ export default function RepartidorModule() {
                     <div>
                       <div style={{ color: 'white', fontWeight: '700', fontSize: '16px' }}>{name}</div>
                       {phone && (
-                        <div style={{ color: '#94a3b8', fontSize: '12px', marginTop: '2px' }}>{phone}</div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '2px' }}>{phone}</div>
                       )}
                     </div>
                   </div>
@@ -326,7 +326,7 @@ export default function RepartidorModule() {
                     justifyContent: 'space-between',
                     alignItems: 'center'
                   }}>
-                    <span style={{ color: '#fbbf24', fontSize: '13px', fontWeight: '600' }}>💰 Total a cobrar</span>
+                    <span style={{ color: '#fbbf24', fontSize: '13px', fontWeight: '600' }}><Banknote size={16} style={{marginRight:6}}/> Total a cobrar</span>
                     <span style={{ color: '#fde68a', fontSize: '20px', fontWeight: '800' }}>{fmtMoney(order.total_amount)}</span>
                   </div>
 
@@ -396,7 +396,7 @@ export default function RepartidorModule() {
                       letterSpacing: '0.3px'
                     }}
                   >
-                    {isBeingDelivered ? '⏳ Confirmando...' : '✅ Marcar como Entregado'}
+                    {isBeingDelivered ? '⏳ Confirmando...' : 'Marcar como Entregado'}
                   </button>
                 </div>
               </div>

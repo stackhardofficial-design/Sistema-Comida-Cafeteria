@@ -1,4 +1,4 @@
-import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
+import {    Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock , TrendingDown , Unlock , ArrowDown } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useApp } from '../../lib/AppContext'
 import {
@@ -22,15 +22,15 @@ export default function StockModule() {
       {/* Header con tabs */}
       <div style={{ borderBottom: '1px solid var(--border)', background: 'var(--surface)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', padding: '16px 24px 0' }}>
-          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '700' }}>📦 Stock & Costos</h1>
+          <h1 style={{ margin: 0, fontSize: '22px', fontWeight: '700' }}><Package size={16} style={{marginRight:6}}/> Stock & Costos</h1>
         </div>
         <div style={{ display: 'flex', gap: 0, padding: '0 24px', marginTop: '12px', overflowX: 'auto' }}>
           {[
             { id: 'control',      label: '📊 Control de Ingredientes' },
-            { id: 'productos',    label: '📦 Stock de Productos' },
+            { id: 'productos',    label: <><Package size={16} style={{marginRight:6}}/> Stock de Productos</> },
             { id: 'ingredientes', label: '🧂 Ingredientes' },
             { id: 'recetas',      label: '🍽️ Ingredientes por Producto' },
-            { id: 'rentabilidad', label: '💰 Costos y Rentabilidad' },
+            { id: 'rentabilidad', label: <><Banknote size={16} style={{marginRight:6}}/> Costos y Rentabilidad</> },
             { id: 'movimientos',  label: '📈 Movimientos' },
           ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{
@@ -261,12 +261,10 @@ function TabControl({ tenantId }) {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '8px' }}>
             <button onClick={() => handleAdjust('compra')} disabled={saving || !editStock || editStock <= 0} 
-              style={{ padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--green)', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', justifyContent: 'center', gap: '8px', opacity: (saving || !editStock) ? 0.6 : 1 }}>
-              ➕ Sumar Stock
+              style={{ padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--green)', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', justifyContent: 'center', gap: '8px', opacity: (saving || !editStock) ? 0.6 : 1 }}><Plus size={14}/> Sumar Stock
             </button>
             <button onClick={() => handleAdjust('desperdicio')} disabled={saving || !editStock || editStock <= 0} 
-              style={{ padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--red)', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', justifyContent: 'center', gap: '8px', opacity: (saving || !editStock) ? 0.6 : 1 }}>
-              ➖ Restar Stock
+              style={{ padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--red)', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', justifyContent: 'center', gap: '8px', opacity: (saving || !editStock) ? 0.6 : 1 }}><Minus size={14}/> Restar Stock
             </button>
           </div>
           <button onClick={() => setEditItem(null)} disabled={saving} style={{ padding: '10px 16px', borderRadius: '8px', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)', width: '100%' }}>Cancelar</button>
@@ -423,12 +421,10 @@ function TabProductosStock({ tenantId }) {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '8px' }}>
             <button onClick={() => handleAdjust('ajuste')} disabled={saving || !editStock || editStock <= 0} 
-              style={{ padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--green)', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', justifyContent: 'center', gap: '8px', opacity: (saving || !editStock) ? 0.6 : 1 }}>
-              ➕ Sumar Stock
+              style={{ padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--green)', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', justifyContent: 'center', gap: '8px', opacity: (saving || !editStock) ? 0.6 : 1 }}><Plus size={14}/> Sumar Stock
             </button>
             <button onClick={() => handleAdjust('desperdicio')} disabled={saving || !editStock || editStock <= 0} 
-              style={{ padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--red)', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', justifyContent: 'center', gap: '8px', opacity: (saving || !editStock) ? 0.6 : 1 }}>
-              ➖ Restar Stock
+              style={{ padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--red)', color: 'white', fontWeight: '700', cursor: 'pointer', display: 'flex', justifyContent: 'center', gap: '8px', opacity: (saving || !editStock) ? 0.6 : 1 }}><Minus size={14}/> Restar Stock
             </button>
           </div>
           <button onClick={() => setEditItem(null)} disabled={saving} style={{ padding: '10px 16px', borderRadius: '8px', border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary)', width: '100%' }}>Cancelar</button>
@@ -509,7 +505,7 @@ function TabIngredientes({ tenantId }) {
                     <td style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{parseFloat(i.min_stock)} {i.unit}</td>
                     <td style={{ padding: '12px 16px' }}>{fmtMoney(i.cost || 0)}</td>
                     <td style={{ padding: '12px 16px', display: 'flex', gap: '8px' }}>
-                      <button onClick={() => openEdit(i)} style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>✏️ Editar</button>
+                      <button onClick={() => openEdit(i)} style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}><PenSquare size={14} style={{marginRight:6}}/> Editar</button>
                       <button onClick={() => handleDelete(i.id)} style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #fee2e2', background: '#fff5f5', color: '#ef4444', cursor: 'pointer', fontSize: '12px' }}><Trash2 size={16} /></button>
                     </td>
                   </tr>
@@ -518,7 +514,7 @@ function TabIngredientes({ tenantId }) {
         </table>
       </div>
 
-      <Modal show={!!modal} onClose={() => setModal(null)} title={modal === 'new' ? '🧂 Nuevo Ingrediente' : '✏️ Editar Ingrediente'}>
+      <Modal show={!!modal} onClose={() => setModal(null)} title={modal === 'new' ? '🧂 Nuevo Ingrediente' : ' Editar Ingrediente'}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', minWidth: '340px' }}>
           {[
             { key: 'name', label: 'Nombre *', type: 'text', placeholder: 'Ej: Pan brioche' },
@@ -591,7 +587,7 @@ function TabRecetas({ tenantId }) {
     setSaving(true)
     try {
       await dbSetProductIngredients(tenantId, selectedProduct.id, recipe.map(r => ({ ingredient_id: r.ingredient_id, quantity: parseFloat(r.quantity) || 0 })))
-      alert('Ingredientes guardados ✅')
+      alert('Ingredientes guardados ')
     } catch (e) { alert('Error: ' + e.message) }
     finally { setSaving(false) }
   }
@@ -650,7 +646,7 @@ function TabRecetas({ tenantId }) {
               </div>
               <button onClick={saveRecipe} disabled={saving}
                 style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'white', fontWeight: '700', cursor: 'pointer', fontSize: '13px', opacity: saving ? 0.6 : 1 }}>
-                {saving ? 'Guardando...' : '💾 Guardar'}
+                {saving ? 'Guardando...' : <><Save size={16} style={{marginRight:6}}/> Guardar</>}
               </button>
             </div>
 
@@ -788,7 +784,7 @@ function TabRentabilidad({ tenantId }) {
           </div>
         </div>
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '28px' }}>📦</span>
+          <span style={{ fontSize: '28px' }}><Package size={16} style={{marginRight:6}}/></span>
           <div>
             <div style={{ fontSize: '20px', fontWeight: '800', color: '#6366f1' }}>{products.filter(p => (p.cost || 0) > 0).length}</div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Productos con costo cargado</div>
@@ -814,7 +810,7 @@ function TabRentabilidad({ tenantId }) {
           background: section === 'products' ? 'var(--accent)' : 'var(--surface)',
           color: section === 'products' ? 'white' : 'var(--text-secondary)',
           border: '1px solid var(--border)', cursor: 'pointer', fontWeight: '600', fontSize: '13px'
-        }}>📦 Rentabilidad por Producto</button>
+        }}><Package size={16} style={{marginRight:6}}/> Rentabilidad por Producto</button>
         <button onClick={() => setSection('fixed')} style={{
           padding: '8px 18px', borderRadius: '8px', border: '1px solid var(--border)',
           background: section === 'fixed' ? 'var(--accent)' : 'var(--surface)',
@@ -938,7 +934,7 @@ function TabRentabilidad({ tenantId }) {
                     <td style={{ padding: '12px 16px', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>{fc.frequency === 'monthly' ? 'Mensual' : fc.frequency}</td>
                     <td style={{ padding: '12px 16px', display: 'flex', gap: '8px' }}>
                       <button onClick={() => { setFcForm({ name: fc.name, amount: fc.amount, frequency: fc.frequency }); setFcModal(fc) }}
-                        style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '12px' }}>✏️</button>
+                        style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: '12px' }}><PenSquare size={16} style={{marginRight:6}}/></button>
                       <button onClick={() => deleteFc(fc.id)}
                         style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #fee2e2', background: '#fff5f5', color: '#ef4444', cursor: 'pointer', fontSize: '12px' }}><Trash2 size={16} /></button>
                     </td>
@@ -958,7 +954,7 @@ function TabRentabilidad({ tenantId }) {
       )}
 
       {/* Fixed cost modal */}
-      <Modal show={!!fcModal} onClose={() => setFcModal(null)} title={fcModal === 'new' ? '💼 Nuevo Costo Fijo' : '✏️ Editar Costo Fijo'}>
+      <Modal show={!!fcModal} onClose={() => setFcModal(null)} title={fcModal === 'new' ? '💼 Nuevo Costo Fijo' : ' Editar Costo Fijo'}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', minWidth: '320px' }}>
           <div>
             <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '5px', color: 'var(--text-secondary)' }}>Descripción *</label>
@@ -1009,7 +1005,7 @@ function TabMovimientos({ tenantId }) {
   const REASON_LABELS = {
     venta:      { label: 'Venta', icon: <CreditCard size={16} style={{marginRight:6}} />, color: '#ef4444' },
     compra:     { label: 'Compra / Entrada', icon: <Package size={16} style={{marginRight:6}} />, color: '#10b981' },
-    ajuste:     { label: 'Ajuste Manual', icon: '✏️', color: '#6366f1' },
+    ajuste:     { label: 'Ajuste Manual', icon: '', color: '#6366f1' },
     desperdicio:{ label: 'Desperdicio', icon: <Trash2 size={16} style={{marginRight:6}} />, color: '#f59e0b' },
   }
 
@@ -1018,7 +1014,7 @@ function TabMovimientos({ tenantId }) {
   return (
     <div>
       <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        {[{ id: 'all', label: 'Todos' }, { id: 'venta', label: '💳 Ventas' }, { id: 'compra', label: '📦 Compras' }, { id: 'ajuste', label: '✏️ Ajustes' }, { id: 'desperdicio', label: '🗑️ Desperdicios' }].map(f => (
+        {[{ id: 'all', label: 'Todos' }, { id: 'venta', label: '💳 Ventas' }, { id: 'compra', label: <><Package size={16} style={{marginRight:6}}/> Compras</> }, { id: 'ajuste', label: <><PenSquare size={16} style={{marginRight:6}}/> Ajustes</> }, { id: 'desperdicio', label: <><Trash2 size={16} style={{marginRight:6}}/> Desperdicios</> }].map(f => (
           <button key={f.id} onClick={() => setFilter(f.id)} style={{
             padding: '7px 14px', borderRadius: '8px', border: '1px solid var(--border)',
             background: filter === f.id ? 'var(--accent)' : 'var(--surface)',
@@ -1041,7 +1037,7 @@ function TabMovimientos({ tenantId }) {
             {loading ? <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Cargando...</td></tr>
               : filtered.length === 0 ? <tr><td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Sin movimientos</td></tr>
                 : filtered.map(m => {
-                  const info = REASON_LABELS[m.reason] || { label: m.reason, icon: '📌', color: '#64748b' }
+                  const info = REASON_LABELS[m.reason] || { label: m.reason, icon: '📌', color: 'var(--text-muted)' }
                   const change = parseFloat(m.change_amount)
                   const date = new Date(m.created_at)
                   return (

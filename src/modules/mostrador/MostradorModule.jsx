@@ -1,4 +1,4 @@
-import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
+import {     Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock , TrendingDown , Unlock , ArrowDown , PenSquare } from 'lucide-react';
 import { useState, useEffect } from 'react'
 import { useApp } from '../../lib/AppContext'
 import { dbGetOrders, dbGetOrder, dbCreateOrder, dbCreateDeliveryOrder, fmtMoney, sb, dbGetZones, dbGetTables } from '../../lib/supabase'
@@ -229,7 +229,7 @@ export default function MostradorModule() {
   const filteredClosed = closedOrders.filter(filterFn)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '24px', background: '#f8fafc', overflowY: 'auto' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '24px', background: 'var(--bg)', overflowY: 'auto' }}>
       <style>{`
         .table-row-hover:hover { background-color: #f1f5f9 !important; }
         .btn-new-order {
@@ -259,7 +259,7 @@ export default function MostradorModule() {
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <h1 style={{ fontSize: '20px', fontWeight: '800', color: '#1e293b', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <h1 style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
           Mostrador
         </h1>
         <button className="btn-new-order" onClick={openModal}>
@@ -269,7 +269,7 @@ export default function MostradorModule() {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Buscador */}
-        <div style={{ display: 'flex', alignItems: 'center', background: 'white', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px 14px', gap: '10px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px 14px', gap: '10px', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
           <span style={{ color: 'var(--text-muted)' }}>🔍</span>
           <input
             type="text"
@@ -278,12 +278,12 @@ export default function MostradorModule() {
             onChange={e => setSearch(e.target.value)}
             style={{ background: 'transparent', border: 'none', outline: 'none', color: 'var(--text)', width: '100%', fontSize: '14px' }}
           />
-          {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '16px' }}>✕</button>}
+          {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '16px' }}>✕</button>}
         </div>
 
         {/* En Curso */}
         <div>
-          <h2 style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>En Curso</h2>
+          <h2 style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>En Curso</h2>
           {loading ? (
             <div style={{ color: 'var(--text-muted)', fontSize: '13px', padding: '12px' }}>Cargando...</div>
           ) : (
@@ -293,7 +293,7 @@ export default function MostradorModule() {
 
         {/* Cerradas */}
         <div>
-          <h2 style={{ fontSize: '11px', fontWeight: '800', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>Cerradas (Últimas 5)</h2>
+          <h2 style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>Cerradas (Últimas 5)</h2>
           {loading ? (
             <div style={{ color: 'var(--text-muted)', fontSize: '13px', padding: '12px' }}>Cargando...</div>
           ) : (
@@ -312,7 +312,7 @@ export default function MostradorModule() {
                 <input className="mos-input" type="text" placeholder="Ej: Juan García" value={customerName} onChange={e => setCustomerName(e.target.value)} autoFocus required />
               </div>
               <div className="mos-field">
-                <label className="mos-label">Teléfono <span style={{ fontWeight: '400', color: '#94a3b8' }}>(opcional)</span></label>
+                <label className="mos-label">Teléfono <span style={{ fontWeight: '400', color: 'var(--text-muted)' }}>(opcional)</span></label>
                 <input className="mos-input" type="text" placeholder="Ej: 11-1234-5678" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
               </div>
 
@@ -363,7 +363,7 @@ export default function MostradorModule() {
             {formError && <div style={{ background: '#fee2e2', color: '#991b1b', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', marginBottom: '12px' }}>{formError}</div>}
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button type="button" onClick={closeModal} style={{ padding: '9px 16px', background: '#f1f5f9', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#64748b' }}>
+              <button type="button" onClick={closeModal} style={{ padding: '9px 16px', background: 'var(--bg)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)' }}>
                 Cancelar
               </button>
               <button type="submit" disabled={creating || !customerName.trim()} style={{ padding: '9px 20px', background: creating || !customerName.trim() ? '#94a3b8' : '#334155', color: 'white', border: 'none', borderRadius: '6px', cursor: creating || !customerName.trim() ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '700' }}>
@@ -379,15 +379,15 @@ export default function MostradorModule() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '16px' }}>
               <div className="mos-field">
-                <label className="mos-label">Dirección de entrega <span style={{ fontWeight: '400', color: '#94a3b8' }}>(opcional)</span></label>
+                <label className="mos-label">Dirección de entrega <span style={{ fontWeight: '400', color: 'var(--text-muted)' }}>(opcional)</span></label>
                 <input className="mos-input" type="text" placeholder="Ej: Av. Corrientes 1234, Piso 3" value={delivStreet} onChange={e => setDelivStreet(e.target.value)} autoFocus />
               </div>
               <div className="mos-field">
-                <label className="mos-label">Descripción / Indicaciones <span style={{ fontWeight: '400', color: '#94a3b8' }}>(opcional)</span></label>
+                <label className="mos-label">Descripción / Indicaciones <span style={{ fontWeight: '400', color: 'var(--text-muted)' }}>(opcional)</span></label>
                 <input className="mos-input" type="text" placeholder="Ej: Dpto 4B, timbre García" value={delivDesc} onChange={e => setDelivDesc(e.target.value)} />
               </div>
               <div className="mos-field">
-                <label className="mos-label">Enlace Google Maps <span style={{ fontWeight: '400', color: '#94a3b8' }}>(opcional)</span></label>
+                <label className="mos-label">Enlace Google Maps <span style={{ fontWeight: '400', color: 'var(--text-muted)' }}>(opcional)</span></label>
                 <input className="mos-input" type="text" placeholder="https://maps.app.goo.gl/..." value={delivMapsUrl} onChange={e => setDelivMapsUrl(e.target.value)} />
               </div>
             </div>
@@ -395,7 +395,7 @@ export default function MostradorModule() {
             {formError && <div style={{ background: '#fee2e2', color: '#991b1b', padding: '8px 12px', borderRadius: '6px', fontSize: '13px', marginBottom: '12px' }}>{formError}</div>}
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button type="button" onClick={() => setStep(1)} style={{ padding: '9px 16px', background: '#f1f5f9', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#64748b' }}>
+              <button type="button" onClick={() => setStep(1)} style={{ padding: '9px 16px', background: 'var(--bg)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)' }}>
                 ← Atrás
               </button>
               <button type="submit" disabled={creating} style={{ padding: '9px 20px', background: creating ? '#94a3b8' : '#f97316', color: 'white', border: 'none', borderRadius: '6px', cursor: creating ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '700' }}>
@@ -410,7 +410,7 @@ export default function MostradorModule() {
             </div>
 
             {loadingTables ? (
-              <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>Cargando zonas...</div>
+              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando zonas...</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
@@ -447,7 +447,7 @@ export default function MostradorModule() {
                           }}
                         >
                           <div style={{ fontSize: '20px', marginBottom: '4px' }}>{isOpen ? '🍽️' : '🪑'}</div>
-                          <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#1e293b' }}>{t.name}</div>
+                          <div style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-primary)' }}>{t.name}</div>
                           <div style={{ fontSize: '10px', color: isOpen ? '#ef4444' : '#10b981', fontWeight: '700', marginTop: '4px' }}>
                             {isOpen ? 'OCUPADA' : 'LIBRE'}
                           </div>
@@ -455,7 +455,7 @@ export default function MostradorModule() {
                       )
                     })
                   ) : (
-                    <div style={{ gridColumn: '1 / -1', padding: '24px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
+                    <div style={{ gridColumn: '1 / -1', padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
                       No hay mesas en esta zona.
                     </div>
                   )}
@@ -464,7 +464,7 @@ export default function MostradorModule() {
             )}
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button type="button" onClick={() => setStep(1)} style={{ padding: '9px 16px', background: '#f1f5f9', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#64748b' }}>
+              <button type="button" onClick={() => setStep(1)} style={{ padding: '9px 16px', background: 'var(--bg)', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: 'var(--text-muted)' }}>
                 ← Atrás
               </button>
               <button type="submit" disabled={creating || !selectedTable} style={{ padding: '9px 20px', background: creating || !selectedTable ? '#94a3b8' : 'var(--accent)', color: 'white', border: 'none', borderRadius: '6px', cursor: creating || !selectedTable ? 'not-allowed' : 'pointer', fontSize: '13px', fontWeight: '700' }}>
@@ -491,10 +491,10 @@ function OrdersTable({ orders, emptyText, onSelect, isClosedTable }) {
   }
 
   return (
-    <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
         <thead>
-          <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border)', color: '#64748b', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>
+          <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>
             <th style={{ padding: '10px 16px' }}>ID / Etiqueta</th>
             <th style={{ padding: '10px 16px' }}>Hora</th>
             <th style={{ padding: '10px 16px' }}>Tipo</th>
@@ -517,12 +517,12 @@ function OrdersTable({ orders, emptyText, onSelect, isClosedTable }) {
                 <td style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--accent)' }}>
                   #{o.id.slice(-6).toUpperCase()}
                 </td>
-                <td style={{ padding: '12px 16px', color: '#64748b' }}>{orderTime}</td>
+                <td style={{ padding: '12px 16px', color: 'var(--text-muted)' }}>{orderTime}</td>
                 <td style={{ padding: '12px 16px' }}>
                   <span style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     {isDelivOrd ? '🛵' : (isMesaOrd ? (
                       <>🪑 <span style={{ fontSize: '12px', fontWeight: 'bold' }}>{o.restaurant_tables?.name || 'Mesa'}</span></>
-                    ) : '🏪')}
+                    ) : '')}
                   </span>
                 </td>
                 <td style={{ padding: '12px 16px' }}>
@@ -532,8 +532,8 @@ function OrdersTable({ orders, emptyText, onSelect, isClosedTable }) {
                     </span>
                   </div>
                 </td>
-                <td style={{ padding: '12px 16px', color: '#334155', fontWeight: '500' }}>{o.customer_name || 'Sin nombre'}</td>
-                <td style={{ padding: '12px 16px', fontWeight: '700', textAlign: 'right', color: '#1e293b' }}>{fmtMoney(o.total_amount)}</td>
+                <td style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: '500' }}>{o.customer_name || 'Sin nombre'}</td>
+                <td style={{ padding: '12px 16px', fontWeight: '700', textAlign: 'right', color: 'var(--text-primary)' }}>{fmtMoney(o.total_amount)}</td>
                 {!isClosedTable && (
                   <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                     {isReady ? (
@@ -550,7 +550,7 @@ function OrdersTable({ orders, emptyText, onSelect, isClosedTable }) {
               </tr>
             )
           }) : (
-            <tr><td colSpan={isClosedTable ? 6 : 7} style={{ padding: '24px 16px', textAlign: 'center', color: '#94a3b8' }}>{emptyText}</td></tr>
+            <tr><td colSpan={isClosedTable ? 6 : 7} style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>{emptyText}</td></tr>
           )}
         </tbody>
       </table>
