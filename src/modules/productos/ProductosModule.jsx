@@ -184,11 +184,19 @@ export default function ProductosModule() {
     setCatModal(true)
   }
 
-  const filteredProducts = products.filter(p => {
-    const matchSearch = !searchProd || p.name.toLowerCase().includes(searchProd.toLowerCase()) || (p.sku || '').toLowerCase().includes(searchProd.toLowerCase())
-    const matchCat = !selectedCatFilter || p.category_id === selectedCatFilter
-    return matchSearch && matchCat
-  })
+  const filteredProducts = products
+    .filter(p => {
+      const matchSearch = !searchProd || p.name.toLowerCase().includes(searchProd.toLowerCase()) || (p.sku || '').toLowerCase().includes(searchProd.toLowerCase())
+      const matchCat = !selectedCatFilter || p.category_id === selectedCatFilter
+      return matchSearch && matchCat
+    })
+    .sort((a, b) => {
+      const catA = a.categories?.name || 'Z'
+      const catB = b.categories?.name || 'Z'
+      if (catA < catB) return -1
+      if (catA > catB) return 1
+      return a.name.localeCompare(b.name)
+    })
 
   return (
     <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%' }}>
