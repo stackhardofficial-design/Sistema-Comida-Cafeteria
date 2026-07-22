@@ -4,8 +4,8 @@ import { useApp } from '../lib/AppContext'
 
 export default function Login() {
   const { setUser, setTenantId, setUserRoles, setCurrentModule } = useApp()
-  const [email, setEmail] = useState('superadmin@stackhard.com')
-  const [password, setPassword] = useState('StackHard2026!')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
