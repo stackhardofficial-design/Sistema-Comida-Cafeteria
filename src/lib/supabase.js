@@ -523,3 +523,39 @@ export async function dbDeductStockForOrder(tenantId, orderId) {
     console.warn('Stock deduction failed:', e.message)
   }
 }
+
+// ===== PRODUCTS: UPDATE (for cost field) =====
+export async function dbUpdateProduct(productId, updates) {
+  const { data, error } = await sb.from('products')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', productId).select().single()
+  if (error) throw error
+  return data
+}
+
+// ===== BUSINESS FIXED COSTS =====
+export async function dbGetFixedCosts(tenantId) {
+  const { data, error } = await sb.from('business_fixed_costs')
+    .select('*').eq('tenant_id', tenantId).order('created_at', { ascending: true })
+  if (error) throw error
+  return data || []
+}
+
+export async function dbCreateFixedCost(tenantId, payload) {
+  const { data, error } = await sb.from('business_fixed_costs')
+    .insert({ tenant_id: tenantId, ...payload }).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function dbUpdateFixedCost(id, payload) {
+  const { data, error } = await sb.from('business_fixed_costs')
+    .update(payload).eq('id', id).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function dbDeleteFixedCost(id) {
+  const { error } = await sb.from('business_fixed_costs').delete().eq('id', id)
+  if (error) throw error
+}
