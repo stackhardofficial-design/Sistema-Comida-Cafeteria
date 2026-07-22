@@ -25,7 +25,6 @@ export default function ProductosModule() {
   const [pSku, setPSku] = useState('')
   const [pCat, setPCat] = useState('')
   const [pPrice, setPPrice] = useState('')
-  const [pStock, setPStock] = useState('100')
   const [pActive, setPActive] = useState('true')
   const [pDesc, setPDesc] = useState('')
 
@@ -89,7 +88,6 @@ export default function ProductosModule() {
         sku: pSku,
         category_id: pCat,
         price: parseFloat(pPrice),
-        stock_quantity: pStock === '' ? null : parseInt(pStock),
         description: pDesc,
         is_active: pActive === 'true'
       }
@@ -120,7 +118,6 @@ export default function ProductosModule() {
     setPSku('')
     setPCat(categories[0]?.id || '')
     setPPrice('')
-    setPStock('100')
     setPActive('true')
     setPDesc('')
     setProdModal(true)
@@ -132,7 +129,6 @@ export default function ProductosModule() {
     setPSku(prod.sku || '')
     setPCat(prod.category_id || '')
     setPPrice(prod.price)
-    setPStock(prod.stock_quantity ?? '')
     setPActive(prod.is_active ? 'true' : 'false')
     setPDesc(prod.description || '')
     setProdModal(true)
@@ -255,7 +251,6 @@ export default function ProductosModule() {
                   <th>Nombre</th>
                   <th>Categoría</th>
                   <th>Precio</th>
-                  <th>Stock</th>
                   <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
@@ -269,11 +264,6 @@ export default function ProductosModule() {
                       <td>{p.categories?.name || '-'}</td>
                       <td style={{ fontWeight: '700' }}>{fmtMoney(p.price)}</td>
                       <td>
-                        <span style={(p.stock_quantity || 0) < 10 ? { color: 'var(--red)', fontWeight: '700' } : {}}>
-                          {p.stock_quantity ?? '∞'}
-                        </span>
-                      </td>
-                      <td>
                         <span className={`badge ${p.is_active ? 'badge-green' : 'badge-red'}`}>
                           {p.is_active ? 'Activo' : 'Inactivo'}
                         </span>
@@ -286,7 +276,7 @@ export default function ProductosModule() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} style={{ textAlign: 'center', padding: '32px' }}>
+                    <td colSpan={6} style={{ textAlign: 'center', padding: '32px' }}>
                       <div className="empty-state">
                         <span className="empty-icon">📦</span>
                         <p>Sin productos registrados</p>
@@ -363,10 +353,6 @@ export default function ProductosModule() {
             <div className="form-row">
               <label>Precio *</label>
               <input type="number" step="any" value={pPrice} onChange={e => setPPrice(e.target.value)} placeholder="0.00" required />
-            </div>
-            <div className="form-row">
-              <label>Stock</label>
-              <input type="number" value={pStock} onChange={e => setPStock(e.target.value)} placeholder="100" />
             </div>
             <div className="form-row">
               <label>Estado</label>
