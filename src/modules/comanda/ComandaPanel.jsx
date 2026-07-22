@@ -414,7 +414,7 @@ export default function ComandaPanel() {
 
   // Assign order (save to DB and mark table as occupied)
   async function assignOrder() {
-    if (!currentContext || cart.length === 0) return
+    if (!currentContext) return
     setAssigning(true)
     try {
       let orderId = currentContext.orderId
@@ -429,6 +429,7 @@ export default function ComandaPanel() {
         setCurrentContext(prev => ({ ...prev, orderId, hasOrder: true }))
         if (currentContext.tableDbId) {
           await dbUpdateTable(currentContext.tableDbId, { status: 'occupied', current_order_id: orderId })
+          triggerRefresh()
         }
       }
     } catch (e) {
