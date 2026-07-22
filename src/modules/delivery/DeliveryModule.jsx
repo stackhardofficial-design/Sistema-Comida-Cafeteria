@@ -11,30 +11,30 @@ const STATUS_GROUPS = [
   {
     key: 'open',
     label: 'En Preparación',
-    headerColor: '#f97316',
-    headerBg: '#fff7ed',
-    badgeBg: '#fed7aa',
-    badgeColor: '#9a3412',
+    headerColor: 'var(--text-primary)',
+    headerBg: 'var(--surface-2)',
+    badgeBg: 'var(--surface)',
+    badgeColor: 'var(--accent)',
     icon: '⏳',
     dotColor: '#f97316',
   },
   {
     key: 'in_transit',
     label: 'Listo para Entregar',
-    headerColor: '#3b82f6',
-    headerBg: '#eff6ff',
-    badgeBg: '#bfdbfe',
-    badgeColor: '#1d4ed8',
+    headerColor: 'var(--text-primary)',
+    headerBg: 'var(--surface-2)',
+    badgeBg: 'var(--surface)',
+    badgeColor: 'var(--accent)',
     icon: <Bike size={16} />,
     dotColor: '#3b82f6',
   },
   {
     key: 'delivered',
     label: 'Enviados',
-    headerColor: '#eab308',
-    headerBg: '#fefce8',
-    badgeBg: '#fef08a',
-    badgeColor: '#713f12',
+    headerColor: 'var(--text-primary)',
+    headerBg: 'var(--surface-2)',
+    badgeBg: 'var(--surface)',
+    badgeColor: 'var(--accent)',
     icon: '',
     dotColor: '#eab308',
   },
@@ -160,7 +160,7 @@ export default function DeliveryModule() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', overflowY: 'auto', padding: '24px' }}>
       <style>{`
-        .del-table-row:hover { background: #f1f5f9 !important; }
+        .del-table-row:hover { background: var(--surface-2) !important; }
         .del-btn-move {
           padding: 4px 10px;
           border: none;

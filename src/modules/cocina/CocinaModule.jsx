@@ -65,7 +65,7 @@ export default function CocinaModule() {
   }
 
   return (
-    <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)' }}>
+    <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', overflow: 'hidden', height: '100%', background: 'var(--bg)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '800' }}><ChefHat size={28} style={{marginRight:10}} /> Pantalla de Cocina (KDS)</h1>
         <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-secondary)' }}>
@@ -82,7 +82,7 @@ export default function CocinaModule() {
           <p>La cocina está al día.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px', overflowY: 'auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px', overflowY: 'auto', alignContent: 'start' }}>
           {orders.map(o => {
             const typeInfo = getOrderTypeInfo(o)
             const waitTime = getWaitTimeMinutes(o.created_at)
@@ -96,7 +96,7 @@ export default function CocinaModule() {
                 border: `2px solid ${typeInfo.color}`, 
                 borderRadius: '12px', 
                 display: 'flex', 
-                flexDirection: 'column',
+                flexDirection: 'column', overflow: 'hidden',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                 overflow: 'hidden'
               }}>
@@ -119,9 +119,9 @@ export default function CocinaModule() {
                 )}
 
                 {/* Lista de Items */}
-                <div style={{ padding: '16px', flex: 1 }}>
+                <div style={{ padding: '16px', flex: 1, overflowY: 'auto', maxHeight: '250px' }}>
                   {o.order_items?.length > 0 ? (
-                    <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', gap: '12px' }}>
                       {o.order_items.map(item => (
                         <li key={item.id} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', fontSize: '15px', fontWeight: '600' }}>
                           <span style={{ background: 'var(--bg)', border: '1px solid var(--border)', padding: '2px 8px', borderRadius: '6px', color: 'var(--accent)' }}>

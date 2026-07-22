@@ -1,4 +1,4 @@
-import {     Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock , TrendingDown , ArrowDown , PenSquare , Unlock } from 'lucide-react';
+import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock, TrendingDown, ArrowDown, PenSquare, Unlock, Calendar } from 'lucide-react';
 import { useState, useEffect } from 'react'
 import { useApp } from '../../lib/AppContext'
 import { dbGetOpenSession, dbOpenSession, dbCloseSession, fmtMoney, fmtDate, sb, logActivity } from '../../lib/supabase'
@@ -114,7 +114,7 @@ export default function CajaModule() {
     efectivo: <><Banknote size={16} style={{marginRight: 6}} /> Efectivo</>,
     debito: <><CreditCard size={16} style={{marginRight: 6}} /> Débito</>,
     credito: <><CreditCard size={16} style={{marginRight: 6}} /> Crédito</>,
-    mercadopago: '📱 MercadoPago',
+    mercadopago: 'MercadoPago',
     transferencia: <><Banknote size={16} style={{marginRight: 6}} /> Transferencia</>
   }
 
@@ -135,7 +135,7 @@ export default function CajaModule() {
       <div className="module-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>Caja</h1>
         {session ? (
-          <button className="btn btn-primary" style={{ background: 'var(--red)' }} onClick={() => setCierreModal(true)}>🔒 Cerrar Turno</button>
+          <button className="btn btn-primary" style={{ background: 'var(--red)' }} onClick={() => setCierreModal(true)}><Lock size={16} style={{marginRight:6}}/> Cerrar Turno</button>
         ) : (
           <button className="btn btn-primary" onClick={() => setAbrirModal(true)}><Unlock size={16} style={{marginRight:6}}/> Abrir Caja</button>
         )}
@@ -152,7 +152,7 @@ export default function CajaModule() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div className="caja-header-info" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: '8px' }}>
               <div>
-                <div className="caja-status" style={{ fontWeight: '600' }}>📅 Turno: {fmtDate(session.created_at)}</div>
+                <div className="caja-status" style={{ fontWeight: '600' }}><Calendar size={16} style={{marginRight:6}}/> Turno: {fmtDate(session.created_at)}</div>
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>Saldo inicial: {fmtMoney(saldoInicial)}</div>
               </div>
               <div style={{ fontSize: '13px', color: 'var(--green-border)', fontWeight: '600' }}>🟢 Caja Abierta</div>
@@ -228,7 +228,7 @@ export default function CajaModule() {
       </Modal>
 
       {/* Modal Cerrar Caja */}
-      <Modal show={cierreModal} onClose={() => setCierreModal(false)} title="🔒 Cerrar Caja">
+      <Modal show={cierreModal} onClose={() => setCierreModal(false)} title={<><Lock size={18} style={{marginRight:8}}/> Cerrar Caja</>}>
         <div>
           <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginBottom: '16px' }}>
             Ingresá el monto físico contado en caja para calcular la diferencia.

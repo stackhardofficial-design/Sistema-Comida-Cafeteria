@@ -231,7 +231,7 @@ export default function MostradorModule() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '24px', background: 'var(--bg)', overflowY: 'auto' }}>
       <style>{`
-        .table-row-hover:hover { background-color: #f1f5f9 !important; }
+        .table-row-hover:hover { background-color: var(--surface-2) !important; }
         .btn-new-order {
           background: #334155; color: white; border: none; padding: 8px 16px;
           border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer;

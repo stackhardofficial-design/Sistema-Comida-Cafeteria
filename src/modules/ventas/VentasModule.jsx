@@ -1,4 +1,4 @@
-import {      Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock , Save , PenSquare , TrendingDown , Unlock , ArrowDown } from 'lucide-react';
+import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock, Save, PenSquare, TrendingDown, Unlock, ArrowDown, RefreshCw, DollarSign, Eye } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react'
 import { useApp } from '../../lib/AppContext'
 import { dbGetOrders, dbGetOrder, dbUpdateOrder, fmtMoney, fmtDate, sb } from '../../lib/supabase'
@@ -197,7 +197,7 @@ export default function VentasModule() {
             </button>
           ))}
           <button onClick={loadVentas} style={{ padding: '8px 16px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '7px', cursor: 'pointer', fontWeight: '600', fontSize: '13px' }}>
-            🔄 Actualizar
+            <RefreshCw size={14} style={{marginRight:6}}/> Actualizar
           </button>
         </div>
       </div>
@@ -219,13 +219,13 @@ export default function VentasModule() {
           <option value="">Canal: Todos</option>
           <option value="dine_in">🪑 Mesa</option>
           <option value="takeaway"><MonitorSmartphone size={18} style={{marginRight:6}} /> Mostrador</option>
-          <option value="delivery">🛵 Delivery</option>
+          <option value="delivery"><Bike size={14} style={{marginRight:6}}/> Delivery</option>
         </select>
 
         <select value={filterMethod} onChange={e => setFilterMethod(e.target.value)} style={inputStyle}>
           <option value="">Pago: Todos</option>
           <option value="cash"><Banknote size={16} style={{marginRight:6}}/> Efectivo</option>
-          <option value="card">💳 Tarjeta</option>
+          <option value="card"><CreditCard size={14} style={{marginRight:6}}/> Tarjeta</option>
           <option value="transfer">🏦 Transferencia</option>
         </select>
 
@@ -346,7 +346,7 @@ export default function VentasModule() {
                         onClick={() => viewVenta(o.id)}
                         title="Ver detalle"
                         style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '5px', cursor: 'pointer', padding: '5px 8px', fontSize: '14px' }}
-                      >👁️</button>
+                      ><Eye size={16}/></button>
                       {o.status !== 'cancelled' && (
                         <button
                           onClick={() => startAnular(o.id)}

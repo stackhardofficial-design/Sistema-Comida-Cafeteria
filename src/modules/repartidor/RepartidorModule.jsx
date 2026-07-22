@@ -1,4 +1,4 @@
-import {                       Bike, MonitorCheck, MessageSquare, MonitorSmartphone, Check , Grid , Users , TrendingUp , X , Save , Banknote , FileText , Plus , PenSquare , Trash2 , ShieldAlert , History , TrendingDown , Lock , Unlock , Package , ArrowDown , ArrowLeft , ShoppingBag , Send , Minus , Clock } from 'lucide-react';
+import { Bike, MonitorCheck, MessageSquare, MonitorSmartphone, Check, Grid, Users, TrendingUp, X, Save, Banknote, FileText, Plus, PenSquare, Trash2, ShieldAlert, History, TrendingDown, Lock, Unlock, Package, ArrowDown, ArrowLeft, ShoppingBag, Send, Minus, Clock, ChevronDown, ChevronRight, MapPin, Map, CheckCircle, Phone, MessageCircle } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '../../lib/AppContext'
 import { dbGetDeliveryOrders, dbUpdateOrder, sb, fmtMoney } from '../../lib/supabase'
@@ -305,7 +305,7 @@ export default function RepartidorModule() {
                       gap: '10px',
                       alignItems: 'flex-start'
                     }}>
-                      <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>📍</span>
+                      <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}><MapPin size={16} style={{marginRight:6}}/></span>
                       <div>
                         <div style={{ color: '#e2e8f0', fontWeight: '600', fontSize: '14px', lineHeight: '1.4' }}>{addressText}</div>
                         {desc && <div style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '3px' }}>{desc}</div>}
