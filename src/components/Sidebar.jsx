@@ -13,7 +13,7 @@ const NAV_ITEMS = [
 ]
 
 export default function Sidebar() {
-  const { user, setUser, setTenantId, currentModule, setCurrentModule } = useApp()
+  const { user, userRoles, setUser, setTenantId, currentModule, setCurrentModule } = useApp()
   const [clock, setClock] = useState('')
 
   useEffect(() => {
@@ -33,6 +33,18 @@ export default function Sidebar() {
   }
 
   const displayName = user?.email?.split('@')[0] || 'Admin'
+  const isOwner = userRoles.includes('owner')
+  const displayRole = isOwner ? 'Administrador' : 'Empleado'
+
+  // Filter items based on userRoles
+  const allowedItems = NAV_ITEMS.filter(item => 
+    isOwner || userRoles.includes(item.id)
+  )
+
+  // Owners get to see Empleados module
+  if (isOwner) {
+    allowedItems.push({ id: 'empleados', icon: '👤', label: 'Empleados' })
+  }
 
   return (
     <aside className="sidebar">
@@ -41,7 +53,7 @@ export default function Sidebar() {
         <span className="logo-text">StackHard</span>
       </div>
       <nav className="sidebar-nav">
-        {NAV_ITEMS.map(item => (
+        {allowedItems.map(item => (
           <button
             key={item.id}
             className={`nav-item${currentModule === item.id ? ' active' : ''}`}
@@ -56,7 +68,7 @@ export default function Sidebar() {
         <span className="user-avatar">👤</span>
         <div className="user-info">
           <span className="user-name">{displayName}</span>
-          <span className="user-role">Administrador</span>
+          <span className="user-role">{displayRole}</span>
           <span className="user-clock">{clock}</span>
         </div>
         <button className="btn-logout" onClick={logout} title="Cerrar sesión">⏏</button>

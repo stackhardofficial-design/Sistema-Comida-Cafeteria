@@ -4,6 +4,7 @@ const AppContext = createContext(null)
 
 export function AppProvider({ children }) {
   const [user, setUser] = useState(null)
+  const [userRoles, setUserRoles] = useState([])
   const [tenantId, setTenantId] = useState(null)
   const [currentModule, setCurrentModule] = useState('mesas')
   const [cart, setCart] = useState([])
@@ -31,6 +32,7 @@ export function AppProvider({ children }) {
   return (
     <AppContext.Provider value={{
       user, setUser,
+      userRoles, setUserRoles,
       tenantId, setTenantId,
       currentModule, setCurrentModule,
       cart, setCart,
