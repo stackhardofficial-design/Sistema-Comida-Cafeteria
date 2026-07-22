@@ -297,10 +297,9 @@ export default function ComandaPanel() {
 
   async function addToCart(product) {
     if (!currentContext) return
-    // --- OPTIMISTIC UPDATE: Show in cart immediately ---
     setCart(prev => {
-      const existing = prev.find(i => i.product.id === product.id)
-      if (existing) return prev.map(i => i.product.id === product.id ? { ...i, qty: i.qty + 1 } : i)
+      const existing = prev.find(i => i.product?.id === product.id)
+      if (existing) return prev.map(i => i.product?.id === product.id ? { ...i, qty: i.qty + 1 } : i)
       return [...prev, { product, qty: 1, notes: '' }]
     })
     // --- SYNC TO DB IN BACKGROUND ---
@@ -333,10 +332,10 @@ export default function ComandaPanel() {
     } catch (e) {
       // Rollback optimistic update on failure
       setCart(prev => {
-        const existing = prev.find(i => i.product.id === product.id)
+        const existing = prev.find(i => i.product?.id === product.id)
         if (!existing) return prev
-        if (existing.qty <= 1) return prev.filter(i => i.product.id !== product.id)
-        return prev.map(i => i.product.id === product.id ? { ...i, qty: i.qty - 1 } : i)
+        if (existing.qty <= 1) return prev.filter(i => i.product?.id !== product.id)
+        return prev.map(i => i.product?.id === product.id ? { ...i, qty: i.qty - 1 } : i)
       })
       alert('Error al agregar al carrito: ' + e.message)
     }
