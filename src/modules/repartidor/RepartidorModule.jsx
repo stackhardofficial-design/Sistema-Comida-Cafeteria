@@ -76,7 +76,7 @@ function MapPreview({ address, mapsUrl }) {
                 fontWeight: '700',
                 cursor: 'pointer',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                color: 'white'
+                color: 'var(--text-primary)'
               }}
             >
               ↗ Abrir
@@ -91,7 +91,7 @@ function MapPreview({ address, mapsUrl }) {
             width: '100%',
             padding: '14px',
             background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-            color: 'white',
+            color: 'var(--text-primary)',
             border: 'none',
             cursor: 'pointer',
             display: 'flex',
@@ -169,7 +169,7 @@ export default function RepartidorModule() {
   const timeStr = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#0f172a', overflowY: 'auto' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', overflowY: 'auto' }}>
       <style>{`
         @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
         .deliver-btn:active { transform: scale(0.97); }
@@ -181,7 +181,7 @@ export default function RepartidorModule() {
 
       {/* Header Premium */}
       <div style={{
-        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+        background: 'var(--surface)',
         padding: '20px 24px',
         borderBottom: '1px solid rgba(255,255,255,0.07)',
         position: 'sticky',
@@ -190,7 +190,7 @@ export default function RepartidorModule() {
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <h1 style={{ fontSize: '24px', fontWeight: '800', color: 'white', margin: 0, letterSpacing: '-0.5px' }}>
+            <h1 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.5px' }}>
               🛵 Repartidor
             </h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
@@ -216,7 +216,7 @@ export default function RepartidorModule() {
           </div>
           <button
             onClick={loadOrders}
-            style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '8px 10px', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '16px' }}
+            style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '8px', padding: '8px 10px', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '16px' }}
           >
             ↻
           </button>
@@ -234,12 +234,12 @@ export default function RepartidorModule() {
           <div style={{
             textAlign: 'center',
             padding: '60px 20px',
-            background: 'rgba(255,255,255,0.03)',
+            background: 'var(--surface-2)',
             borderRadius: '16px',
-            border: '1px dashed rgba(255,255,255,0.1)'
+            border: '1px dashed var(--border)'
           }}>
             <span style={{ fontSize: '56px', display: 'block', marginBottom: '16px' }}>🙌</span>
-            <h3 style={{ margin: '0 0 8px 0', color: '#e2e8f0', fontSize: '20px', fontWeight: '700' }}>¡Todo al día!</h3>
+            <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-primary)', fontSize: '20px', fontWeight: '700' }}>¡Todo al día!</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: 0 }}>No hay pedidos pendientes de entrega.</p>
           </div>
         ) : (
@@ -254,7 +254,7 @@ export default function RepartidorModule() {
                 key={order.id}
                 className="deliver-card"
                 style={{
-                  background: '#1e293b',
+                  background: 'var(--surface)',
                   borderRadius: '16px',
                   overflow: 'hidden',
                   border: '1px solid rgba(255,255,255,0.08)',
@@ -264,8 +264,8 @@ export default function RepartidorModule() {
                 {/* Card Header */}
                 <div style={{
                   padding: '16px 18px',
-                  background: 'rgba(255,255,255,0.03)',
-                  borderBottom: '1px solid rgba(255,255,255,0.06)',
+                  background: 'var(--surface-2)',
+                  borderBottom: '1px solid var(--border)',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center'
@@ -281,7 +281,7 @@ export default function RepartidorModule() {
                       {name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <div style={{ color: 'white', fontWeight: '700', fontSize: '16px' }}>{name}</div>
+                      <div style={{ color: 'var(--text-primary)', fontWeight: '700', fontSize: '16px' }}>{name}</div>
                       {phone && (
                         <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '2px' }}>{phone}</div>
                       )}
@@ -298,7 +298,7 @@ export default function RepartidorModule() {
                   {/* Dirección */}
                   {addressText && (
                     <div style={{
-                      background: 'rgba(255,255,255,0.05)',
+                      background: 'var(--surface-2)',
                       borderRadius: '10px',
                       padding: '10px 14px',
                       display: 'flex',
@@ -307,7 +307,7 @@ export default function RepartidorModule() {
                     }}>
                       <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}><MapPin size={16} style={{marginRight:6}}/></span>
                       <div>
-                        <div style={{ color: '#e2e8f0', fontWeight: '600', fontSize: '14px', lineHeight: '1.4' }}>{addressText}</div>
+                        <div style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '14px', lineHeight: '1.4' }}>{addressText}</div>
                         {desc && <div style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '3px' }}>{desc}</div>}
                       </div>
                     </div>
@@ -318,16 +318,16 @@ export default function RepartidorModule() {
 
                   {/* Total */}
                   <div style={{
-                    background: 'rgba(234, 179, 8, 0.1)',
-                    border: '1px solid rgba(234, 179, 8, 0.2)',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
                     borderRadius: '10px',
                     padding: '10px 14px',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
                   }}>
-                    <span style={{ color: '#fbbf24', fontSize: '13px', fontWeight: '600' }}><Banknote size={16} style={{marginRight:6}}/> Total a cobrar</span>
-                    <span style={{ color: '#fde68a', fontSize: '20px', fontWeight: '800' }}>{fmtMoney(order.total_amount)}</span>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '13px', fontWeight: '600' }}><Banknote size={16} style={{marginRight:6}}/> Total a cobrar</span>
+                    <span style={{ color: 'var(--text-primary)', fontSize: '20px', fontWeight: '800' }}>{fmtMoney(order.total_amount)}</span>
                   </div>
 
                   {/* Botones de Acción */}
@@ -341,7 +341,7 @@ export default function RepartidorModule() {
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
                           background: '#16a34a',
-                          color: 'white',
+                          color: 'var(--text-primary)',
                           textDecoration: 'none',
                           padding: '13px',
                           borderRadius: '10px',
@@ -360,7 +360,7 @@ export default function RepartidorModule() {
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
                           background: '#2563eb',
-                          color: 'white',
+                          color: 'var(--text-primary)',
                           textDecoration: 'none',
                           padding: '13px',
                           borderRadius: '10px',
