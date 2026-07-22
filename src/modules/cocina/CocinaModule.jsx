@@ -17,7 +17,7 @@ export default function CocinaModule() {
       // Cargamos solo las órdenes abiertas (que no han sido pagadas/cerradas)
       const data = await dbGetOrders(tenantId, { status: 'open' })
       // Filtramos las que aún no están listas (pending o nulo)
-      const pendingOrders = data.filter(o => !o.kitchen_status || o.kitchen_status === 'pending')
+      const pendingOrders = data.filter(o => !o.kitchen_status || o.kitchen_status === 'pending' || o.kitchen_status === 'in_progress')
       // Ordenamos de más antiguas a más nuevas para que Cocina haga primero lo que entró primero
       pendingOrders.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
       setOrders(pendingOrders)
@@ -38,6 +38,15 @@ export default function CocinaModule() {
       .subscribe()
     return () => sb.removeChannel(ch)
   }, [tenantId])
+
+  async function handleMarkInProgress(orderId) {
+    try {
+      await dbUpdateKitchenStatus(orderId, 'in_progress')
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, kitchen_status: 'in_progress' } : o))
+    } catch (e) {
+      alert('Error: ' + e.message)
+    }
+  }
 
   async function handleMarkReady(orderId) {
     try {
@@ -84,7 +93,7 @@ export default function CocinaModule() {
           <p>La cocina está al día.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px', overflowY: 'auto', alignContent: 'start' }}>
+        <div style={{ columnCount: 'auto', columnWidth: '320px', columnGap: '20px', overflowY: 'auto', paddingRight: '4px' }}>
           {orders.map(o => {
             const typeInfo = getOrderTypeInfo(o)
             const waitTime = getWaitTimeMinutes(o.created_at)
@@ -93,7 +102,7 @@ export default function CocinaModule() {
             else if (waitTime >= 10) waitColor = '#f59e0b' // yellow if > 10m
 
             return (
-              <div key={o.id} onClick={() => setSelectedOrder(o)} style={{ cursor: 'pointer', background: 'var(--surface)', 
+              <div key={o.id} style={{ breakInside: 'avoid', marginBottom: '20px', background: 'var(--surface)', 
                 border: `2px solid ${typeInfo.color}`, 
                 borderRadius: '12px', 
                 display: 'flex', 
@@ -120,7 +129,7 @@ export default function CocinaModule() {
                 )}
 
                 {/* Lista de Items */}
-                <div style={{ padding: '16px', flex: 1, overflowY: 'auto', maxHeight: '250px' }}>
+                <div style={{ padding: '16px', flex: 1 }}>
                   {o.order_items?.length > 0 ? (
                     <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', gap: '12px' }}>
                       {o.order_items.map(item => (
