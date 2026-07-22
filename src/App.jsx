@@ -14,6 +14,7 @@ import ClientesModule from './modules/clientes/ClientesModule'
 import EmpleadosModule from './modules/empleados/EmpleadosModule'
 import RepartidorModule from './modules/repartidor/RepartidorModule'
 import HistorialModule from './modules/historial/HistorialModule'
+import StockModule from './modules/stock/StockModule'
 import './App.css'
 
 function AppShell() {
@@ -59,6 +60,7 @@ function AppShell() {
     empleados: <EmpleadosModule />,
     repartidor: <RepartidorModule />,
     historial: <HistorialModule />,
+    stock: <StockModule />,
   }
 
   return (

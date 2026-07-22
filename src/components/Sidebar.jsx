@@ -46,6 +46,7 @@ export default function Sidebar() {
   if (isOwner) {
     allowedItems.push({ id: 'empleados', icon: '👤', label: 'Empleados' })
     allowedItems.push({ id: 'historial', icon: '📜', label: 'Historial' })
+    allowedItems.push({ id: 'stock', icon: '📦', label: 'Stock' })
   }
 
   return (

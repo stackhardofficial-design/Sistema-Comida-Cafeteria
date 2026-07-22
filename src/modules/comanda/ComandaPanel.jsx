@@ -4,7 +4,7 @@ import {
   dbGetCategories, dbGetProducts, dbAddItem, dbRemoveItem,
   dbCreateOrder, dbUpdateOrder, dbUpdateTable, dbCreatePayment,
   dbGetOpenSession, dbOpenSession, fmtMoney, dbRecalcOrder, sb, logActivity,
-  dbGetZones, dbGetTables, dbGetOrder
+  dbGetZones, dbGetTables, dbGetOrder, dbDeductStockForOrder
 } from '../../lib/supabase'
 import Modal from '../../components/Modal'
 
@@ -386,6 +386,8 @@ export default function ComandaPanel() {
       if (currentContext.tableDbId) {
         await dbUpdateTable(currentContext.tableDbId, { status: 'free', current_order_id: null })
       }
+      // Deduct ingredient stock based on recipe
+      await dbDeductStockForOrder(tenantId, currentContext.orderId)
       clearCart()
       setPayModal(false)
       setPayments([])

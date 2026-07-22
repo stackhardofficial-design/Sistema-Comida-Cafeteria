@@ -382,3 +382,123 @@ export async function dbGetActivityLogs(tenantId, filters = {}) {
   if (error) throw error
   return data || []
 }
+
+// ===== STOCK: INGREDIENTS =====
+export async function dbGetIngredients(tenantId) {
+  const { data, error } = await sb.from('ingredients')
+    .select('*').eq('tenant_id', tenantId).eq('is_active', true)
+    .order('name', { ascending: true })
+  if (error) throw error
+  return data || []
+}
+
+export async function dbCreateIngredient(tenantId, payload) {
+  const { data, error } = await sb.from('ingredients')
+    .insert({ tenant_id: tenantId, ...payload }).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function dbUpdateIngredient(id, payload) {
+  const { data, error } = await sb.from('ingredients')
+    .update({ ...payload, updated_at: new Date().toISOString() }).eq('id', id).select().single()
+  if (error) throw error
+  return data
+}
+
+export async function dbDeleteIngredient(id) {
+  await sb.from('product_ingredients').delete().eq('ingredient_id', id)
+  const { error } = await sb.from('ingredients').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ===== STOCK: PRODUCT INGREDIENTS (RECIPES) =====
+export async function dbGetProductIngredients(productId) {
+  const { data, error } = await sb.from('product_ingredients')
+    .select('*, ingredients(id, name, unit, cost)')
+    .eq('product_id', productId)
+  if (error) throw error
+  return data || []
+}
+
+export async function dbSetProductIngredients(tenantId, productId, rows) {
+  await sb.from('product_ingredients').delete().eq('product_id', productId)
+  if (rows.length === 0) return
+  const inserts = rows.map(r => ({
+    tenant_id: tenantId,
+    product_id: productId,
+    ingredient_id: r.ingredient_id,
+    quantity: r.quantity
+  }))
+  const { error } = await sb.from('product_ingredients').insert(inserts)
+  if (error) throw error
+}
+
+// ===== STOCK: MOVEMENTS =====
+export async function dbGetStockMovements(tenantId, limit = 300) {
+  const { data, error } = await sb.from('stock_movements')
+    .select('*, ingredients(name, unit)')
+    .eq('tenant_id', tenantId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return data || []
+}
+
+export async function dbAdjustIngredientStock(tenantId, ingredientId, amount, reason, previousStock) {
+  const prev = parseFloat(previousStock) || 0
+  const delta = reason === 'desperdicio' ? -Math.abs(amount) : Math.abs(amount)
+  const newStock = Math.max(0, prev + delta)
+
+  const { error: e1 } = await sb.from('ingredients')
+    .update({ current_stock: newStock, updated_at: new Date().toISOString() })
+    .eq('id', ingredientId)
+  if (e1) throw e1
+
+  const { error: e2 } = await sb.from('stock_movements').insert({
+    tenant_id: tenantId,
+    item_type: 'ingredient',
+    item_id: ingredientId,
+    change_amount: delta,
+    previous_stock: prev,
+    new_stock: newStock,
+    reason
+  })
+  if (e2) throw e2
+}
+
+export async function dbDeductStockForOrder(tenantId, orderId) {
+  try {
+    const { data: items } = await sb.from('order_items')
+      .select('product_id, quantity').eq('order_id', orderId)
+    if (!items || items.length === 0) return
+
+    for (const item of items) {
+      const { data: recipe } = await sb.from('product_ingredients')
+        .select('ingredient_id, quantity, ingredients(id, current_stock, unit)')
+        .eq('product_id', item.product_id)
+      if (!recipe || recipe.length === 0) continue
+
+      for (const r of recipe) {
+        const totalRequired = r.quantity * item.quantity
+        const ing = r.ingredients
+        const prev = parseFloat(ing.current_stock) || 0
+        const newStock = Math.max(0, prev - totalRequired)
+
+        await sb.from('ingredients').update({ current_stock: newStock, updated_at: new Date().toISOString() }).eq('id', r.ingredient_id)
+        await sb.from('stock_movements').insert({
+          tenant_id: tenantId,
+          item_type: 'ingredient',
+          item_id: r.ingredient_id,
+          change_amount: -totalRequired,
+          previous_stock: prev,
+          new_stock: newStock,
+          reason: 'venta',
+          reference_id: orderId
+        })
+      }
+    }
+  } catch (e) {
+    console.warn('Stock deduction failed:', e.message)
+  }
+}
