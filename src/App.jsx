@@ -67,7 +67,7 @@ function AppShell() {
       <main className="workspace">
         {MODULE_MAP[currentModule] || <MesasModule />}
       </main>
-      <ComandaPanel />
+      {['mesas', 'mostrador', 'delivery'].includes(currentModule) && <ComandaPanel />}
     </div>
   )
 }
