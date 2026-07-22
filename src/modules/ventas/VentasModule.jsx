@@ -173,7 +173,7 @@ export default function VentasModule() {
 
   const inputStyle = {
     padding: '8px 12px', borderRadius: '7px', border: '1px solid var(--border)',
-    background: 'var(--surface)', color: 'var(--text)', fontSize: '13px', outline: 'none'
+    background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '13px', outline: 'none'
   }
 
   return (
@@ -496,7 +496,7 @@ export default function VentasModule() {
             onChange={e => setPinInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && confirmAnular()}
             autoFocus
-            style={{ width: '100%', padding: '12px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '16px', textAlign: 'center', letterSpacing: '4px', boxSizing: 'border-box' }}
+            style={{ width: '100%', padding: '12px', borderRadius: '7px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '16px', textAlign: 'center', letterSpacing: '4px', boxSizing: 'border-box' }}
           />
           <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
             <button onClick={() => setPinModal(false)} style={{ flex: 1, padding: '11px', background: 'transparent', border: '1px solid var(--border)', borderRadius: '7px', cursor: 'pointer', color: 'var(--text-secondary)' }}>

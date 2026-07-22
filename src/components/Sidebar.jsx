@@ -81,13 +81,8 @@ export default function Sidebar() {
     <aside className="sidebar">
       <div className="sidebar-logo" style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '24px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-          <div style={{
-            width: '32px', height: '32px', background: 'linear-gradient(135deg, #4f4f4f 0%, #333333 100%)',
-            borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)'
-          }}>
-            <Database size={18} color="#FF6600" />
-          </div>
+          <img src="/logo-dark.jpg" alt="StackHard" className="logo-dark" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} />
+          <img src="/logo-light.jpg" alt="StackHard" className="logo-light" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} />
           <span className="logo-text" style={{ fontSize: '20px', letterSpacing: '-0.5px' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Stack</span><span style={{ color: 'var(--accent)' }}>Hard</span>
           </span>

@@ -43,13 +43,8 @@ export default function Login() {
     <div className="login-screen" style={{ background: 'var(--bg)' }}>
       <div className="login-box" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }}>
         <div className="login-logo" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px' }}>
-          <div style={{
-            width: '64px', height: '64px', background: 'linear-gradient(135deg, #4f4f4f 0%, #333333 100%)',
-            borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '16px'
-          }}>
-            <Database size={36} color="#FF6600" />
-          </div>
+          <img src="/logo-dark.jpg" alt="StackHard" className="logo-dark" style={{ width: '80px', height: '80px', borderRadius: '16px', objectFit: 'cover', marginBottom: '16px' }} />
+          <img src="/logo-light.jpg" alt="StackHard" className="logo-light" style={{ width: '80px', height: '80px', borderRadius: '16px', objectFit: 'cover', marginBottom: '16px' }} />
           <h1 style={{ fontSize: '32px', fontWeight: '900', letterSpacing: '-1px', margin: '0 0 8px 0' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Stack</span><span style={{ color: 'var(--accent)' }}>Hard</span>
           </h1>

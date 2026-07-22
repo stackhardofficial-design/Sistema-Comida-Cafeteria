@@ -494,7 +494,7 @@ export default function ComandaPanel() {
                   borderRadius: '6px', 
                   border: '1px solid var(--border)', 
                   background: 'var(--input-bg, #fff)', 
-                  color: 'var(--text)' 
+                  color: 'var(--text-primary)' 
                 }}
                 autoFocus
               />
@@ -859,12 +859,12 @@ export default function ComandaPanel() {
               <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <span style={{ fontSize: '13px', fontWeight: 600 }}>Propina a registrar:</span>
                 <div style={{ display: 'flex', gap: '6px' }}>
-                  <button onClick={() => setTipMode('none')} style={{ flex: 1, padding: '8px 4px', fontSize: '12px', borderRadius: '6px', border: '1px solid', borderColor: tipMode === 'none' ? 'var(--accent)' : 'var(--border)', background: tipMode === 'none' ? 'var(--accent)' : 'var(--surface)', color: tipMode === 'none' ? 'white' : 'var(--text)', cursor: 'pointer', fontWeight: 600 }}>0%</button>
-                  <button onClick={() => setTipMode('10')} style={{ flex: 1, padding: '8px 4px', fontSize: '12px', borderRadius: '6px', border: '1px solid', borderColor: tipMode === '10' ? 'var(--accent)' : 'var(--border)', background: tipMode === '10' ? 'var(--accent)' : 'var(--surface)', color: tipMode === '10' ? 'white' : 'var(--text)', cursor: 'pointer', fontWeight: 600 }}>10% ({fmtMoney(grandTotal * 0.1)})</button>
-                  <button onClick={() => { setTipMode('custom'); setCustomTip('') }} style={{ flex: 1, padding: '8px 4px', fontSize: '12px', borderRadius: '6px', border: '1px solid', borderColor: tipMode === 'custom' ? 'var(--accent)' : 'var(--border)', background: tipMode === 'custom' ? 'var(--accent)' : 'var(--surface)', color: tipMode === 'custom' ? 'white' : 'var(--text)', cursor: 'pointer', fontWeight: 600 }}>Monto...</button>
+                  <button onClick={() => setTipMode('none')} style={{ flex: 1, padding: '8px 4px', fontSize: '12px', borderRadius: '6px', border: '1px solid', borderColor: tipMode === 'none' ? 'var(--accent)' : 'var(--border)', background: tipMode === 'none' ? 'var(--accent)' : 'var(--surface)', color: tipMode === 'none' ? 'white' : 'var(--text-primary)', cursor: 'pointer', fontWeight: 600 }}>0%</button>
+                  <button onClick={() => setTipMode('10')} style={{ flex: 1, padding: '8px 4px', fontSize: '12px', borderRadius: '6px', border: '1px solid', borderColor: tipMode === '10' ? 'var(--accent)' : 'var(--border)', background: tipMode === '10' ? 'var(--accent)' : 'var(--surface)', color: tipMode === '10' ? 'white' : 'var(--text-primary)', cursor: 'pointer', fontWeight: 600 }}>10% ({fmtMoney(grandTotal * 0.1)})</button>
+                  <button onClick={() => { setTipMode('custom'); setCustomTip('') }} style={{ flex: 1, padding: '8px 4px', fontSize: '12px', borderRadius: '6px', border: '1px solid', borderColor: tipMode === 'custom' ? 'var(--accent)' : 'var(--border)', background: tipMode === 'custom' ? 'var(--accent)' : 'var(--surface)', color: tipMode === 'custom' ? 'white' : 'var(--text-primary)', cursor: 'pointer', fontWeight: 600 }}>Monto...</button>
                 </div>
                 {tipMode === 'custom' && (
-                  <input type="number" placeholder="Monto exacto de propina" value={customTip} onChange={e => setCustomTip(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--accent)', background: 'var(--surface)', color: 'var(--text)', fontWeight: 'bold' }} autoFocus />
+                  <input type="number" placeholder="Monto exacto de propina" value={customTip} onChange={e => setCustomTip(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--accent)', background: 'var(--surface)', color: 'var(--text-primary)', fontWeight: 'bold' }} autoFocus />
                 )}
               </div>
 
@@ -1015,7 +1015,7 @@ export default function ComandaPanel() {
             <button 
               className="btn-cancel-modal" 
               onClick={() => { setPayModal(false); setPayments([]); setPayAmount(''); setTipMode('none'); setCustomTip(''); }}
-              style={{ padding: '16px', background: 'transparent', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '8px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}
+              style={{ padding: '16px', background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '8px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}
             >
               Cancelar
             </button>

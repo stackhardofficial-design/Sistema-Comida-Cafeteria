@@ -276,7 +276,7 @@ export default function MostradorModule() {
             placeholder="Buscar por etiqueta o nombre"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ background: 'transparent', border: 'none', outline: 'none', color: 'var(--text)', width: '100%', fontSize: '14px' }}
+            style={{ background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', width: '100%', fontSize: '14px' }}
           />
           {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '16px' }}>✕</button>}
         </div>

@@ -217,7 +217,7 @@ export default function CajaModule() {
               placeholder="0.00"
               value={openingAmount}
               onChange={e => setOpeningAmount(e.target.value)}
-              style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--input-bg)', color: 'var(--text)' }}
+              style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }}
             />
           </div>
           <div className="form-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '16px' }}>
@@ -240,7 +240,7 @@ export default function CajaModule() {
               placeholder="0.00"
               value={closingAmount}
               onChange={e => setClosingAmount(e.target.value)}
-              style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--input-bg)', color: 'var(--text)' }}
+              style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--input-bg)', color: 'var(--text-primary)' }}
             />
           </div>
           <div className="form-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '16px' }}>

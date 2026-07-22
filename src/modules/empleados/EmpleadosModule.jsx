@@ -11,8 +11,8 @@ import Modal from '../../components/Modal'
 
 const MODULE_OPTIONS = [
   { id: 'mesas',      label: <><Grid size={16} style={{marginRight:6}}/> Mesas</> },
-  { id: 'mostrador',  label: '<MonitorSmartphone size={18} style={{marginRight:6}} /> Mostrador' },
-  { id: 'delivery',   label: '<Package size={18} style={{marginRight:6}} /> Delivery' },
+  { id: 'mostrador',  label: <><MonitorSmartphone size={18} style={{marginRight:6}} /> Mostrador</> },
+  { id: 'delivery',   label: <><Package size={18} style={{marginRight:6}} /> Delivery</> },
   { id: 'ventas',     label: '📊 Ventas' },
   { id: 'caja',       label: '🏧 Caja' },
   { id: 'clientes',   label: <><Users size={16} style={{marginRight:6}}/> Clientes</> },
@@ -37,7 +37,7 @@ export default function EmpleadosModule() {
         </div>
         <div style={{ display: 'flex', gap: 0, padding: '0 24px', marginTop: '12px' }}>
           {[
-            { id: 'empleados', label: '<User size={14} style={{marginRight:4}} /> Equipo' },
+            { id: 'empleados', label: <><User size={14} style={{marginRight:4}} /> Equipo</> },
             { id: 'horas',     label: <><Clock size={16} style={{marginRight:6}}/> Horas Trabajadas</> },
                       ].map(t => (
             <button key={t.id} onClick={() => setTab(t.id)} style={{
@@ -132,7 +132,7 @@ function TabEquipo({ tenantId }) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <input placeholder="Buscar  Buscar por nombre..." value={search} onChange={e => setSearch(e.target.value)}
-          style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px', width: '260px' }} />
+          style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '13px', width: '260px' }} />
         <button onClick={() => setShowNew(true)} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'white', fontWeight: '700', cursor: 'pointer' }}>
           + Nuevo Empleado
         </button>
@@ -225,7 +225,7 @@ function TabEquipo({ tenantId }) {
               <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '8px' }}>Módulos accesibles</label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 {MODULE_OPTIONS.map(mod => (
-                  <label key={mod.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: newForm.modules.includes(mod.id) ? 'var(--accent)' : 'none', color: newForm.modules.includes(mod.id) ? 'white' : 'var(--text)', transition: 'all 0.1s' }}>
+                  <label key={mod.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer', padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: newForm.modules.includes(mod.id) ? 'var(--accent)' : 'none', color: newForm.modules.includes(mod.id) ? 'white' : 'var(--text-primary)', transition: 'all 0.1s' }}>
                     <input type="checkbox" checked={newForm.modules.includes(mod.id)} onChange={() => setNewForm(p => ({ ...p, modules: p.modules.includes(mod.id) ? p.modules.filter(m => m !== mod.id) : [...p.modules, mod.id] }))} style={{ display: 'none' }} />
                     {mod.label}
                   </label>
@@ -251,7 +251,7 @@ function TabEquipo({ tenantId }) {
               <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '4px' }}>Sueldo por hora ($)</label>
               <input type="number" min="0" step="0.01" placeholder="Ej: 1200" value={editEmp.hourly_rate}
                 onChange={e => setEditEmp(p => ({ ...p, hourly_rate: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--surface)', color: 'var(--text)', fontSize: '14px', boxSizing: 'border-box' }} />
+                style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '14px', boxSizing: 'border-box' }} />
             </div>
             <div>
               <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '8px' }}>Módulos accesibles</label>
@@ -259,7 +259,7 @@ function TabEquipo({ tenantId }) {
                 {MODULE_OPTIONS.map(mod => {
                   const checked = (editEmp.roles || []).includes(mod.id)
                   return (
-                    <label key={mod.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: checked ? 'var(--accent)' : 'none', color: checked ? 'white' : 'var(--text)', transition: 'all 0.1s' }}>
+                    <label key={mod.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: checked ? 'var(--accent)' : 'none', color: checked ? 'white' : 'var(--text-primary)', transition: 'all 0.1s' }}>
                       <input type="checkbox" checked={checked} onChange={() => setEditEmp(p => ({ ...p, roles: (p.roles || []).includes(mod.id) ? (p.roles || []).filter(m => m !== mod.id) : [...(p.roles || []), mod.id] }))} style={{ display: 'none' }} />
                       {mod.label}
                     </label>
@@ -432,7 +432,7 @@ function TabHoras({ tenantId }) {
     return { emp, totalH, totalPay }
   })
 
-  const inputStyle = { width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '14px', boxSizing: 'border-box' }
+  const inputStyle = { width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '14px', boxSizing: 'border-box' }
 
   return (
     <div>
@@ -448,7 +448,7 @@ function TabHoras({ tenantId }) {
             </div>
             {distribution.length > 0 && (
               <button onClick={copyToClipboard}
-                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: copied ? '#10b981' : 'none', color: copied ? 'white' : 'var(--text)', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.2s' }}>
+                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--border)', background: copied ? '#10b981' : 'none', color: copied ? 'white' : 'var(--text-primary)', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.2s' }}>
                 {copied ? <><Check size={16} style={{marginRight:6}}/> Copiado!</> : <><FileText size={16} style={{marginRight:6}}/> Copiar resumen</>}
               </button>
             )}
@@ -465,7 +465,7 @@ function TabHoras({ tenantId }) {
                   padding: '10px 16px', borderRadius: '10px', border: '2px solid',
                   borderColor: splitMode === m.id ? 'var(--accent)' : 'var(--border)',
                   background: splitMode === m.id ? 'var(--accent)' : 'none',
-                  color: splitMode === m.id ? 'white' : 'var(--text)',
+                  color: splitMode === m.id ? 'white' : 'var(--text-primary)',
                   cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s'
                 }}>
                   <div style={{ fontWeight: '700', fontSize: '13px' }}>{m.label}</div>
@@ -571,13 +571,13 @@ function TabHoras({ tenantId }) {
       {/* Filters + Action */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
         <select value={filterEmp} onChange={e => setFilterEmp(e.target.value)}
-          style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px' }}>
+          style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '13px' }}>
           <option value="all">Todos los empleados</option>
           {employees.filter(e => e.role !== 'owner').map(e => <option key={e.id} value={e.id}>{e.first_name} {e.last_name}</option>)}
         </select>
-        <input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px' }} />
+        <input type="date" value={filterFrom} onChange={e => setFilterFrom(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '13px' }} />
         <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>hasta</span>
-        <input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px' }} />
+        <input type="date" value={filterTo} onChange={e => setFilterTo(e.target.value)} style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '13px' }} />
         <div style={{ flex: 1 }} />
         <button onClick={() => {
           setForm({ user_id: '', work_date: new Date().toISOString().slice(0, 10), time_in: '', time_out: '', notes: '' })

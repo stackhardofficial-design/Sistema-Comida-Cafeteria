@@ -207,7 +207,7 @@ CREATE POLICY "Allow ALL for tenant" ON public.activity_logs FOR ALL USING (true
         <select
           value={filterUser}
           onChange={e => setFilterUser(e.target.value)}
-          style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '13px' }}
+          style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)', fontSize: '13px' }}
         >
           <option value=""><User size={14} style={{marginRight:4}} /> Todos los empleados</option>
           {uniqueUsers.map(u => (
@@ -218,7 +218,7 @@ CREATE POLICY "Allow ALL for tenant" ON public.activity_logs FOR ALL USING (true
         <select
           value={filterAction}
           onChange={e => setFilterAction(e.target.value)}
-          style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '13px' }}
+          style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)', fontSize: '13px' }}
         >
           <option value="">📌 Todas las acciones</option>
           {uniqueActions.map(a => (
@@ -230,14 +230,14 @@ CREATE POLICY "Allow ALL for tenant" ON public.activity_logs FOR ALL USING (true
           type="date"
           value={filterFrom}
           onChange={e => setFilterFrom(e.target.value)}
-          style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '13px' }}
+          style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)', fontSize: '13px' }}
           placeholder="Desde"
         />
         <input
           type="date"
           value={filterTo}
           onChange={e => setFilterTo(e.target.value)}
-          style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', fontSize: '13px' }}
+          style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)', fontSize: '13px' }}
           placeholder="Hasta"
         />
 
@@ -300,7 +300,7 @@ CREATE POLICY "Allow ALL for tenant" ON public.activity_logs FOR ALL USING (true
                   }}
                 >
                   <td style={{ padding: '12px 16px', fontSize: '12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                    <div style={{ fontWeight: '500', color: 'var(--text)' }}>
+                    <div style={{ fontWeight: '500', color: 'var(--text-primary)' }}>
                       {new Date(log.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                     </div>
                     <div>{new Date(log.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</div>

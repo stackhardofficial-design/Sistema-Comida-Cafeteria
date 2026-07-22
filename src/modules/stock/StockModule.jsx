@@ -92,7 +92,7 @@ function IngredientSearch({ ingredients, onSelect, excluded = [] }) {
         style={{
           width: '100%', padding: '8px 12px', borderRadius: '8px',
           border: '1px solid var(--border)', background: 'var(--surface)',
-          color: 'var(--text)', fontSize: '13px', boxSizing: 'border-box'
+          color: 'var(--text-primary)', fontSize: '13px', boxSizing: 'border-box'
         }}
       />
       {open && filtered.length > 0 && (
@@ -105,7 +105,7 @@ function IngredientSearch({ ingredients, onSelect, excluded = [] }) {
             <button key={i.id} onClick={() => handleSelect(i)} style={{
               display: 'block', width: '100%', padding: '9px 14px', textAlign: 'left',
               background: 'none', border: 'none', borderBottom: '1px solid var(--border)',
-              cursor: 'pointer', fontSize: '13px', color: 'var(--text)'
+              cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)'
             }}
               onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-soft, #f0f4ff)'}
               onMouseLeave={e => e.currentTarget.style.background = 'none'}
@@ -199,7 +199,7 @@ function TabControl({ tenantId }) {
 
       <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <input placeholder="Buscar  Buscar ingrediente..." value={search} onChange={e => setSearch(e.target.value)}
-          style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px', minWidth: '200px' }} />
+          style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '13px', minWidth: '200px' }} />
         {[{ id: 'all', label: 'Todos' }, { id: 'ok', label: <><Check size={16} style={{marginRight:6}}/> Disponibles</> }, { id: 'poco', label: '⚠️ Poco stock' }, { id: 'agotados', label: <><X size={16} style={{marginRight:6}}/> Agotados</> }].map(f => (
           <button key={f.id} onClick={() => setFilter(f.id)} style={{
             padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)',
@@ -254,7 +254,7 @@ function TabControl({ tenantId }) {
               Cantidad a sumar o restar ({editItem?.unit})
             </label>
             <input type="number" min="0.001" step="0.001" value={editStock} onChange={e => setEditStock(e.target.value)} placeholder="Ej: 1.5"
-              style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '16px', textAlign: 'center' }} autoFocus />
+              style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '16px', textAlign: 'center' }} autoFocus />
             <p style={{ margin: '8px 0 0', fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center' }}>
               Stock actual: <strong>{parseFloat(editItem?.current_stock || 0)} {editItem?.unit}</strong>
             </p>
@@ -352,7 +352,7 @@ function TabProductosStock({ tenantId }) {
 
       <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <input placeholder="Buscar  Buscar producto..." value={search} onChange={e => setSearch(e.target.value)}
-          style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px', minWidth: '200px' }} />
+          style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '13px', minWidth: '200px' }} />
         {[{ id: 'all', label: 'Todos' }, { id: 'con_stock', label: <><Check size={16} style={{marginRight:6}}/> Trackeados</> }, { id: 'agotados', label: <><X size={16} style={{marginRight:6}}/> Agotados</> }].map(f => (
           <button key={f.id} onClick={() => setFilter(f.id)} style={{
             padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)',
@@ -412,7 +412,7 @@ function TabProductosStock({ tenantId }) {
               Cantidad a sumar o restar
             </label>
             <input type="number" min="1" step="1" value={editStock} onChange={e => setEditStock(e.target.value)} placeholder="Ej: 10"
-              style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '16px', textAlign: 'center' }} autoFocus />
+              style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '16px', textAlign: 'center' }} autoFocus />
             {editItem?.stock_quantity === null && (
               <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center' }}>
                 ℹ️ Al realizar el ajuste, este producto pasará a trackearse automáticamente.
@@ -479,7 +479,7 @@ function TabIngredientes({ tenantId }) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <input placeholder="Buscar  Buscar ingrediente..." value={search} onChange={e => setSearch(e.target.value)}
-          style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px', width: '260px' }} />
+          style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '13px', width: '260px' }} />
         <button onClick={openNew} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: 'var(--accent)', color: 'white', fontWeight: '700', cursor: 'pointer' }}>
           + Nuevo Ingrediente
         </button>
@@ -525,13 +525,13 @@ function TabIngredientes({ tenantId }) {
             <div key={f.key}>
               <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '5px', color: 'var(--text-secondary)' }}>{f.label}</label>
               <input type={f.type} placeholder={f.placeholder} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '14px', boxSizing: 'border-box' }} />
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '14px', boxSizing: 'border-box' }} />
             </div>
           ))}
           <div>
             <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '5px', color: 'var(--text-secondary)' }}>Unidad de medida *</label>
             <select value={form.unit} onChange={e => setForm(p => ({ ...p, unit: e.target.value }))}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '14px' }}>
+              style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '14px' }}>
               {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
             </select>
           </div>
@@ -619,7 +619,7 @@ function TabRecetas({ tenantId }) {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               width: '100%', padding: '10px 16px', textAlign: 'left',
               background: selectedProduct?.id === p.id ? 'var(--accent)' : 'none',
-              color: selectedProduct?.id === p.id ? 'white' : 'var(--text)',
+              color: selectedProduct?.id === p.id ? 'white' : 'var(--text-primary)',
               border: 'none', borderBottom: '1px solid var(--border)', cursor: 'pointer', fontSize: '13px',
               fontWeight: selectedProduct?.id === p.id ? '700' : '500', transition: 'all 0.1s'
             }}>
@@ -670,7 +670,7 @@ function TabRecetas({ tenantId }) {
                         <td style={{ padding: '8px', textAlign: 'center' }}>
                           <input type="number" min="0" step="0.01" value={r.quantity}
                             onChange={e => updateQty(r.ingredient_id, e.target.value)}
-                            style={{ width: '80px', padding: '5px 8px', borderRadius: '6px', border: '1px solid var(--border)', textAlign: 'center', background: 'var(--surface)', color: 'var(--text)', fontSize: '14px', fontWeight: '600' }} />
+                            style={{ width: '80px', padding: '5px 8px', borderRadius: '6px', border: '1px solid var(--border)', textAlign: 'center', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '14px', fontWeight: '600' }} />
                         </td>
                         <td style={{ padding: '8px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '13px' }}>{r.ingredient?.unit}</td>
                         <td style={{ padding: '4px' }}>
@@ -823,9 +823,9 @@ function TabRentabilidad({ tenantId }) {
         <>
           <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
             <input placeholder="Buscar  Buscar producto..." value={searchProd} onChange={e => setSearchProd(e.target.value)}
-              style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px', width: '220px' }} />
+              style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '13px', width: '220px' }} />
             <select value={filterCat} onChange={e => setFilterCat(e.target.value)}
-              style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px' }}>
+              style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '13px' }}>
               <option value="all">Todas las categorías</option>
               {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
@@ -960,18 +960,18 @@ function TabRentabilidad({ tenantId }) {
             <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '5px', color: 'var(--text-secondary)' }}>Descripción *</label>
             <input type="text" placeholder="Ej: Alquiler, Sueldo empleado, Gas..." value={fcForm.name}
               onChange={e => setFcForm(p => ({ ...p, name: e.target.value }))}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '14px', boxSizing: 'border-box' }} autoFocus />
+              style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '14px', boxSizing: 'border-box' }} autoFocus />
           </div>
           <div>
             <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '5px', color: 'var(--text-secondary)' }}>Monto ($) *</label>
             <input type="number" min="0" step="0.01" placeholder="0.00" value={fcForm.amount}
               onChange={e => setFcForm(p => ({ ...p, amount: e.target.value }))}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '14px', boxSizing: 'border-box' }} />
+              style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '14px', boxSizing: 'border-box' }} />
           </div>
           <div>
             <label style={{ fontSize: '12px', fontWeight: '600', display: 'block', marginBottom: '5px', color: 'var(--text-secondary)' }}>Frecuencia</label>
             <select value={fcForm.frequency} onChange={e => setFcForm(p => ({ ...p, frequency: e.target.value }))}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '14px' }}>
+              style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', fontSize: '14px' }}>
               <option value="monthly">Mensual</option>
               <option value="weekly">Semanal</option>
               <option value="annual">Anual</option>
