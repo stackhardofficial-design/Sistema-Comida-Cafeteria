@@ -28,8 +28,8 @@ export default function MostradorModule() {
     try {
       setLoading(true)
       const [open, closed] = await Promise.all([
-        dbGetOrders(tenantId, { status: 'open', type: 'dine_in' }),
-        dbGetOrders(tenantId, { status: 'paid', type: 'dine_in', limit: 5 })
+        dbGetOrders(tenantId, { status: 'open' }),
+        dbGetOrders(tenantId, { status: 'paid', limit: 5 })
       ])
       setOpenOrders(open)
       setClosedOrders(closed)
@@ -126,9 +126,20 @@ export default function MostradorModule() {
 
   async function openTicket(order) {
     try {
+      const isDelivOrd = order.order_type === 'delivery'
+      // Respuesta visual inmediata
+      setCurrentContext({
+        type: isDelivOrd ? 'delivery' : 'mostrador',
+        orderId: order.id,
+        customerName: order.customer_name || '',
+        address: '',
+      })
+      setCart([])
+      setDiscount({ type: 'none', value: 0 })
+
+      // Carga asíncrona de detalles en segundo plano
       const fullOrder = await dbGetOrder(order.id)
       if (!fullOrder) return
-      const isDelivOrd = order.order_type === 'delivery'
       setCurrentContext({
         type: isDelivOrd ? 'delivery' : 'mostrador',
         orderId: order.id,
@@ -142,7 +153,6 @@ export default function MostradorModule() {
         notes: oi.notes || '',
         dbItemId: oi.id
       })))
-      setDiscount({ type: 'none', value: 0 })
     } catch (e) {
       alert('Error al cargar pedido')
     }
