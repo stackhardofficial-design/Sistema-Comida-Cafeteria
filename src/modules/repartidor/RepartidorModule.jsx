@@ -27,7 +27,16 @@ function MapPreview({ address, mapsUrl }) {
 
   if (!address && !mapsUrl) return null
 
+  
+  const getRepartidorStatus = (o) => {
+    if (o.status === 'in_transit') return { label: 'EN CAMINO', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)' }
+    if (o.kitchen_status === 'ready') return { label: 'LISTO PARA RETIRAR', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' }
+    if (o.kitchen_status === 'in_progress') return { label: 'COCINANDO', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' }
+    return { label: 'EN COLA', color: 'var(--text-secondary)', bg: 'var(--surface-2)' }
+  }
+
   return (
+
     <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)', marginBottom: '4px' }}>
       {iframeSrc ? (
         <div style={{ position: 'relative' }}>
@@ -120,7 +129,7 @@ export default function RepartidorModule() {
     try {
       setLoading(true)
       const data = await dbGetDeliveryOrders(tenantId)
-      setOrders(data.filter(o => o.status === 'in_transit'))
+      setOrders(data.filter(o => o.status === 'open' || o.status === 'in_transit'))
     } catch (e) {
       console.error('Error al cargar pedidos del repartidor:', e)
     } finally {
@@ -291,6 +300,9 @@ export default function RepartidorModule() {
                     <div style={{ color: 'var(--text-secondary)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase' }}>Pedido</div>
                     <div style={{ color: 'var(--accent)', fontSize: '14px', fontWeight: '800' }}>#{order.id.slice(-5).toUpperCase()}</div>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>{orderTime}</div>
+                      <div style={{ color: getRepartidorStatus(order).color, background: getRepartidorStatus(order).bg, padding: '3px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', marginTop: '6px', textAlign: 'center' }}>
+                        {getRepartidorStatus(order).label}
+                      </div>
                   </div>
                 </div>
 
@@ -382,9 +394,7 @@ export default function RepartidorModule() {
                     style={{
                       width: '100%',
                       padding: '16px',
-                      background: isBeingDelivered
-                        ? 'rgba(255,255,255,0.1)'
-                        : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      background: isBeingDelivered ? 'var(--surface-2)' : (order.status === 'open' ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)'),
                       color: isBeingDelivered ? '#64748b' : 'white',
                       border: 'none',
                       borderRadius: '12px',
