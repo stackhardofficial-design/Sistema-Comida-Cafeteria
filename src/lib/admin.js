@@ -10,24 +10,21 @@ const adminSb = createClient(SUPABASE_URL, SERVICE_ROLE, {
 })
 
 export async function dbCreateEmployee(tenantId, email, password, firstName, lastName, modules) {
-  // 1. Crear usuario en Auth
   const { data: authData, error: authError } = await adminSb.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true
+    email, password, email_confirm: true
   })
   if (authError) throw authError
 
-  // 2. Insertar en public.users con los permisos
   const userId = authData.user.id
   const { data: userData, error: userError } = await adminSb.from('users').insert({
     id: userId,
     tenant_id: tenantId,
-    role: 'cashier', // Must be one of the DB allowed roles (cashier, waiter, manager, admin, owner)
+    role: 'cashier',
     first_name: firstName,
     last_name: lastName,
-    roles: modules, // Guardamos los modulos a los que tiene acceso en el array de roles
-    is_active: true
+    roles: modules,
+    is_active: true,
+    hourly_rate: 0
   }).select().single()
 
   if (userError) throw userError
@@ -39,25 +36,76 @@ export async function dbGetEmployees(tenantId) {
     .select('*')
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: true })
-  
+  if (error) throw error
+  return data
+}
+
+export async function dbUpdateEmployee(userId, updates) {
+  const { data, error } = await adminSb.from('users')
+    .update(updates)
+    .eq('id', userId).select().single()
   if (error) throw error
   return data
 }
 
 export async function dbUpdateEmployeeAccess(userId, modules) {
-  const { data, error } = await adminSb.from('users').update({
-    roles: modules
-  }).eq('id', userId).select().single()
-  
+  return dbUpdateEmployee(userId, { roles: modules })
+}
+
+export async function dbToggleEmployeeStatus(userId, isActive) {
+  return dbUpdateEmployee(userId, { is_active: isActive })
+}
+
+// ── EMPLOYEE HOURS ──────────────────────────────────────────────────────────
+export async function dbGetEmployeeHours(tenantId, filters = {}) {
+  let q = adminSb.from('employee_hours')
+    .select('*, users(first_name, last_name)')
+    .eq('tenant_id', tenantId)
+    .order('work_date', { ascending: false })
+  if (filters.userId) q = q.eq('user_id', filters.userId)
+  if (filters.from)   q = q.gte('work_date', filters.from)
+  if (filters.to)     q = q.lte('work_date', filters.to)
+  const { data, error } = await q
+  if (error) throw error
+  return data || []
+}
+
+export async function dbAddEmployeeHours(tenantId, userId, workDate, hoursWorked, notes = '') {
+  const { data, error } = await adminSb.from('employee_hours').insert({
+    tenant_id: tenantId,
+    user_id: userId,
+    work_date: workDate,
+    hours_worked: hoursWorked,
+    notes
+  }).select().single()
   if (error) throw error
   return data
 }
 
-export async function dbToggleEmployeeStatus(userId, isActive) {
-  const { data, error } = await adminSb.from('users').update({
-    is_active: isActive
-  }).eq('id', userId).select().single()
-  
+export async function dbUpdateEmployeeHours(id, hoursWorked, notes = '') {
+  const { data, error } = await adminSb.from('employee_hours')
+    .update({ hours_worked: hoursWorked, notes, updated_at: new Date().toISOString() })
+    .eq('id', id).select().single()
   if (error) throw error
   return data
+}
+
+export async function dbDeleteEmployeeHours(id) {
+  const { error } = await adminSb.from('employee_hours').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ── TIPS ─────────────────────────────────────────────────────────────────────
+export async function dbGetTips(tenantId, filters = {}) {
+  let q = adminSb.from('payments')
+    .select('*, orders(id, order_type, created_at)')
+    .eq('tenant_id', tenantId)
+    .gt('tip_amount', 0)
+    .order('created_at', { ascending: false })
+  if (filters.from) q = q.gte('created_at', filters.from)
+  if (filters.to)   q = q.lte('created_at', filters.to)
+  if (filters.limit) q = q.limit(filters.limit)
+  const { data, error } = await q
+  if (error) throw error
+  return data || []
 }

@@ -233,7 +233,9 @@ export async function dbRecalcOrder(orderId) {
 export async function dbCreatePayment(tenantId, orderId, methods, cashSessionId = null) {
   const payloads = methods.map(m => ({
     tenant_id: tenantId, order_id: orderId, cash_session_id: cashSessionId,
-    payment_method: m.method, amount: m.amount, change_amount: m.change || 0
+    payment_method: m.method, amount: m.amount,
+    change_amount: m.change || 0,
+    tip_amount: m.tip_amount || 0
   }))
   const { data, error } = await sb.from('payments').insert(payloads).select()
   if (error) throw error

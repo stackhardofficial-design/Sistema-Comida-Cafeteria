@@ -361,12 +361,20 @@ export default function ComandaPanel() {
     setSaving(true)
     try {
       const session = await dbGetOpenSession(tenantId)
-      await dbCreatePayment(tenantId, currentContext.orderId, payments, session?.id)
+      const finalTotal = includeTip ? grandTotal * 1.1 : grandTotal
+      const totalPaid = payments.reduce((s, p) => s + p.amount - (p.change || 0), 0)
+      // Tip = todo lo que supere el total de la venta (propina del 10% si includeTip, o excedente manual)
+      const tipTotal = Math.max(0, totalPaid - grandTotal)
+      // Attach tip_amount proportionally to each payment
+      const paymentsWithTip = payments.map((p, idx) => ({
+        ...p,
+        tip_amount: idx === payments.length - 1 ? parseFloat(tipTotal.toFixed(2)) : 0
+      }))
+      await dbCreatePayment(tenantId, currentContext.orderId, paymentsWithTip, session?.id)
       await dbUpdateOrder(currentContext.orderId, { status: 'paid', discount_amount: discountAmount })
 
       // Log the payment activity
       const { data: { user: authUser } } = await sb.auth.getUser()
-      const totalPaid = payments.reduce((s, p) => s + p.amount, 0)
       logActivity(
         tenantId,
         authUser?.id,
