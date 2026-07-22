@@ -1,34 +1,33 @@
 {
-    "name":  "sistema-comida-pos",
-    "version":  "1.0.0",
-    "description":  "",
-    "main":  "app.js",
-    "scripts":  {
-                    "preview":  "vite preview",
-                    "build":  "vite build",
-                    "dev":  "vite"
-                },
-    "repository":  {
-                       "type":  "git",
-                       "url":  "git+https://github.com/stackhardofficial-design/Sistema-Comida-Cafeteria.git"
-                   },
-    "keywords":  [
-
-                 ],
-    "author":  "",
-    "license":  "ISC",
-    "type":  "module",
-    "bugs":  {
-                 "url":  "https://github.com/stackhardofficial-design/Sistema-Comida-Cafeteria/issues"
-             },
-    "homepage":  "https://github.com/stackhardofficial-design/Sistema-Comida-Cafeteria#readme",
-    "dependencies":  {
-                         "@supabase/supabase-js":  "^2.110.2",
-                         "react":  "^19.2.7",
-                         "react-dom":  "^19.2.7"
-                     },
-    "devDependencies":  {
-                            "@vitejs/plugin-react":  "^6.0.3",
-                            "vite":  "^8.1.4"
-                        }
+    "name": "sistema-comida-pos",
+    "version": "1.0.0",
+    "description": "",
+    "main": "app.js",
+    "scripts": {
+        "preview": "vite preview",
+        "build": "vite build",
+        "dev": "vite"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/stackhardofficial-design/Sistema-Comida-Cafeteria.git"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "type": "module",
+    "bugs": {
+        "url": "https://github.com/stackhardofficial-design/Sistema-Comida-Cafeteria/issues"
+    },
+    "homepage": "https://github.com/stackhardofficial-design/Sistema-Comida-Cafeteria#readme",
+    "dependencies": {
+        "@supabase/supabase-js": "^2.110.2",
+        "lucide-react": "^1.25.0",
+        "react": "^19.2.7",
+        "react-dom": "^19.2.7"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-react": "^6.0.3",
+        "vite": "^8.1.4"
+    }
 }
