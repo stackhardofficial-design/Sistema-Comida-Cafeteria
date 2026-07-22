@@ -23,7 +23,7 @@ export async function dbCreateEmployee(tenantId, email, password, firstName, las
   const { data: userData, error: userError } = await adminSb.from('users').insert({
     id: userId,
     tenant_id: tenantId,
-    role: 'employee',
+    role: 'cashier', // Must be one of the DB allowed roles (cashier, waiter, manager, admin, owner)
     first_name: firstName,
     last_name: lastName,
     roles: modules, // Guardamos los modulos a los que tiene acceso en el array de roles
