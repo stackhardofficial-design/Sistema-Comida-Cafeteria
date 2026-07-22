@@ -503,8 +503,10 @@ function OrdersTable({ orders, emptyText, onSelect, isClosedTable }) {
                 </td>
                 <td style={{ padding: '12px 16px', color: '#64748b' }}>{orderTime}</td>
                 <td style={{ padding: '12px 16px' }}>
-                  <span style={{ fontSize: '14px' }}>
-                    {isDelivOrd ? '🛵' : (isMesaOrd ? '🪑' : '🏪')}
+                  <span style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {isDelivOrd ? '🛵' : (isMesaOrd ? (
+                      <>🪑 <span style={{ fontSize: '12px', fontWeight: 'bold' }}>{o.restaurant_tables?.name || 'Mesa'}</span></>
+                    ) : '🏪')}
                   </span>
                 </td>
                 <td style={{ padding: '12px 16px' }}>
