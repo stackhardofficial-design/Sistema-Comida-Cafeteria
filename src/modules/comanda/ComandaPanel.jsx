@@ -929,28 +929,36 @@ export default function ComandaPanel() {
               </div>
             )}
 
-            <button 
-              className="btn-close-sale" 
-              onClick={closeSale} 
-              disabled={saving || payments.length === 0 || ((includeTip ? grandTotal * 1.1 : grandTotal) - payments.reduce((sum, p) => sum + p.amount - (p.change || 0), 0) > 0.01)}
-              style={{ 
-                marginTop: 'auto', 
-                background: (saving || payments.length === 0 || ((includeTip ? grandTotal * 1.1 : grandTotal) - payments.reduce((sum, p) => sum + p.amount - (p.change || 0), 0) > 0.01)) ? 'var(--border)' : 'var(--green)',
-                color: 'white',
-                padding: '16px',
-                border: 'none',
-                borderRadius: '8px',
-                fontWeight: 'bold',
-                fontSize: '16px',
-                cursor: (saving || payments.length === 0 || ((includeTip ? grandTotal * 1.1 : grandTotal) - payments.reduce((sum, p) => sum + p.amount - (p.change || 0), 0) > 0.01)) ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {saving ? 'Procesando...' : '✅ CERRAR VENTA'}
-            </button>
+            {(() => {
+              const targetTotal = grandTotal + (tipMode === '10' ? grandTotal * 0.1 : (tipMode === 'custom' ? parseFloat(customTip) || 0 : 0));
+              const currentPaid = payments.reduce((sum, p) => sum + p.amount - (p.change || 0), 0);
+              const pending = targetTotal - currentPaid;
+              const isReady = payments.length > 0 && pending <= 0.01;
+              return (
+                <button 
+                  className="btn-close-sale" 
+                  onClick={closeSale} 
+                  disabled={saving || !isReady}
+                  style={{ 
+                    marginTop: 'auto', 
+                    background: (saving || !isReady) ? 'var(--border)' : 'var(--green)',
+                    color: 'white',
+                    padding: '16px',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    cursor: (saving || !isReady) ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {saving ? 'Procesando...' : '✅ CERRAR VENTA'}
+                </button>
+              )
+            })()}
             <button 
               className="btn-cancel-modal" 
-              onClick={() => { setPayModal(false); setPayments([]); setPayAmount(''); setIncludeTip(false); }}
-              style={{ padding: '12px', background: 'transparent', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', cursor: 'pointer' }}
+              onClick={() => { setPayModal(false); setPayments([]); setPayAmount(''); setTipMode('none'); setCustomTip(''); }}
+              style={{ padding: '16px', background: 'transparent', color: 'var(--text)', border: '1px solid var(--border)', borderRadius: '8px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}
             >
               Cancelar
             </button>
