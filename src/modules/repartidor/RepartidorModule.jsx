@@ -28,12 +28,7 @@ function MapPreview({ address, mapsUrl }) {
   if (!address && !mapsUrl) return null
 
   
-  const getRepartidorStatus = (o) => {
-    if (o.status === 'in_transit') return { label: 'EN CAMINO', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)' }
-    if (o.kitchen_status === 'ready') return { label: 'LISTO PARA RETIRAR', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' }
-    if (o.kitchen_status === 'in_progress') return { label: 'COCINANDO', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' }
-    return { label: 'EN COLA', color: 'var(--text-secondary)', bg: 'var(--surface-2)' }
-  }
+  
 
   return (
 
@@ -148,10 +143,16 @@ export default function RepartidorModule() {
   }, [tenantId, loadOrders])
 
   async function markAsDelivered(orderId) {
+    const order = orders.find(o => o.id === orderId)
     setDelivering(orderId)
     try {
-      await dbUpdateOrder(orderId, { status: 'delivered' })
-      setOrders(prev => prev.filter(o => o.id !== orderId))
+      if (order.status === 'open') {
+        await dbUpdateOrder(orderId, { status: 'in_transit' })
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'in_transit' } : o))
+      } else {
+        await dbUpdateOrder(orderId, { status: 'delivered' })
+        setOrders(prev => prev.filter(o => o.id !== orderId))
+      }
     } catch (e) {
       alert('Error al actualizar estado: ' + e.message)
     } finally {
@@ -177,6 +178,12 @@ export default function RepartidorModule() {
   const now = new Date()
   const timeStr = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
 
+  const getRepartidorStatus = (o) => {
+    if (o.status === 'in_transit') return { label: 'EN CAMINO', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)' }
+    if (o.kitchen_status === 'ready') return { label: 'LISTO PARA RETIRAR', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' }
+    if (o.kitchen_status === 'in_progress') return { label: 'COCINANDO', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' }
+    return { label: 'EN COLA', color: 'var(--text-secondary)', bg: 'var(--surface-2)' }
+  }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)', overflowY: 'auto' }}>
       <style>{`
