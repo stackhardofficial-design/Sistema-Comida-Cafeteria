@@ -664,21 +664,7 @@ export default function ComandaPanel() {
                     />
                   </div>
 
-                  {(delivMapsUrl || delivStreet) && (
-                    <div style={{ marginTop: '4px' }}>
-                      <span style={{ fontSize: '10px', fontWeight: 'bold', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
-                        Vista previa de ubicación:
-                      </span>
-                      <iframe 
-                        width="100%" 
-                        height="160" 
-                        frameBorder="0" 
-                        style={{ border: 0, borderRadius: '8px', background: 'var(--border)' }} 
-                        src={`https://maps.google.com/maps?q=${encodeURIComponent(delivMapsUrl ? delivMapsUrl : delivStreet)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-                        allowFullScreen
-                      />
-                    </div>
-                  )}
+                  
                 </>
               )}
             </div>
