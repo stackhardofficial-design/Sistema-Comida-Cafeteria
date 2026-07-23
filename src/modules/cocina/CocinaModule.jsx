@@ -151,13 +151,24 @@ export default function CocinaModule() {
                   <div style={{ fontSize: '13px', fontWeight: '700', color: waitColor }}>
                     <Clock size={14} style={{marginRight:4}} /> Hace {waitTime} min
                   </div>
-                  <button onClick={(e) => { e.stopPropagation(); handleMarkReady(o.id); }} style={{
-                    padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#10b981', color: 'white', fontWeight: '800', fontSize: '14px', cursor: 'pointer', transition: 'transform 0.1s', boxShadow: '0 2px 4px rgba(16, 185, 129, 0.3)'
-                  }}
-                  onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
-                  onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}>
-                    <><Check size={16} style={{marginRight:4}} /> LISTO</>
-                  </button>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                    {o.kitchen_status !== 'in_progress' && (
+                      <button onClick={(e) => { e.stopPropagation(); handleMarkInProgress(o.id); }} style={{
+                        padding: '10px 14px', borderRadius: '8px', border: 'none', background: '#f59e0b', color: 'white', fontWeight: '800', fontSize: '13px', cursor: 'pointer', transition: 'transform 0.1s', boxShadow: '0 2px 4px rgba(245, 158, 11, 0.3)'
+                      }}
+                      onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
+                      onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}>
+                        <><ChefHat size={16} style={{marginRight:4}} /> COCINANDO</>
+                      </button>
+                    )}
+                    <button onClick={(e) => { e.stopPropagation(); handleMarkReady(o.id); }} style={{
+                      padding: '10px 14px', borderRadius: '8px', border: 'none', background: '#10b981', color: 'white', fontWeight: '800', fontSize: '13px', cursor: 'pointer', transition: 'transform 0.1s', boxShadow: '0 2px 4px rgba(16, 185, 129, 0.3)'
+                    }}
+                    onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
+                    onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}>
+                      <><Check size={16} style={{marginRight:4}} /> LISTO</>
+                    </button>
+                  </div>
                 </div>
               </div>
             )
