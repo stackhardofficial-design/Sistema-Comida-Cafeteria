@@ -358,21 +358,36 @@ export default function ComandaPanel() {
   }
 
   async function closeSale() {
-    if (!currentContext?.orderId || payments.length === 0) return
+    if (!currentContext?.orderId) return
     setSaving(true)
     try {
       const session = await dbGetOpenSession(tenantId)
       const calculatedTip = tipMode === '10' ? grandTotal * 0.1 : (tipMode === 'custom' ? parseFloat(customTip) || 0 : 0)
-      const totalPaid = payments.reduce((s, p) => s + p.amount - (p.change || 0), 0)
+      const targetTotal = grandTotal + calculatedTip
       
+      let finalPayments = [...payments]
+      // Si no agregaron pagos manualmente, asumimos que pagan el total con el medio seleccionado
+      if (finalPayments.length === 0) {
+        finalPayments = [{ method: payMethod, amount: targetTotal, change: 0 }]
+      }
+      
+      const totalPaid = finalPayments.reduce((s, p) => s + p.amount - (p.change || 0), 0)
+      
+      // Si hay pagos cargados pero no cubren el total, avisar al usuario
+      if (totalPaid < targetTotal - 0.01) {
+        alert('El monto pagado no cubre el total de la venta.');
+        setSaving(false);
+        return;
+      }
+
       const tipTotal = calculatedTip
       // Attach tip_amount proportionally to each payment
-      const paymentsWithTip = payments.map((p, idx) => ({
+      const paymentsWithTip = finalPayments.map((p, idx) => ({
         ...p,
         tip_amount: idx === payments.length - 1 ? parseFloat(tipTotal.toFixed(2)) : 0
       }))
       await dbCreatePayment(tenantId, currentContext.orderId, paymentsWithTip, session?.id)
-      await dbUpdateOrder(currentContext.orderId, { status: 'paid', discount_amount: discountAmount })
+      await dbUpdateOrder(currentContext.orderId, { status: isDeliveryOrder ? 'open' : 'paid', discount_amount: discountAmount })
 
       // Log the payment activity
       const { data: { user: authUser } } = await sb.auth.getUser()
@@ -387,7 +402,7 @@ export default function ComandaPanel() {
           context: currentContext.customerName || currentContext.tableName || currentContext.type,
           total: grandTotal,
           total_paid: totalPaid,
-          methods: payments.map(p => `${p.method}: $${p.amount}`),
+          methods: finalPayments.map(p => `${p.method}: $${p.amount}`),
           items_count: cart.length
         }
       )
@@ -981,20 +996,20 @@ export default function ComandaPanel() {
                 <button 
                   className="btn-close-sale" 
                   onClick={closeSale} 
-                  disabled={saving || !isReady}
+                  disabled={saving}
                   style={{ 
                     marginTop: 'auto', 
-                    background: (saving || !isReady) ? 'var(--border)' : 'var(--green)',
+                    background: (saving) ? 'var(--border)' : 'var(--green)',
                     color: 'white',
                     padding: '16px',
                     border: 'none',
                     borderRadius: '8px',
                     fontWeight: 'bold',
                     fontSize: '16px',
-                    cursor: (saving || !isReady) ? 'not-allowed' : 'pointer'
+                    cursor: (saving) ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {saving ? 'Procesando...' : '<><Check size={18} style={{marginRight:6}}/> CERRAR VENTA</>'}
+                  {saving ? 'Procesando...' : <><Check size={18} style={{marginRight:6}}/> CERRAR VENTA</>}
                 </button>
               )
             })()}
