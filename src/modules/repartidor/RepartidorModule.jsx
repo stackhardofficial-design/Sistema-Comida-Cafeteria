@@ -1,7 +1,7 @@
 import { Bike, MonitorCheck, MessageSquare, MonitorSmartphone, Check, Grid, Users, TrendingUp, X, Save, Banknote, FileText, Plus, PenSquare, Trash2, ShieldAlert, History, TrendingDown, Lock, Unlock, Package, ArrowDown, ArrowLeft, ShoppingBag, Send, Minus, Clock, ChevronDown, ChevronRight, MapPin, Map, CheckCircle, Phone, MessageCircle } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '../../lib/AppContext'
-import { dbGetDeliveryOrders, dbUpdateOrder, sb, fmtMoney } from '../../lib/supabase'
+import { dbGetDeliveryOrders, dbUpdateOrder, sb, fmtMoney, dbCreatePayment } from '../../lib/supabase'
 
 function MapPreview({ address, mapsUrl }) {
   const [expanded, setExpanded] = useState(false)
@@ -117,7 +117,8 @@ export default function RepartidorModule() {
   const { tenantId } = useApp()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
-  const [delivering, setDelivering] = useState(null) // orderId en proceso
+  const [delivering, setDelivering] = useState(null)
+  const [orderToPay, setOrderToPay] = useState(null) // orderId en proceso
 
   const loadOrders = useCallback(async () => {
     if (!tenantId) return
@@ -142,19 +143,53 @@ export default function RepartidorModule() {
     return () => sb.removeChannel(channel)
   }, [tenantId, loadOrders])
 
+  
+  async function handleConfirmPayment(method) {
+    if (!orderToPay) return;
+    const orderId = orderToPay.id;
+    setDelivering(orderId);
+    try {
+      await dbCreatePayment(tenantId, orderId, [{ method, amount: orderToPay.total_amount }]);
+      await dbUpdateOrder(orderId, { status: 'delivered' });
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+      setOrderToPay(null);
+    } catch (e) {
+      alert('Error al procesar pago: ' + e.message);
+    } finally {
+      setDelivering(null);
+    }
+  }
+
   async function markAsDelivered(orderId) {
     const order = orders.find(o => o.id === orderId)
-    setDelivering(orderId)
-    try {
-      if (order.status === 'open') {
+    
+    if (order.status === 'open') {
+      setDelivering(orderId)
+      try {
         await dbUpdateOrder(orderId, { status: 'in_transit' })
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'in_transit' } : o))
-      } else {
-        await dbUpdateOrder(orderId, { status: 'delivered' })
-        setOrders(prev => prev.filter(o => o.id !== orderId))
+      } catch (e) {
+        alert('Error: ' + e.message)
+      } finally {
+        setDelivering(null)
       }
+      return
+    }
+
+    // It's in_transit, we are marking it as delivered
+    const isPaid = order.payments && order.payments.length > 0;
+    if (!isPaid) {
+      setOrderToPay(order);
+      return;
+    }
+
+    // Already paid, just deliver
+    setDelivering(orderId)
+    try {
+      await dbUpdateOrder(orderId, { status: 'delivered' })
+      setOrders(prev => prev.filter(o => o.id !== orderId))
     } catch (e) {
-      alert('Error al actualizar estado: ' + e.message)
+      alert('Error: ' + e.message)
     } finally {
       setDelivering(null)
     }
@@ -305,7 +340,16 @@ export default function RepartidorModule() {
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase' }}>Pedido</div>
-                    <div style={{ color: 'var(--accent)', fontSize: '14px', fontWeight: '800' }}>#{order.id.slice(-5).toUpperCase()}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
+                          <span style={{ 
+                            background: (order.payments && order.payments.length > 0) ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', 
+                            color: (order.payments && order.payments.length > 0) ? '#10b981' : '#ef4444', 
+                            padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '900' 
+                          }}>
+                            {(order.payments && order.payments.length > 0) ? '✅ PAGADO' : '⚠️ A COBRAR'}
+                          </span>
+                          <div style={{ color: 'var(--accent)', fontSize: '14px', fontWeight: '800' }}>#{order.id.slice(-5).toUpperCase()}</div>
+                        </div>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '11px' }}>{orderTime}</div>
                       <div style={{ color: getRepartidorStatus(order).color, background: getRepartidorStatus(order).bg, padding: '3px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', marginTop: '6px', textAlign: 'center' }}>
                         {getRepartidorStatus(order).label}
@@ -420,6 +464,41 @@ export default function RepartidorModule() {
             )
           })
         )}
+      
+      {orderToPay && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'var(--surface)', padding: '24px', borderRadius: '16px', width: '100%', maxWidth: '400px', border: '1px solid var(--border)', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
+            <h2 style={{ margin: '0 0 8px 0', color: 'var(--text-primary)', fontSize: '24px', textAlign: 'center' }}>Cobrar Pedido</h2>
+            <p style={{ margin: '0 0 24px 0', color: 'var(--text-secondary)', textAlign: 'center' }}>El cliente debe abonar <strong>{fmtMoney(orderToPay.total_amount)}</strong></p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button 
+                onClick={() => handleConfirmPayment('efectivo')}
+                disabled={delivering === orderToPay.id}
+                style={{ padding: '16px', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '18px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
+                <span>💵 Efectivo</span>
+                <span>{fmtMoney(orderToPay.total_amount)}</span>
+              </button>
+              <button 
+                onClick={() => handleConfirmPayment('transferencia')}
+                disabled={delivering === orderToPay.id}
+                style={{ padding: '16px', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '18px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
+                <span>📱 Transferencia</span>
+                <span>{fmtMoney(orderToPay.total_amount)}</span>
+              </button>
+            </div>
+            
+            <button 
+              onClick={() => setOrderToPay(null)}
+              style={{ width: '100%', marginTop: '16px', padding: '14px', background: 'transparent', color: 'var(--text-secondary)', border: '1px solid var(--border)', borderRadius: '12px', fontSize: '16px', cursor: 'pointer' }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   )

@@ -285,7 +285,7 @@ export async function dbCloseSession(sessionId, closingAmount, expectedAmount) {
 // ===== DELIVERY =====
 export async function dbGetDeliveryOrders(tenantId) {
   const { data } = await sb.from('orders')
-    .select('*, delivery_addresses(*), order_items(id)')
+    .select('*, delivery_addresses(*), order_items(id), payments(id)')
     .eq('tenant_id', tenantId)
     .eq('order_type', 'delivery')
     .in('status', ['open', 'in_transit', 'delivered'])
