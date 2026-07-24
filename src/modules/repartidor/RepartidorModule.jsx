@@ -473,7 +473,7 @@ export default function RepartidorModule() {
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <button 
-                onClick={() => handleConfirmPayment('efectivo')}
+                onClick={() => handleConfirmPayment('cash')}
                 disabled={delivering === orderToPay.id}
                 style={{ padding: '16px', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '18px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
               >
@@ -481,7 +481,7 @@ export default function RepartidorModule() {
                 <span>{fmtMoney(orderToPay.total_amount)}</span>
               </button>
               <button 
-                onClick={() => handleConfirmPayment('transferencia')}
+                onClick={() => handleConfirmPayment('transfer')}
                 disabled={delivering === orderToPay.id}
                 style={{ padding: '16px', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', border: 'none', borderRadius: '12px', fontSize: '18px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
               >
