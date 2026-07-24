@@ -1,4 +1,4 @@
-﻿import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js'
 
 const SUPABASE_URL = 'https://mylukzjucxgjjmvbteuf.supabase.co'
 // MODO MVP/PROTOTIPO: Usamos la service_role key en el frontend para evitar crear un backend
@@ -148,10 +148,10 @@ export async function dbCreateTenantAndOwner(restaurantName, ownerEmail, ownerPa
   const { data: userData, error: userError } = await adminSb.from('users').insert({
     id: authData.user.id,
     tenant_id: tenantData.id,
-    role: 'admin',
+    role: 'owner',
     first_name: ownerName,
     last_name: '',
-    roles: ['mesas', 'mostrador', 'delivery', 'ventas', 'caja', 'clientes', 'productos', 'empleados', 'historial', 'stock', 'configuracion'],
+    roles: ['mesas', 'mostrador', 'delivery', 'cocina', 'ventas', 'caja', 'clientes', 'productos', 'empleados', 'historial', 'stock', 'configuracion'],
     is_active: true,
     hourly_rate: 0
   }).select().single()

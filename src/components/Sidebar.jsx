@@ -18,12 +18,19 @@ const NAV_ITEMS = [
 export default function Sidebar() {
   const { user, userRoles, setUser, setTenantId, currentModule, setCurrentModule } = useApp()
   const [clock, setClock] = useState('')
-  const [isDark, setIsDark] = useState(true)
+  const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
-    const isDarkMode = !document.body.classList.contains('light-mode')
+    const storedTheme = localStorage.getItem('app-theme')
+    const isDarkMode = storedTheme === 'dark' // if nothing stored, defaults to false
     setIsDark(isDarkMode)
-    if (isDarkMode) document.body.classList.add('dark-mode')
+    if (isDarkMode) {
+      document.body.classList.add('dark-mode')
+      document.body.classList.remove('light-mode')
+    } else {
+      document.body.classList.add('light-mode')
+      document.body.classList.remove('dark-mode')
+    }
   }, [])
 
   function toggleTheme() {
@@ -32,9 +39,11 @@ export default function Sidebar() {
       if (next) {
         document.body.classList.add('dark-mode')
         document.body.classList.remove('light-mode')
+        localStorage.setItem('app-theme', 'dark')
       } else {
         document.body.classList.add('light-mode')
         document.body.classList.remove('dark-mode')
+        localStorage.setItem('app-theme', 'light')
       }
       return next
     })
