@@ -65,8 +65,10 @@ export default function CajaModule() {
     const amount = parseFloat(openingAmount) || 0
     try {
       await dbOpenSession(tenantId, amount)
-      const { data: { user: authUser } } = await sb.auth.getUser()
-      logActivity(tenantId, authUser?.id, authUser?.email?.split('@')[0] || 'Admin', 'OPEN_SESSION', 'cash_session', { opening_amount: amount })
+      sb.auth.getUser().then(({ data }) => {
+        const authUser = data?.user
+        logActivity(tenantId, authUser?.id, authUser?.email?.split('@')[0] || 'Admin', 'OPEN_SESSION', 'cash_session', { opening_amount: amount })
+      }).catch(() => {})
       setAbrirModal(false)
       setOpeningAmount('')
       loadCaja()
@@ -85,14 +87,16 @@ export default function CajaModule() {
 
     try {
       await dbCloseSession(session.id, closing, expected)
-      const { data: { user: authUser } } = await sb.auth.getUser()
-      logActivity(tenantId, authUser?.id, authUser?.email?.split('@')[0] || 'Admin', 'CLOSE_SESSION', 'cash_session', {
-        session_id: session.id,
-        closing_amount: closing,
-        expected_amount: expected,
-        difference: closing - expected,
-        total_payments: payments.reduce((s, p) => s + parseFloat(p.amount), 0)
-      })
+      sb.auth.getUser().then(({ data }) => {
+        const authUser = data?.user
+        logActivity(tenantId, authUser?.id, authUser?.email?.split('@')[0] || 'Admin', 'CLOSE_SESSION', 'cash_session', {
+          session_id: session.id,
+          closing_amount: closing,
+          expected_amount: expected,
+          difference: closing - expected,
+          total_payments: payments.reduce((s, p) => s + parseFloat(p.amount), 0)
+        })
+      }).catch(() => {})
       setCierreModal(false)
       setClosingAmount('')
       loadCaja()

@@ -39,10 +39,15 @@ export default function MesasModule() {
 
   const loadData = useCallback(async () => {
     if (!tenantId) return
-    const [z, t] = await Promise.all([dbGetZones(tenantId), dbGetTables(tenantId)])
-    setZones(z)
-    setTables(t)
-    setLoading(false)
+    try {
+      const [z, t] = await Promise.all([dbGetZones(tenantId), dbGetTables(tenantId)])
+      setZones(z)
+      setTables(t)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
   }, [tenantId])
 
   useEffect(() => { loadData() }, [loadData, refreshTrigger])

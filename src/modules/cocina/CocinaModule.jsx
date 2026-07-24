@@ -107,8 +107,7 @@ export default function CocinaModule() {
                 borderRadius: '12px', 
                 display: 'flex', 
                 flexDirection: 'column', overflow: 'hidden',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                overflow: 'hidden'
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
               }}>
                 {/* Cabecera Tarjeta */}
                 <div style={{ background: typeInfo.color, color: 'white', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

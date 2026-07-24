@@ -1,5 +1,5 @@
 import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock, Save, PenSquare, TrendingDown, Unlock, ArrowDown, RefreshCw, DollarSign, Eye } from 'lucide-react';
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useApp } from '../../lib/AppContext'
 import { dbGetOrders, dbGetOrder, dbUpdateOrder, fmtMoney, fmtDate, sb } from '../../lib/supabase'
 import Modal from '../../components/Modal'
@@ -65,9 +65,6 @@ export default function VentasModule() {
   const [orderToAnul, setOrderToAnul] = useState(null)
   const [pinInput, setPinInput] = useState('')
 
-  // Vista: tabla o tarjetas
-  const [view, setView] = useState('table')
-
   // Período rápido
   function setQuickPeriod(period) {
     const today = new Date()
@@ -86,7 +83,7 @@ export default function VentasModule() {
     }
   }
 
-  async function loadVentas() {
+  const loadVentas = useCallback(async () => {
     if (!tenantId) return
     try {
       setLoading(true)
@@ -102,9 +99,9 @@ export default function VentasModule() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [tenantId, from, to, filterStatus, filterType])
 
-  useEffect(() => { loadVentas() }, [tenantId, from, to, filterStatus, filterType])
+  useEffect(() => { loadVentas() }, [loadVentas])
 
   useEffect(() => {
     if (!tenantId) return
@@ -112,7 +109,7 @@ export default function VentasModule() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `tenant_id=eq.${tenantId}` }, () => loadVentas())
       .subscribe()
     return () => sb.removeChannel(ch)
-  }, [tenantId])
+  }, [tenantId, loadVentas])
 
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
@@ -142,7 +139,7 @@ export default function VentasModule() {
   const byMethod = {}
   filteredOrders.filter(isPaid).forEach(o => {
     (o.payments || []).forEach(p => {
-      const k = METHOD_LABELS[p.payment_method] || p.payment_method
+      const k = p.payment_method
       byMethod[k] = (byMethod[k] || 0) + parseFloat(p.amount)
     })
   })
@@ -230,7 +227,7 @@ export default function VentasModule() {
         </select>
 
         <input
-          placeholder="Buscar  Buscar cliente, ID..."
+          placeholder="Buscar cliente, ID..."
           value={search}
           onChange={e => setSearch(e.target.value)}
           style={{ ...inputStyle, flex: 1, minWidth: '180px' }}
@@ -263,7 +260,7 @@ export default function VentasModule() {
               padding: '6px 14px', borderRadius: '20px', background: 'var(--surface)',
               border: '1px solid var(--border)', fontSize: '13px', fontWeight: '600'
             }}>
-              {m} · <span style={{ color: 'var(--accent)' }}>{fmtMoney(v)}</span>
+              {METHOD_LABELS[m] || m} · <span style={{ color: 'var(--accent)' }}>{fmtMoney(v)}</span>
             </div>
           ))}
         </div>
@@ -296,7 +293,8 @@ export default function VentasModule() {
               const client = o.customer_name || null
               const label = mesa && client ? `${mesa} · ${client}` : mesa || client || '—'
               const itemCount = (o.order_items || []).length
-              const methodsSummary = [...new Set((o.payments || []).map(p => METHOD_LABELS[p.payment_method] || p.payment_method))].join(' + ') || '—'
+              const methodStrings = { cash: 'Efectivo', card: 'Tarjeta', transfer: 'Transferencia', efectivo: 'Efectivo', debito: 'Débito', credito: 'Crédito', transferencia: 'Transferencia' }
+              const methodsSummary = [...new Set((o.payments || []).map(p => methodStrings[p.payment_method] || p.payment_method))].join(' + ') || '—'
               const closedAt = (o.status === 'paid' || o.status === 'delivered' || o.status === 'cancelled') ? o.updated_at : null
 
               return (
