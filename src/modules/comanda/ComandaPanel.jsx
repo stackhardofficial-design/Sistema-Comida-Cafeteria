@@ -361,57 +361,75 @@ export default function ComandaPanel() {
     if (!currentContext?.orderId) return
     setSaving(true)
     try {
-      const session = await dbGetOpenSession(tenantId)
       const calculatedTip = tipMode === '10' ? grandTotal * 0.1 : (tipMode === 'custom' ? parseFloat(customTip) || 0 : 0)
       const targetTotal = grandTotal + calculatedTip
-      
+
       let finalPayments = [...payments]
       // Si no agregaron pagos manualmente, asumimos que pagan el total con el medio seleccionado
       if (finalPayments.length === 0) {
         finalPayments = [{ method: payMethod, amount: targetTotal, change: 0 }]
       }
-      
+
       const totalPaid = finalPayments.reduce((s, p) => s + p.amount - (p.change || 0), 0)
-      
+
       // Si hay pagos cargados pero no cubren el total, avisar al usuario
       if (totalPaid < targetTotal - 0.01) {
-        alert('El monto pagado no cubre el total de la venta.');
-        setSaving(false);
-        return;
+        alert('El monto pagado no cubre el total de la venta.')
+        setSaving(false)
+        return
       }
 
-      const tipTotal = calculatedTip
-      // Attach tip_amount proportionally to each payment
+      // Obtener sesión de caja con timeout de seguridad (no bloquea si Supabase tarda)
+      let sessionId = null
+      try {
+        const sess = await Promise.race([
+          dbGetOpenSession(tenantId),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))
+        ])
+        sessionId = sess?.id || null
+      } catch (_) { /* continuar sin sesión si falla */ }
+
+      // Attach tip_amount al último pago
       const paymentsWithTip = finalPayments.map((p, idx) => ({
         ...p,
-        tip_amount: idx === payments.length - 1 ? parseFloat(tipTotal.toFixed(2)) : 0
+        tip_amount: idx === finalPayments.length - 1 ? parseFloat(calculatedTip.toFixed(2)) : 0
       }))
-      await dbCreatePayment(tenantId, currentContext.orderId, paymentsWithTip, session?.id)
+
+      // --- OPERACIONES CRÍTICAS (bloquean el cierre) ---
+      await dbCreatePayment(tenantId, currentContext.orderId, paymentsWithTip, sessionId)
       await dbUpdateOrder(currentContext.orderId, { status: isDeliveryOrder ? 'open' : 'paid', discount_amount: discountAmount })
-
-      // Log the payment activity
-      const { data: { user: authUser } } = await sb.auth.getUser()
-      logActivity(
-        tenantId,
-        authUser?.id,
-        authUser?.email?.split('@')[0] || 'Empleado',
-        'CLOSE_SALE',
-        'order',
-        {
-          order_id: currentContext.orderId,
-          context: currentContext.customerName || currentContext.tableName || currentContext.type,
-          total: grandTotal,
-          total_paid: totalPaid,
-          methods: finalPayments.map(p => `${p.method}: $${p.amount}`),
-          items_count: cart.length
-        }
-      )
-
       if (currentContext.tableDbId) {
         await dbUpdateTable(currentContext.tableDbId, { status: 'free', current_order_id: null })
       }
-      // Deduct ingredient stock based on recipe
-      await dbDeductStockForOrder(tenantId, currentContext.orderId)
+
+      // --- OPERACIONES NO CRÍTICAS — fire-and-forget (no bloquean el cierre) ---
+      const _orderId = currentContext.orderId
+      const _ctx = { ...currentContext }
+      // Descuento de stock en segundo plano
+      dbDeductStockForOrder(tenantId, _orderId).catch(e =>
+        console.warn('Stock deduction background error:', e.message)
+      )
+      // Log de actividad en segundo plano (no depende de auth.getUser bloqueante)
+      sb.auth.getUser().then(({ data }) => {
+        const authUser = data?.user
+        logActivity(
+          tenantId,
+          authUser?.id,
+          authUser?.email?.split('@')[0] || 'Empleado',
+          'CLOSE_SALE',
+          'order',
+          {
+            order_id: _orderId,
+            context: _ctx.customerName || _ctx.tableName || _ctx.type,
+            total: grandTotal,
+            total_paid: totalPaid,
+            methods: finalPayments.map(p => `${p.method}: $${p.amount}`),
+            items_count: cart.length
+          }
+        )
+      }).catch(() => {})
+
+      // Limpiar estado UI
       clearCart()
       setPayModal(false)
       setPayments([])
@@ -818,7 +836,7 @@ export default function ComandaPanel() {
       </div>
 
       {/* Payment Modal (Multi-Pago y Ticket) */}
-      <Modal show={payModal} onClose={() => { setPayModal(false); setPayments([]); setPayAmount(''); setIncludeTip(false); }} wide>
+      <Modal show={payModal} onClose={() => { setPayModal(false); setPayments([]); setPayAmount(''); setTipMode('none'); setCustomTip(''); }} wide>
         <div className="payment-modal">
           {/* TICKET PROFESIONAL */}
           <div className="modal-left" style={{ background: 'var(--surface, #fff)', padding: '24px', borderRadius: '8px', border: '1px solid var(--border)' }}>
