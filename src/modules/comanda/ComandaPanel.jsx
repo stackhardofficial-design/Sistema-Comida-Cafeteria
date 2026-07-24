@@ -22,6 +22,7 @@ export default function ComandaPanel() {
   const [activeCategory, setActiveCategory] = useState(null)
   const [search, setSearch] = useState('')
   const [payModal, setPayModal] = useState(false)
+  const [discountModal, setDiscountModal] = useState(false)
   const [payEfectivo, setPayEfectivo] = useState('')
   const [payTarjeta, setPayTarjeta] = useState('')
   const [payTransferencia, setPayTransferencia] = useState('')
