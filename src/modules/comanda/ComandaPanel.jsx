@@ -22,11 +22,10 @@ export default function ComandaPanel() {
   const [activeCategory, setActiveCategory] = useState(null)
   const [search, setSearch] = useState('')
   const [payModal, setPayModal] = useState(false)
-  const [discountModal, setDiscountModal] = useState(false)
-  const [payMethod, setPayMethod] = useState('cash')
-  const [payAmount, setPayAmount] = useState('')
-  const [payments, setPayments] = useState([])
-  const [tipMode, setTipMode] = useState('none') // 'none', '10', 'custom'
+  const [payEfectivo, setPayEfectivo] = useState('')
+  const [payTarjeta, setPayTarjeta] = useState('')
+  const [payTransferencia, setPayTransferencia] = useState('')
+  const [excesoComoPropina, setExcesoComoPropina] = useState(false) // 'none', '10', 'custom'
   const [customTip, setCustomTip] = useState('')
   const [saving, setSaving] = useState(false)
   const [assigning, setAssigning] = useState(false)
@@ -361,25 +360,38 @@ export default function ComandaPanel() {
     if (!currentContext?.orderId) return
     setSaving(true)
     try {
-      const calculatedTip = tipMode === '10' ? grandTotal * 0.1 : (tipMode === 'custom' ? parseFloat(customTip) || 0 : 0)
-      const targetTotal = grandTotal + calculatedTip
+      const amtEf = parseFloat(payEfectivo) || 0;
+      const amtTa = parseFloat(payTarjeta) || 0;
+      const amtTr = parseFloat(payTransferencia) || 0;
+      const totalPaid = amtEf + amtTa + amtTr;
 
-      let finalPayments = [...payments]
-      // Si no agregaron pagos manualmente, asumimos que pagan el total con el medio seleccionado
-      if (finalPayments.length === 0) {
-        finalPayments = [{ method: payMethod, amount: targetTotal, change: 0 }]
-      }
-
-      const totalPaid = finalPayments.reduce((s, p) => s + p.amount - (p.change || 0), 0)
-
-      // Si hay pagos cargados pero no cubren el total, avisar al usuario
-      if (totalPaid < targetTotal - 0.01) {
+      if (totalPaid < grandTotal - 0.01) {
         alert('El monto pagado no cubre el total de la venta.')
         setSaving(false)
         return
       }
 
-      // Obtener sesión de caja con timeout de seguridad (no bloquea si Supabase tarda)
+      const difference = totalPaid - grandTotal;
+      let change = 0;
+      let tip = 0;
+
+      if (difference > 0.01) {
+        if (excesoComoPropina) {
+          tip = difference;
+        } else {
+          change = difference;
+        }
+      }
+
+      const finalPayments = [];
+      if (amtEf > 0) finalPayments.push({ method: 'cash', amount: amtEf, change: change > 0 ? change : 0 })
+      if (amtTa > 0) finalPayments.push({ method: 'card', amount: amtTa, change: 0 })
+      if (amtTr > 0) finalPayments.push({ method: 'transfer', amount: amtTr, change: 0 })
+
+      if (finalPayments.length === 0) {
+        finalPayments.push({ method: 'cash', amount: 0, change: 0 })
+      }
+
       let sessionId = null
       try {
         const sess = await Promise.race([
@@ -387,29 +399,24 @@ export default function ComandaPanel() {
           new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))
         ])
         sessionId = sess?.id || null
-      } catch (_) { /* continuar sin sesión si falla */ }
+      } catch (_) { }
 
-      // Attach tip_amount al último pago
       const paymentsWithTip = finalPayments.map((p, idx) => ({
         ...p,
-        tip_amount: idx === finalPayments.length - 1 ? parseFloat(calculatedTip.toFixed(2)) : 0
+        tip_amount: idx === 0 ? parseFloat(tip.toFixed(2)) : 0
       }))
 
-      // --- OPERACIONES CRÍTICAS (bloquean el cierre) ---
       await dbCreatePayment(tenantId, currentContext.orderId, paymentsWithTip, sessionId)
       await dbUpdateOrder(currentContext.orderId, { status: isDeliveryOrder ? 'open' : 'paid', discount_amount: discountAmount })
       if (currentContext.tableDbId) {
         await dbUpdateTable(currentContext.tableDbId, { status: 'free', current_order_id: null })
       }
 
-      // --- OPERACIONES NO CRÍTICAS — fire-and-forget (no bloquean el cierre) ---
       const _orderId = currentContext.orderId
       const _ctx = { ...currentContext }
-      // Descuento de stock en segundo plano
       dbDeductStockForOrder(tenantId, _orderId).catch(e =>
         console.warn('Stock deduction background error:', e.message)
       )
-      // Log de actividad en segundo plano (no depende de auth.getUser bloqueante)
       sb.auth.getUser().then(({ data }) => {
         const authUser = data?.user
         logActivity(
@@ -429,14 +436,12 @@ export default function ComandaPanel() {
         )
       }).catch(() => {})
 
-      // Limpiar estado UI
       clearCart()
       setPayModal(false)
-      setPayments([])
-      setPayAmount('')
-      setTipMode('none')
-      setCustomTip('')
-      setPayMethod('cash')
+      setPayEfectivo('')
+      setPayTarjeta('')
+      setPayTransferencia('')
+      setExcesoComoPropina(false)
       triggerRefresh()
     } catch (e) {
       alert('Error al cerrar venta: ' + e.message)
@@ -819,7 +824,7 @@ export default function ComandaPanel() {
               <button
                 className="btn-cobrar"
                 disabled={cart.length === 0}
-                onClick={() => setPayModal(true)}
+                onClick={() => { setPayModal(true); setPayEfectivo(grandTotal.toString()); setPayTarjeta(''); setPayTransferencia(''); setExcesoComoPropina(false); }}
               ><CreditCard size={18} style={{marginRight:6}}/> COBRAR</button>
               {true && (
                 <button
@@ -836,7 +841,7 @@ export default function ComandaPanel() {
       </div>
 
       {/* Payment Modal (Multi-Pago y Ticket) */}
-      <Modal show={payModal} onClose={() => { setPayModal(false); setPayments([]); setPayAmount(''); setTipMode('none'); setCustomTip(''); }} wide>
+      <Modal show={payModal} onClose={() => { setPayModal(false); setPayEfectivo(''); setPayTarjeta(''); setPayTransferencia(''); setExcesoComoPropina(false); }} wide>
         <div className="payment-modal">
           {/* TICKET PROFESIONAL */}
           <div className="modal-left" style={{ background: 'var(--surface, #fff)', padding: '24px', borderRadius: '8px', border: '1px solid var(--border)' }}>
@@ -855,7 +860,6 @@ export default function ComandaPanel() {
                     </div>
                     <span style={{ fontWeight: 500 }}>{fmtMoney((item.product?.price || 0) * item.qty)}</span>
                   </div>
-                  
                 </div>
               ))}
             </div>
@@ -871,25 +875,9 @@ export default function ComandaPanel() {
                   <span>-{fmtMoney(discountAmount)}</span>
                 </div>
               )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: 'bold' }}>
-                <span>Total sin propina:</span>
-                <span>{fmtMoney(grandTotal)}</span>
-              </div>
-              <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 600 }}>Propina a registrar:</span>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button onClick={() => setTipMode('none')} style={{ flex: 1, padding: '8px 4px', fontSize: '12px', borderRadius: '6px', border: '1px solid', borderColor: tipMode === 'none' ? 'var(--accent)' : 'var(--border)', background: tipMode === 'none' ? 'var(--accent)' : 'var(--surface)', color: tipMode === 'none' ? 'white' : 'var(--text-primary)', cursor: 'pointer', fontWeight: 600 }}>0%</button>
-                  <button onClick={() => setTipMode('10')} style={{ flex: 1, padding: '8px 4px', fontSize: '12px', borderRadius: '6px', border: '1px solid', borderColor: tipMode === '10' ? 'var(--accent)' : 'var(--border)', background: tipMode === '10' ? 'var(--accent)' : 'var(--surface)', color: tipMode === '10' ? 'white' : 'var(--text-primary)', cursor: 'pointer', fontWeight: 600 }}>10% ({fmtMoney(grandTotal * 0.1)})</button>
-                  <button onClick={() => { setTipMode('custom'); setCustomTip('') }} style={{ flex: 1, padding: '8px 4px', fontSize: '12px', borderRadius: '6px', border: '1px solid', borderColor: tipMode === 'custom' ? 'var(--accent)' : 'var(--border)', background: tipMode === 'custom' ? 'var(--accent)' : 'var(--surface)', color: tipMode === 'custom' ? 'white' : 'var(--text-primary)', cursor: 'pointer', fontWeight: 600 }}>Monto...</button>
-                </div>
-                {tipMode === 'custom' && (
-                  <input type="number" placeholder="Monto exacto de propina" value={customTip} onChange={e => setCustomTip(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid var(--accent)', background: 'var(--surface)', color: 'var(--text-primary)', fontWeight: 'bold' }} autoFocus />
-                )}
-              </div>
-
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: 'bold', marginTop: '16px', color: 'var(--accent)', borderTop: '2px dashed var(--border)', paddingTop: '16px' }}>
                 <span>TOTAL A PAGAR:</span>
-                <span>{fmtMoney(grandTotal + (tipMode === '10' ? grandTotal * 0.1 : (tipMode === 'custom' ? parseFloat(customTip) || 0 : 0)))}</span>
+                <span>{fmtMoney(grandTotal)}</span>
               </div>
             </div>
           </div>
@@ -898,133 +886,72 @@ export default function ComandaPanel() {
           <div className="modal-right" style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingLeft: '16px' }}>
             <h3>Medio de Pago</h3>
             
-            <div className="pay-methods" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-              {[['cash',<><Banknote size={16} style={{marginRight:6}}/> Efectivo</>],['card',<><CreditCard size={16} style={{marginRight:6}}/> Tarjeta</>],['transfer',<><Banknote size={16} style={{marginRight:6}}/> Transfer.</>]].map(([m, label]) => (
-                <button 
-                  key={m} 
-                  className={`pay-method${payMethod === m ? ' selected' : ''}`} 
-                  onClick={() => setPayMethod(m)}
-                  style={{ padding: '12px 8px', fontSize: '13px', borderRadius: '6px' }}
-                >
-                  {label}
-                </button>
-              ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Banknote size={20} /> <span style={{width: '90px', fontWeight: 600}}>Efectivo</span>
+                <input type="number" placeholder="0" value={payEfectivo} onChange={e => setPayEfectivo(e.target.value)} style={{flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '16px'}} />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CreditCard size={20} /> <span style={{width: '90px', fontWeight: 600}}>Tarjeta</span>
+                <input type="number" placeholder="0" value={payTarjeta} onChange={e => setPayTarjeta(e.target.value)} style={{flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '16px'}} />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Banknote size={20} /> <span style={{width: '90px', fontWeight: 600}}>Transfer.</span>
+                <input type="number" placeholder="0" value={payTransferencia} onChange={e => setPayTransferencia(e.target.value)} style={{flex: 1, padding: '10px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '16px'}} />
+              </div>
             </div>
 
-            <div style={{ background: 'var(--bg, #f8fafc)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <span style={{ fontSize: '14px', fontWeight: 600 }}>Saldo Restante:</span>
-                <span style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--red)' }}>
-                  {fmtMoney(Math.max(0, (grandTotal + (tipMode === '10' ? grandTotal * 0.1 : (tipMode === 'custom' ? parseFloat(customTip) || 0 : 0))) - payments.reduce((sum, p) => sum + p.amount - (p.change || 0), 0)))}
-                </span>
-              </div>
-              
+            <div style={{ background: 'var(--bg, #f8fafc)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)', marginTop: 'auto' }}>
               {(() => {
-                const currentAmt = parseFloat(payAmount) || 0;
-                const calculatedTotal = grandTotal + (tipMode === '10' ? grandTotal * 0.1 : (tipMode === 'custom' ? parseFloat(customTip) || 0 : 0));
-                const currentBalance = calculatedTotal - payments.reduce((sum, p) => sum + p.amount - (p.change || 0), 0);
-                const change = currentAmt > currentBalance ? currentAmt - currentBalance : 0;
+                const totalPaid = (parseFloat(payEfectivo)||0) + (parseFloat(payTarjeta)||0) + (parseFloat(payTransferencia)||0)
+                const diff = totalPaid - grandTotal;
                 
                 return (
-                  <>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <input 
-                        type="number" 
-                        placeholder="Monto a pagar" 
-                        value={payAmount} 
-                        onChange={e => setPayAmount(e.target.value)}
-                        style={{ flex: 1, padding: '12px', borderRadius: '6px', border: '1px solid var(--border)' }}
-                      />
-                      <button 
-                        className="btn btn-primary"
-                        disabled={!payAmount || parseFloat(payAmount) <= 0}
-                        onClick={() => {
-                          const amt = parseFloat(payAmount)
-                          if (amt <= 0) return
-                          let finalChange = 0
-                          if (payMethod === 'cash' && amt > currentBalance) {
-                            finalChange = amt - currentBalance
-                          }
-                          setPayments([...payments, { method: payMethod, amount: amt, change: finalChange }])
-                          setPayAmount('')
-                        }}
-                        style={{ padding: '0 16px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '6px', fontWeight: '600' }}
-                      >
-                        Añadir
-                      </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '14px', fontWeight: 600 }}>Total Pagado:</span>
+                      <span style={{ fontSize: '16px', fontWeight: 'bold' }}>{fmtMoney(totalPaid)}</span>
                     </div>
-                    {change > 0 && payMethod === 'cash' && (
-                      <div style={{ marginTop: '8px', padding: '10px', background: '#ecfdf5', border: '1px solid #10b981', borderRadius: '6px', fontSize: '13px', color: '#065f46', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span>Vuelto calculado: <strong>{fmtMoney(change)}</strong></span>
-                        <button 
-                          onClick={() => {
-                            setTipMode('custom')
-                            const currentTip = tipMode === 'custom' ? (parseFloat(customTip) || 0) : (tipMode === '10' ? grandTotal * 0.1 : 0)
-                            setCustomTip((currentTip + change).toString())
-                          }}
-                          style={{ padding: '6px 12px', background: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '12px' }}
-                        >
-                          ¿Vuelto como propina?
-                        </button>
+                    {diff > 0.01 && (
+                      <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: excesoComoPropina ? 'var(--accent)' : 'var(--red)' }}>
+                          <span style={{ fontSize: '14px', fontWeight: 600 }}>{excesoComoPropina ? 'Propina registrada:' : 'Vuelto a entregar:'}</span>
+                          <span style={{ fontSize: '18px', fontWeight: 'bold' }}>{fmtMoney(diff)}</span>
+                        </div>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
+                          <input type="checkbox" checked={excesoComoPropina} onChange={e => setExcesoComoPropina(e.target.checked)} style={{ width: '16px', height: '16px' }} />
+                          Registrar excedente como propina
+                        </label>
+                      </>
+                    )}
+                    {diff < -0.01 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--red)' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 600 }}>Falta cobrar:</span>
+                        <span style={{ fontSize: '16px', fontWeight: 'bold' }}>{fmtMoney(Math.abs(diff))}</span>
                       </div>
                     )}
-                  </>
+                  </div>
                 )
               })()}
             </div>
 
-            {payments.length > 0 && (
-              <div style={{ flex: 1, overflowY: 'auto' }}>
-                <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'var(--text-secondary)' }}>Pagos Añadidos:</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {payments.map((p, idx) => (
-                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg, #f8fafc)', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border)' }}>
-                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                        <span style={{ fontSize: '18px' }}>
-                          {p.method === 'cash' ? <Banknote size={18} /> : p.method === 'card' ? <CreditCard size={18} /> : <Banknote size={18} />}
-                        </span>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontSize: '13px', fontWeight: 600 }}>
-                            {p.method === 'cash' ? 'Efectivo' : p.method === 'card' ? 'Tarjeta' : 'Transferencia'}
-                          </span>
-                          {p.change > 0 && <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Vuelto: {fmtMoney(p.change)}</span>}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontWeight: 600 }}>{fmtMoney(p.amount)}</span>
-                        <button 
-                          style={{ background: 'none', border: 'none', color: 'var(--red)', cursor: 'pointer', fontSize: '16px' }}
-                          onClick={() => setPayments(payments.filter((_, i) => i !== idx))}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {(() => {
-              const targetTotal = grandTotal + (tipMode === '10' ? grandTotal * 0.1 : (tipMode === 'custom' ? parseFloat(customTip) || 0 : 0));
-              const currentPaid = payments.reduce((sum, p) => sum + p.amount - (p.change || 0), 0);
-              const pending = targetTotal - currentPaid;
-              const isReady = payments.length > 0 && pending <= 0.01;
+              const totalPaid = (parseFloat(payEfectivo)||0) + (parseFloat(payTarjeta)||0) + (parseFloat(payTransferencia)||0)
+              const isValid = totalPaid >= grandTotal - 0.01
               return (
                 <button 
                   className="btn-close-sale" 
                   onClick={closeSale} 
-                  disabled={saving}
+                  disabled={saving || !isValid}
                   style={{ 
-                    marginTop: 'auto', 
-                    background: (saving) ? 'var(--border)' : 'var(--green)',
-                    color: 'white',
+                    background: (saving || !isValid) ? 'var(--border)' : 'var(--green)',
+                    color: (saving || !isValid) ? 'var(--text-muted)' : 'white',
                     padding: '16px',
                     border: 'none',
                     borderRadius: '8px',
                     fontWeight: 'bold',
                     fontSize: '16px',
-                    cursor: (saving) ? 'not-allowed' : 'pointer'
+                    cursor: (saving || !isValid) ? 'not-allowed' : 'pointer'
                   }}
                 >
                   {saving ? 'Procesando...' : <><Check size={18} style={{marginRight:6}}/> CERRAR VENTA</>}
@@ -1033,7 +960,7 @@ export default function ComandaPanel() {
             })()}
             <button 
               className="btn-cancel-modal" 
-              onClick={() => { setPayModal(false); setPayments([]); setPayAmount(''); setTipMode('none'); setCustomTip(''); }}
+              onClick={() => { setPayModal(false); setPayEfectivo(''); setPayTarjeta(''); setPayTransferencia(''); setExcesoComoPropina(false); }}
               style={{ padding: '16px', background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '8px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}
             >
               Cancelar
