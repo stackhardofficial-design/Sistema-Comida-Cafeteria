@@ -219,18 +219,18 @@ export default function ProductosModule() {
       <div className="module-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>Productos</h1>
-          <div className="tab-buttons" style={{ display: 'flex', background: 'var(--card-bg)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+          <div className="tab-buttons" style={{ display: 'flex', background: 'var(--surface-2)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border)' }}>
             <button
               className={`tab-btn${activeTab === 'productos' ? ' active' : ''}`}
               onClick={() => setActiveTab('productos')}
-              style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '6px', cursor: 'pointer', border: 'none', background: activeTab === 'productos' ? 'var(--primary)' : 'transparent', color: activeTab === 'productos' ? 'white' : 'var(--text-secondary)' }}
+              style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '6px', cursor: 'pointer', border: 'none', background: activeTab === 'productos' ? 'var(--accent)' : 'transparent', color: activeTab === 'productos' ? 'white' : 'var(--text-secondary)' }}
             >
               Productos
             </button>
             <button
               className={`tab-btn${activeTab === 'categorias' ? ' active' : ''}`}
               onClick={() => setActiveTab('categorias')}
-              style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '6px', cursor: 'pointer', border: 'none', background: activeTab === 'categorias' ? 'var(--primary)' : 'transparent', color: activeTab === 'categorias' ? 'white' : 'var(--text-secondary)' }}
+              style={{ padding: '6px 12px', fontSize: '13px', borderRadius: '6px', cursor: 'pointer', border: 'none', background: activeTab === 'categorias' ? 'var(--accent)' : 'transparent', color: activeTab === 'categorias' ? 'white' : 'var(--text-secondary)' }}
             >
               Categorías
             </button>

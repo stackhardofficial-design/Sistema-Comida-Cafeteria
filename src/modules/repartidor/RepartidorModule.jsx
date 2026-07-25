@@ -280,13 +280,13 @@ export default function RepartidorModule() {
         <div style={{ display: 'flex', gap: '8px', marginTop: '16px', background: 'var(--surface-2)', padding: '4px', borderRadius: '10px' }}>
           <button 
             onClick={() => setActiveTab('pendientes')}
-            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'pendientes' ? 'var(--primary)' : 'transparent', color: activeTab === 'pendientes' ? 'white' : 'var(--text-secondary)', fontWeight: '700', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s' }}
+            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'pendientes' ? 'var(--accent)' : 'transparent', color: activeTab === 'pendientes' ? 'white' : 'var(--text-secondary)', fontWeight: '700', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s' }}
           >
             Pendientes
           </button>
           <button 
             onClick={() => setActiveTab('entregados')}
-            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'entregados' ? 'var(--primary)' : 'transparent', color: activeTab === 'entregados' ? 'white' : 'var(--text-secondary)', fontWeight: '700', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s' }}
+            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'entregados' ? 'var(--accent)' : 'transparent', color: activeTab === 'entregados' ? 'white' : 'var(--text-secondary)', fontWeight: '700', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s' }}
           >
             Entregados
           </button>
