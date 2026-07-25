@@ -6,6 +6,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'pizza',
     label: 'Pizza',
+    group: 'Comidas Rápidas',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="20" cy="20" r="18" fill="#FDE68A" stroke="#D97706" strokeWidth="1.5"/>
@@ -22,6 +23,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'hamburger',
     label: 'Hamburguesa',
+    group: 'Comidas Rápidas',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <ellipse cx="20" cy="11" rx="15" ry="8" fill="#D97706" stroke="#92400E" strokeWidth="1.2"/>
@@ -38,6 +40,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'sushi',
     label: 'Sushi',
+    group: 'Internacional',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <ellipse cx="20" cy="22" rx="14" ry="10" fill="#F9FAFB" stroke="#374151" strokeWidth="1.5"/>
@@ -53,6 +56,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'taco',
     label: 'Taco',
+    group: 'Comidas Rápidas',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M4 30 Q20 8 36 30" fill="#FDE68A" stroke="#D97706" strokeWidth="1.5"/>
@@ -67,6 +71,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'pasta',
     label: 'Pasta',
+    group: 'Principales',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <ellipse cx="20" cy="26" rx="16" ry="8" fill="#FFFBEB" stroke="#D97706" strokeWidth="1.5"/>
@@ -83,6 +88,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'empanada',
     label: 'Empanada',
+    group: 'Regionales / Clásicos',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M6 24 Q20 6 34 24 Q30 34 20 34 Q10 34 6 24Z" fill="#FBBF24" stroke="#D97706" strokeWidth="1.5"/>
@@ -97,6 +103,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'hotdog',
     label: 'Pancho / Hot Dog',
+    group: 'Comidas Rápidas',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <ellipse cx="20" cy="20" rx="18" ry="10" fill="#D97706" stroke="#92400E" strokeWidth="1.5"/>
@@ -111,6 +118,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'nuggets',
     label: 'Nuggets / Papas',
+    group: 'Comidas Rápidas',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="13" y="6" width="5" height="18" rx="2.5" fill="#FBBF24" stroke="#D97706" strokeWidth="1.2"/>
@@ -124,6 +132,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'sandwich',
     label: 'Sándwich',
+    group: 'Comidas Rápidas',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="4" y="8" width="32" height="7" rx="3.5" fill="#D97706" stroke="#92400E" strokeWidth="1.2"/>
@@ -141,6 +150,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'wrap',
     label: 'Wrap / Burrito',
+    group: 'Comidas Rápidas',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <ellipse cx="20" cy="20" rx="14" ry="16" fill="#FDE68A" stroke="#D97706" strokeWidth="1.5" transform="rotate(30 20 20)"/>
@@ -154,6 +164,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'salad',
     label: 'Ensalada',
+    group: 'Saludable',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <ellipse cx="20" cy="28" rx="16" ry="8" fill="#DCFCE7" stroke="#16A34A" strokeWidth="1.5"/>
@@ -171,6 +182,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'soup',
     label: 'Sopas',
+    group: 'Entradas',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M6 20 Q6 36 20 36 Q34 36 34 20 Z" fill="#FEF3C7" stroke="#D97706" strokeWidth="1.5"/>
@@ -188,6 +200,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'steak',
     label: 'Carnes / Parrilla',
+    group: 'Carnes',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <ellipse cx="20" cy="24" rx="16" ry="10" fill="#7C2D12" stroke="#431407" strokeWidth="1.5"/>
@@ -203,6 +216,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'chicken',
     label: 'Pollo',
+    group: 'Principales',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M10 30 Q8 20 14 16 Q18 12 22 14 Q28 14 30 20 Q34 28 30 34 Q22 38 14 34 Z" fill="#D97706" stroke="#92400E" strokeWidth="1.5"/>
@@ -218,6 +232,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'fish',
     label: 'Pescados',
+    group: 'Principales',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M34 20 Q26 10 14 14 Q6 18 8 26 Q10 34 20 30 Q30 28 34 20Z" fill="#93C5FD" stroke="#2563EB" strokeWidth="1.5"/>
@@ -233,6 +248,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'vegan',
     label: 'Vegano',
+    group: 'Saludable',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="20" cy="20" r="16" fill="#DCFCE7" stroke="#16A34A" strokeWidth="1.5"/>
@@ -247,6 +263,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'breakfast',
     label: 'Desayuno',
+    group: 'Cafetería',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <ellipse cx="20" cy="26" rx="14" ry="8" fill="#FEF9C3" stroke="#CA8A04" strokeWidth="1.5"/>
@@ -261,6 +278,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'dessert',
     label: 'Postres',
+    group: 'Postres',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M10 20 Q10 36 20 36 Q30 36 30 20 Z" fill="#FDE8D8" stroke="#F97316" strokeWidth="1.5"/>
@@ -277,6 +295,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'snack',
     label: 'Snacks',
+    group: 'Entradas',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M8 12 L12 8 L32 8 L36 12 L36 30 Q36 36 30 36 L10 36 Q4 36 4 30 L4 12 Z" fill="#FBBF24" stroke="#D97706" strokeWidth="1.5"/>
@@ -293,6 +312,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'kids',
     label: 'Menú Niños',
+    group: 'Infantil',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="20" cy="20" r="16" fill="#FEF3C7" stroke="#D97706" strokeWidth="1.5"/>
@@ -313,6 +333,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'coffee',
     label: 'Café',
+    group: 'Cafetería',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M6 16 L34 16 L30 34 Q30 36 26 36 L14 36 Q10 36 10 34 Z" fill="#6B3A2A" stroke="#431407" strokeWidth="1.5"/>
@@ -328,6 +349,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'beer',
     label: 'Cerveza',
+    group: 'Bebidas con Alcohol',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="10" y="14" width="18" height="24" rx="3" fill="#FBBF24" stroke="#D97706" strokeWidth="1.5"/>
@@ -343,6 +365,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'cocktail',
     label: 'Cócteles / Tragos',
+    group: 'Bebidas con Alcohol',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M8 8 L20 24 L32 8 Z" fill="#E879F9" stroke="#A21CAF" strokeWidth="1.5"/>
@@ -359,6 +382,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'wine',
     label: 'Vinos',
+    group: 'Bebidas con Alcohol',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 4 L28 4 L26 20 Q26 28 20 30 Q14 28 14 20 Z" fill="#7C3AED" stroke="#5B21B6" strokeWidth="1.5"/>
@@ -374,6 +398,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'smoothie',
     label: 'Smoothies',
+    group: 'Bebidas sin Alcohol',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 12 L14 36 Q14 38 20 38 Q26 38 26 36 L28 12 Z" fill="#EC4899" stroke="#BE185D" strokeWidth="1.5"/>
@@ -390,6 +415,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'soda',
     label: 'Gaseosas / Refrescos',
+    group: 'Bebidas sin Alcohol',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="10" y="10" width="20" height="28" rx="4" fill="#3B82F6" stroke="#1D4ED8" strokeWidth="1.5"/>
@@ -407,6 +433,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'juice',
     label: 'Jugos Naturales',
+    group: 'Bebidas sin Alcohol',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M10 16 L12 36 Q12 38 20 38 Q28 38 28 36 L30 16 Z" fill="#F59E0B" stroke="#D97706" strokeWidth="1.5"/>
@@ -422,6 +449,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'tea',
     label: 'Té / Infusiones',
+    group: 'Cafetería',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M8 18 L32 18 L30 36 Q30 38 20 38 Q10 38 10 36 Z" fill="#10B981" stroke="#047857" strokeWidth="1.5"/>
@@ -438,6 +466,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'water',
     label: 'Agua / Aguas',
+    group: 'Bebidas sin Alcohol',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="12" y="10" width="16" height="28" rx="8" fill="#BAE6FD" stroke="#0284C7" strokeWidth="1.5"/>
@@ -453,6 +482,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'milkshake',
     label: 'Milkshakes',
+    group: 'Postres',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M10 16 L12 38 Q12 40 20 40 Q28 40 28 38 L30 16 Z" fill="#FDE8D8" stroke="#F97316" strokeWidth="1.5"/>
@@ -472,6 +502,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'champagne',
     label: 'Champagne / Espumante',
+    group: 'Bebidas con Alcohol',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M14 4 L26 4 L24 18 Q24 26 20 28 Q16 26 16 18 Z" fill="#FDE68A" stroke="#D97706" strokeWidth="1.5"/>
@@ -489,6 +520,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'spirits',
     label: 'Destilados / Whisky',
+    group: 'Bebidas con Alcohol',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="12" y="18" width="16" height="20" rx="3" fill="#D97706" stroke="#92400E" strokeWidth="1.5"/>
@@ -506,6 +538,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'promo',
     label: 'Promociones',
+    group: 'Especiales',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <polygon points="20,4 24,15 36,15 26,22 30,34 20,27 10,34 14,22 4,15 16,15" fill="#FBBF24" stroke="#D97706" strokeWidth="1.5"/>
@@ -516,6 +549,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'combo',
     label: 'Combos',
+    group: 'Especiales',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="14" cy="22" r="9" fill="#3B82F6" stroke="#1D4ED8" strokeWidth="1.5"/>
@@ -529,6 +563,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'especiales',
     label: 'Especiales del día',
+    group: 'Especiales',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="20" cy="22" r="14" fill="#FEF3C7" stroke="#D97706" strokeWidth="1.5"/>
@@ -543,6 +578,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'glutenfree',
     label: 'Sin Gluten',
+    group: 'Saludable',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="20" cy="20" r="16" fill="#ECFDF5" stroke="#16A34A" strokeWidth="1.5"/>
@@ -556,6 +592,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'spicy',
     label: 'Picante',
+    group: 'Especiales',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M20 36 Q14 28 16 18 Q18 8 22 6 Q26 4 28 8 Q24 8 22 12 Q26 10 28 16 Q30 22 28 30 Z" fill="#EF4444" stroke="#DC2626" strokeWidth="1.5"/>
@@ -570,6 +607,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'ice_cream',
     label: 'Helados',
+    group: 'Postres',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M14 24 L20 38 L26 24 Z" fill="#D97706" stroke="#92400E" strokeWidth="1.2"/>
@@ -585,6 +623,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'cake',
     label: 'Tortas / Pasteles',
+    group: 'Postres',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="6" y="24" width="28" height="14" rx="3" fill="#FDE68A" stroke="#D97706" strokeWidth="1.5"/>
@@ -603,6 +642,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'donut',
     label: 'Donuts / Factura',
+    group: 'Cafetería',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="20" cy="22" r="14" fill="#D97706" stroke="#92400E" strokeWidth="1.5"/>
@@ -622,6 +662,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'bread',
     label: 'Panadería',
+    group: 'Cafetería',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M6 20 Q6 12 20 10 Q34 12 34 20 L32 34 Q28 38 20 38 Q12 38 8 34 Z" fill="#D97706" stroke="#92400E" strokeWidth="1.5"/>
@@ -634,6 +675,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'rice',
     label: 'Arroz / Risotto',
+    group: 'Principales',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <ellipse cx="20" cy="28" rx="16" ry="8" fill="#F9FAFB" stroke="#9CA3AF" strokeWidth="1.5"/>
@@ -654,6 +696,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'noodles',
     label: 'Fideos / Ramen',
+    group: 'Principales',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M6 20 Q6 34 20 36 Q34 34 34 20 Z" fill="#FEF9C3" stroke="#D97706" strokeWidth="1.5"/>
@@ -671,6 +714,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'cheese',
     label: 'Quesos',
+    group: 'Entradas',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M4 28 L20 10 L36 28 Z" fill="#FBBF24" stroke="#D97706" strokeWidth="1.5"/>
@@ -686,6 +730,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'dips',
     label: 'Salsas / Aderezos',
+    group: 'Entradas',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <ellipse cx="20" cy="28" rx="14" ry="8" fill="#EF4444" stroke="#DC2626" strokeWidth="1.5"/>
@@ -701,6 +746,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'vino_copa',
     label: 'Copa de Vino',
+    group: 'Bebidas con Alcohol',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 6 L28 6 L26 18 Q26 24 20 26 Q14 24 14 18 Z" fill="#C084FC" stroke="#7C3AED" strokeWidth="1.5"/>
@@ -716,6 +762,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'fruta',
     label: 'Frutas',
+    group: 'Saludable',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="16" cy="24" r="8" fill="#EF4444" stroke="#DC2626" strokeWidth="1.2"/>
@@ -730,6 +777,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'energy',
     label: 'Energizantes',
+    group: 'Bebidas sin Alcohol',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="10" y="6" width="20" height="32" rx="6" fill="#ECFDF5" stroke="#059669" strokeWidth="1.5"/>
@@ -743,6 +791,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'bar',
     label: 'Bar / Bebidas alcohólicas',
+    group: 'Bebidas con Alcohol',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M8 10 L20 26 L32 10 Z" fill="#FDE68A" stroke="#D97706" strokeWidth="1.5"/>
@@ -758,6 +807,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'frozen',
     label: 'Congelados / Fríos',
+    group: 'Postres',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M20 4 L20 36" stroke="#BAE6FD" strokeWidth="2.5" strokeLinecap="round"/>
@@ -779,6 +829,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'sin_tacc',
     label: 'Sin TACC',
+    group: 'Saludable',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="20" cy="20" r="16" fill="#FEF9C3" stroke="#CA8A04" strokeWidth="1.5"/>
@@ -790,6 +841,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'plato_dia',
     label: 'Plato del Día',
+    group: 'Especiales',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <ellipse cx="20" cy="26" rx="16" ry="8" fill="#F1F5F9" stroke="#64748B" strokeWidth="1.5"/>
@@ -807,6 +859,7 @@ export const CATEGORY_ICONS = [
   {
     id: 'brunch',
     label: 'Brunch',
+    group: 'Cafetería',
     svg: (
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <ellipse cx="20" cy="28" rx="16" ry="8" fill="#FDE68A" stroke="#D97706" strokeWidth="1.5"/>
@@ -820,6 +873,21 @@ export const CATEGORY_ICONS = [
       </svg>
     )
   },
+,
+  { id: 'milanesa', label: 'Milanesa', group: 'Regionales / Clásicos', svg: <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="20" cy="20" rx="14" ry="10" fill="#D97706" stroke="#92400E" strokeWidth="1.5"/><circle cx="16" cy="18" r="1.5" fill="#B45309"/><circle cx="24" cy="22" r="1.5" fill="#B45309"/><circle cx="12" cy="22" r="1" fill="#B45309"/></svg> },
+  { id: 'choripan', label: 'Choripán', group: 'Regionales / Clásicos', svg: <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 20 Q20 10 32 20 Q20 30 8 20" fill="#FDE68A" stroke="#D97706" strokeWidth="1.5"/><ellipse cx="20" cy="20" rx="12" ry="4" fill="#991B1B" stroke="#7F1D1D" strokeWidth="1"/></svg> },
+  { id: 'locro', label: 'Locro', group: 'Regionales / Clásicos', svg: <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 24 C6 32, 14 36, 20 36 C26 36, 34 32, 34 24" fill="#FBBF24" stroke="#D97706" strokeWidth="1.5"/><path d="M4 24 L36 24" stroke="#D97706" strokeWidth="2"/><circle cx="16" cy="22" r="2" fill="#EF4444"/><circle cx="24" cy="22" r="1.5" fill="#FDE68A"/></svg> },
+  { id: 'pastel_papa', label: 'Pastel de Papa', group: 'Regionales / Clásicos', svg: <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="14" width="20" height="12" fill="#FDE68A" stroke="#D97706" strokeWidth="1.5"/><path d="M10 20 L30 20" stroke="#92400E" strokeWidth="2" strokeDasharray="2 2"/></svg> },
+  { id: 'alfajor', label: 'Alfajor', group: 'Cafetería', svg: <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="10" fill="#FCD34D" stroke="#D97706" strokeWidth="1.5"/><circle cx="20" cy="20" r="8" fill="#78350F"/></svg> },
+  { id: 'medialuna', label: 'Medialuna', group: 'Cafetería', svg: <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 20 C10 10, 30 10, 30 20 C30 22, 28 24, 26 24 C24 24, 22 20, 20 20 C18 20, 16 24, 14 24 C12 24, 10 22, 10 20" fill="#FDE68A" stroke="#D97706" strokeWidth="1.5"/></svg> },
+  { id: 'mate', label: 'Mate', group: 'Cafetería', svg: <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 14 C14 32, 26 32, 26 14 Z" fill="#22C55E" stroke="#166534" strokeWidth="1.5"/><line x1="28" y1="6" x2="24" y2="14" stroke="#9CA3AF" strokeWidth="2"/></svg> },
+  { id: 'fernet', label: 'Fernet', group: 'Bebidas con Alcohol', svg: <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="14" y="10" width="12" height="20" fill="#000000" stroke="#374151" strokeWidth="1.5"/><rect x="14" y="10" width="12" height="6" fill="#F3F4F6"/></svg> },
+  { id: 'lomito', label: 'Lomito', group: 'Comidas Rápidas', svg: <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="20" cy="14" rx="14" ry="6" fill="#D97706" stroke="#92400E" strokeWidth="1.5"/><rect x="6" y="18" width="28" height="4" fill="#991B1B"/><rect x="6" y="22" width="28" height="2" fill="#10B981"/><ellipse cx="20" cy="26" rx="14" ry="6" fill="#D97706" stroke="#92400E" strokeWidth="1.5"/></svg> },
+  { id: 'churros', label: 'Churros', group: 'Postres', svg: <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 10 L16 30 M20 10 L24 30 M28 10 L32 30" stroke="#FDE68A" strokeWidth="4" strokeLinecap="round"/><path d="M12 10 L16 30 M20 10 L24 30 M28 10 L32 30" stroke="#D97706" strokeWidth="1" strokeDasharray="2 4"/></svg> },
+  { id: 'parrilla', label: 'Parrillada', group: 'Carnes', svg: <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 20 L32 20 M12 20 L12 28 M20 20 L20 28 M28 20 L28 28" stroke="#374151" strokeWidth="2"/><ellipse cx="20" cy="16" rx="10" ry="4" fill="#991B1B"/><ellipse cx="14" cy="14" rx="4" ry="2" fill="#D97706"/></svg> },
+  { id: 'tarta', label: 'Tarta', group: 'Principales', svg: <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 10 L36 28 L4 28 Z" fill="#FDE68A" stroke="#D97706" strokeWidth="1.5"/><path d="M16 18 L24 18" stroke="#10B981" strokeWidth="2"/></svg> },
+  { id: 'picada', label: 'Picada', group: 'Entradas', svg: <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="14" fill="#FDE68A" stroke="#D97706" strokeWidth="1.5"/><circle cx="14" cy="16" r="3" fill="#EF4444"/><circle cx="24" cy="14" r="3" fill="#FBBF24"/><circle cx="18" cy="26" r="3" fill="#991B1B"/><circle cx="26" cy="22" r="3" fill="#10B981"/></svg> }
+
 ];
 
 // Ícono por defecto cuando no hay ninguno asignado

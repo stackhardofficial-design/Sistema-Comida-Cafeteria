@@ -410,29 +410,44 @@ export default function ProductosModule() {
               onChange={e => setIconSearch(e.target.value)}
               style={{ marginBottom: '10px' }}
             />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px', maxHeight: '240px', overflowY: 'auto', padding: '4px' }}>
-              <button
-                type="button"
-                onClick={() => setCIcon('')}
-                title="Sin ícono"
-                style={{ padding: '8px', borderRadius: '8px', border: `2px solid ${cIcon === '' ? 'var(--accent)' : 'var(--border)'}`, background: cIcon === '' ? 'rgba(var(--accent-rgb,249,115,22),0.1)' : 'var(--surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}
-              >
-                ∅
-              </button>
-              {CATEGORY_ICONS
-                .filter(ic => !iconSearch || ic.label.toLowerCase().includes(iconSearch.toLowerCase()))
-                .map(ic => (
-                  <button
-                    key={ic.id}
-                    type="button"
-                    title={ic.label}
-                    onClick={() => setCIcon(ic.id)}
-                    style={{ padding: '6px', borderRadius: '8px', border: `2px solid ${cIcon === ic.id ? 'var(--accent)' : 'var(--border)'}`, background: cIcon === ic.id ? 'rgba(249,115,22,0.1)' : 'var(--surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'border-color 0.15s' }}
-                  >
-                    <span style={{ display: 'inline-flex', width: 28, height: 28 }}>{ic.svg}</span>
-                  </button>
-                ))
-              }
+            <div style={{ maxHeight: '300px', overflowY: 'auto', padding: '4px', paddingRight: '8px' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <button
+                  type="button"
+                  onClick={() => setCIcon('')}
+                  title="Sin ícono"
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: `2px solid ${cIcon === '' ? 'var(--accent)' : 'var(--border)'}`, background: cIcon === '' ? 'rgba(var(--accent-rgb,249,115,22),0.1)' : 'var(--surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '600' }}
+                >
+                  <span style={{ fontSize: '18px' }}>∅</span> Sin ícono (por defecto)
+                </button>
+              </div>
+              {Object.entries(
+                CATEGORY_ICONS
+                  .filter(ic => !iconSearch || ic.label.toLowerCase().includes(iconSearch.toLowerCase()))
+                  .reduce((acc, ic) => {
+                    const g = ic.group || 'Otros'
+                    if (!acc[g]) acc[g] = []
+                    acc[g].push(ic)
+                    return acc
+                  }, {})
+              ).map(([group, icons]) => (
+                <div key={group} style={{ marginBottom: '16px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{group}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px' }}>
+                    {icons.map(ic => (
+                      <button
+                        key={ic.id}
+                        type="button"
+                        title={ic.label}
+                        onClick={() => setCIcon(ic.id)}
+                        style={{ padding: '6px', borderRadius: '8px', border: `2px solid ${cIcon === ic.id ? 'var(--accent)' : 'var(--border)'}`, background: cIcon === ic.id ? 'rgba(249,115,22,0.1)' : 'var(--surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'border-color 0.15s' }}
+                      >
+                        <span style={{ display: 'inline-flex', width: 28, height: 28 }}>{ic.svg}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
           <div className="form-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
