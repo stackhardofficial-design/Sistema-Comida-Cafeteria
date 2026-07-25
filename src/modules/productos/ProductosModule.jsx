@@ -1,4 +1,4 @@
-import {     Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock , TrendingDown , Unlock , ArrowDown , PenSquare } from 'lucide-react';
+import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock, TrendingDown, Unlock, ArrowDown, PenSquare } from 'lucide-react';
 import { useState, useEffect } from 'react'
 import { useApp } from '../../lib/AppContext'
 import {
@@ -6,6 +6,7 @@ import {
   dbSaveCategory, dbDeleteCategory, fmtMoney, sb
 } from '../../lib/supabase'
 import Modal from '../../components/Modal'
+import { CATEGORY_ICONS, CategoryIconDisplay } from '../../lib/categoryIcons'
 
 export default function ProductosModule() {
   const { tenantId, triggerRefresh } = useApp()
@@ -34,6 +35,8 @@ export default function ProductosModule() {
   const [editingCat, setEditingCat] = useState(null)
   const [cName, setCName] = useState('')
   const [cDesc, setCDesc] = useState('')
+  const [cIcon, setCIcon] = useState('')
+  const [iconSearch, setIconSearch] = useState('')
 
   async function loadData() {
     if (!tenantId) return
@@ -146,6 +149,7 @@ export default function ProductosModule() {
       const payload = {
         name: cName,
         description: cDesc,
+        icon: cIcon || null,
         is_active: true
       }
       const newCat = await dbSaveCategory(tenantId, payload, editingCat?.id || null)
@@ -182,6 +186,17 @@ export default function ProductosModule() {
     setEditingCat(null)
     setCName('')
     setCDesc('')
+    setCIcon('')
+    setIconSearch('')
+    setCatModal(true)
+  }
+
+  function openEditCat(cat) {
+    setEditingCat(cat)
+    setCName(cat.name)
+    setCDesc(cat.description || '')
+    setCIcon(cat.icon || '')
+    setIconSearch('')
     setCatModal(true)
   }
 
@@ -299,38 +314,25 @@ export default function ProductosModule() {
         </div>
       ) : (
         <div className="data-container" style={{ display: 'flex', flexDirection: 'column', gap: '20px', flex: 1 }}>
-          <div className="data-table-wrapper" style={{ flex: 1, overflowY: 'auto' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Descripción</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {categories.length > 0 ? (
-                  categories.map(c => (
-                    <tr key={c.id}>
-                      <td style={{ fontWeight: '600' }}>{c.name}</td>
-                      <td>{c.description || '-'}</td>
-                      <td>
-                        <button className="btn-icon del" onClick={() => deleteCategory(c)} title="Eliminar"><Trash2 size={16} /></button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={3} style={{ textAlign: 'center', padding: '32px' }}>
-                      <div className="empty-state">
-                        <span className="empty-icon">🍽️</span>
-                        <p>Sin categorías registradas</p>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px', overflowY: 'auto', flex: 1 }}>
+            {categories.length > 0 ? (
+              categories.map(c => (
+                <div key={c.id} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '20px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', transition: 'box-shadow 0.2s' }}>
+                  <CategoryIconDisplay iconId={c.icon} size={44} />
+                  <div style={{ fontWeight: '700', fontSize: '13px', textAlign: 'center', color: 'var(--text-primary)' }}>{c.name.toUpperCase()}</div>
+                  {c.description && <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center' }}>{c.description}</div>}
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                    <button className="btn-icon edit" onClick={() => openEditCat(c)} title="Editar"><PenSquare size={14} /></button>
+                    <button className="btn-icon del" onClick={() => deleteCategory(c)} title="Eliminar"><Trash2 size={14} /></button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '60px 20px', background: 'var(--surface-2)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
+                <div style={{ fontSize: '40px', marginBottom: '12px' }}>🍽️</div>
+                <p style={{ color: 'var(--text-secondary)', fontWeight: '600', margin: 0 }}>Sin categorías registradas</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -383,15 +385,55 @@ export default function ProductosModule() {
       </Modal>
 
       {/* Modal CRUD Categoría */}
-      <Modal show={catModal} onClose={() => setCatModal(false)} title="Nueva Categoría">
+      <Modal show={catModal} onClose={() => setCatModal(false)} title={editingCat ? 'Editar Categoría' : 'Nueva Categoría'}>
         <form onSubmit={saveCategory}>
           <div className="form-row" style={{ marginBottom: '12px' }}>
             <label>Nombre *</label>
             <input value={cName} onChange={e => setCName(e.target.value)} placeholder="Bebidas, Postres..." required />
           </div>
-          <div className="form-row" style={{ marginBottom: '20px' }}>
+          <div className="form-row" style={{ marginBottom: '12px' }}>
             <label>Descripción</label>
             <input value={cDesc} onChange={e => setCDesc(e.target.value)} placeholder="Descripción opcional" />
+          </div>
+          <div className="form-row" style={{ marginBottom: '12px' }}>
+            <label>Ícono seleccionado</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <CategoryIconDisplay iconId={cIcon} size={40} />
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>{cIcon ? CATEGORY_ICONS.find(i => i.id === cIcon)?.label : 'Sin ícono (por defecto)'}</span>
+            </div>
+          </div>
+          <div className="form-row" style={{ marginBottom: '16px' }}>
+            <label>Elegir ícono</label>
+            <input
+              placeholder="Buscar ícono..."
+              value={iconSearch}
+              onChange={e => setIconSearch(e.target.value)}
+              style={{ marginBottom: '10px' }}
+            />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px', maxHeight: '240px', overflowY: 'auto', padding: '4px' }}>
+              <button
+                type="button"
+                onClick={() => setCIcon('')}
+                title="Sin ícono"
+                style={{ padding: '8px', borderRadius: '8px', border: `2px solid ${cIcon === '' ? 'var(--accent)' : 'var(--border)'}`, background: cIcon === '' ? 'rgba(var(--accent-rgb,249,115,22),0.1)' : 'var(--surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}
+              >
+                ∅
+              </button>
+              {CATEGORY_ICONS
+                .filter(ic => !iconSearch || ic.label.toLowerCase().includes(iconSearch.toLowerCase()))
+                .map(ic => (
+                  <button
+                    key={ic.id}
+                    type="button"
+                    title={ic.label}
+                    onClick={() => setCIcon(ic.id)}
+                    style={{ padding: '6px', borderRadius: '8px', border: `2px solid ${cIcon === ic.id ? 'var(--accent)' : 'var(--border)'}`, background: cIcon === ic.id ? 'rgba(249,115,22,0.1)' : 'var(--surface)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'border-color 0.15s' }}
+                  >
+                    <span style={{ display: 'inline-flex', width: 28, height: 28 }}>{ic.svg}</span>
+                  </button>
+                ))
+              }
+            </div>
           </div>
           <div className="form-actions" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
             <button type="button" className="btn btn-secondary" onClick={() => setCatModal(false)}>Cancelar</button>

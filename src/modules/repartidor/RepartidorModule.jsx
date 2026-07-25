@@ -108,6 +108,115 @@ function MapPreview({ address, mapsUrl }) {
         >
           <><MonitorCheck size={16} style={{marginRight:6}}/> Ver Ubicación en Google Maps</>
         </button>
+import { useState, useEffect, useCallback } from 'react'
+import { useApp } from '../../lib/AppContext'
+import { dbGetDeliveryOrders, dbUpdateOrder, sb, fmtMoney, dbCreatePayment } from '../../lib/supabase'
+
+function MapPreview({ address, mapsUrl }) {
+  const [expanded, setExpanded] = useState(false)
+
+  // Google Maps iframe embed - no API key needed
+  const embedQuery = mapsUrl && (mapsUrl.includes('http') || mapsUrl.includes('maps'))
+    ? null  // si hay un link directo de google maps, extraemos coordenadas
+    : address
+
+  // Usamos el embed de Google Maps con la dirección o URL directa
+  const iframeSrc = mapsUrl && mapsUrl.includes('goo.gl/maps')
+    ? mapsUrl.replace('goo.gl/maps', 'www.google.com/maps')
+    : mapsUrl && mapsUrl.includes('maps.app.goo.gl')
+      ? null  // link corto de maps, no se puede embeber directo
+      : address
+        ? `https://maps.google.com/maps?q=${encodeURIComponent(address)}&output=embed&hl=es&z=15`
+        : null
+
+  const openInMaps = () => {
+    const url = mapsUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+    window.open(url, '_blank')
+  }
+
+  if (!address && !mapsUrl) return null
+
+  
+  
+
+  return (
+
+    <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)', marginBottom: '4px' }}>
+      {iframeSrc ? (
+        <div style={{ position: 'relative' }}>
+          <iframe
+            src={iframeSrc}
+            width="100%"
+            height={expanded ? '280px' : '160px'}
+            frameBorder="0"
+            style={{ display: 'block', transition: 'height 0.3s ease' }}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title="Mapa de entrega"
+          />
+          {/* Barra de acciones sobre el mapa */}
+          <div style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            display: 'flex',
+            gap: '6px'
+          }}>
+            <button
+              onClick={() => setExpanded(e => !e)}
+              style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border)',
+                borderRadius: '6px',
+                padding: '5px 9px',
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.12)',
+                color: 'var(--text-secondary)'
+              }}
+            >
+              {expanded ? '⊖' : '⊕'}
+            </button>
+            <button
+              onClick={openInMaps}
+              style={{
+                background: '#2563eb',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '5px 9px',
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                color: 'var(--text-primary)'
+              }}
+            >
+              ↗ Abrir
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* Fallback: si el link es un shortlink de maps que no se puede embeber */
+        <button
+          onClick={openInMaps}
+          style={{
+            width: '100%',
+            padding: '14px',
+            background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
+            color: 'var(--text-primary)',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            fontWeight: '700',
+            fontSize: '14px'
+          }}
+        >
+          <><MonitorCheck size={16} style={{marginRight:6}}/> Ver Ubicación en Google Maps</>
+        </button>
       )}
     </div>
   )
@@ -115,6 +224,7 @@ function MapPreview({ address, mapsUrl }) {
 
 export default function RepartidorModule() {
   const { tenantId } = useApp()
+  const [activeTab, setActiveTab] = useState('pendientes') // 'pendientes' | 'entregados'
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [delivering, setDelivering] = useState(null)
@@ -125,7 +235,8 @@ export default function RepartidorModule() {
     try {
       setLoading(true)
       const data = await dbGetDeliveryOrders(tenantId)
-      setOrders(data.filter(o => o.status === 'open' || o.status === 'in_transit'))
+      // Guardamos todos, luego filtramos en la vista
+      setOrders(data)
     } catch (e) {
       console.error('Error al cargar pedidos del repartidor:', e)
     } finally {
@@ -187,7 +298,7 @@ export default function RepartidorModule() {
     setDelivering(orderId)
     try {
       await dbUpdateOrder(orderId, { status: 'delivered' })
-      setOrders(prev => prev.filter(o => o.id !== orderId))
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'delivered' } : o))
     } catch (e) {
       alert('Error: ' + e.message)
     } finally {
@@ -214,6 +325,7 @@ export default function RepartidorModule() {
   const timeStr = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
 
   const getRepartidorStatus = (o) => {
+    if (o.status === 'delivered') return { label: 'ENTREGADO', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' }
     if (o.status === 'in_transit') return { label: 'EN CAMINO', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)' }
     if (o.kitchen_status === 'ready') return { label: 'LISTO PARA RETIRAR', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' }
     if (o.kitchen_status === 'in_progress') return { label: 'COCINANDO', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' }
@@ -245,7 +357,7 @@ export default function RepartidorModule() {
               🛵 Repartidor
             </h1>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
-              {orders.length > 0 && (
+              {orders.filter(o => o.status === 'open' || o.status === 'in_transit').length > 0 && (
                 <span style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -259,7 +371,7 @@ export default function RepartidorModule() {
                   border: '1px solid rgba(249, 115, 22, 0.3)'
                 }}>
                   <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fb923c', display: 'inline-block', animation: 'pulse-dot 1.5s infinite' }} />
-                  {orders.length} pendiente{orders.length !== 1 ? 's' : ''}
+                  {orders.filter(o => o.status === 'open' || o.status === 'in_transit').length} pendiente{orders.filter(o => o.status === 'open' || o.status === 'in_transit').length !== 1 ? 's' : ''}
                 </span>
               )}
               <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{timeStr}</span>
@@ -272,6 +384,22 @@ export default function RepartidorModule() {
             ↻
           </button>
         </div>
+        
+        {/* Tabs de Repartidor */}
+        <div style={{ display: 'flex', gap: '8px', marginTop: '16px', background: 'var(--surface-2)', padding: '4px', borderRadius: '10px' }}>
+          <button 
+            onClick={() => setActiveTab('pendientes')}
+            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'pendientes' ? 'var(--primary)' : 'transparent', color: activeTab === 'pendientes' ? 'white' : 'var(--text-secondary)', fontWeight: '700', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s' }}
+          >
+            Pendientes
+          </button>
+          <button 
+            onClick={() => setActiveTab('entregados')}
+            style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', background: activeTab === 'entregados' ? 'var(--primary)' : 'transparent', color: activeTab === 'entregados' ? 'white' : 'var(--text-secondary)', fontWeight: '700', fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s' }}
+          >
+            Entregados
+          </button>
+        </div>
       </div>
 
       {/* Lista de Pedidos */}
@@ -281,7 +409,7 @@ export default function RepartidorModule() {
             <div style={{ fontSize: '32px', marginBottom: '12px' }}>⏳</div>
             <p style={{ margin: 0, fontWeight: '600' }}>Cargando entregas...</p>
           </div>
-        ) : orders.length === 0 ? (
+        ) : (activeTab === 'pendientes' ? orders.filter(o => o.status === 'open' || o.status === 'in_transit') : orders.filter(o => o.status === 'delivered')).length === 0 ? (
           <div style={{
             textAlign: 'center',
             padding: '60px 20px',
@@ -291,10 +419,10 @@ export default function RepartidorModule() {
           }}>
             <span style={{ fontSize: '56px', display: 'block', marginBottom: '16px' }}>🙌</span>
             <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-primary)', fontSize: '20px', fontWeight: '700' }}>¡Todo al día!</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: 0 }}>No hay pedidos pendientes de entrega.</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: 0 }}>No hay pedidos {activeTab === 'pendientes' ? 'pendientes de entrega' : 'entregados'}.</p>
           </div>
         ) : (
-          orders.map(order => {
+          (activeTab === 'pendientes' ? orders.filter(o => o.status === 'open' || o.status === 'in_transit') : orders.filter(o => o.status === 'delivered')).map(order => {
             const { phone, name, addressText, desc, mapsUrl } = getOrderInfo(order)
             const isBeingDelivered = delivering === order.id
             const orderTime = new Date(order.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
@@ -437,28 +565,30 @@ export default function RepartidorModule() {
                     )}
                   </div>
 
-                  {/* Botón Principal Entregar */}
-                  <button
-                    className="deliver-btn"
-                    onClick={() => markAsDelivered(order.id)}
-                    disabled={isBeingDelivered}
-                    style={{
-                      width: '100%',
-                      padding: '16px',
-                      background: isBeingDelivered ? 'var(--surface-2)' : (order.status === 'open' ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)'),
-                      color: isBeingDelivered ? '#64748b' : 'white',
-                      border: 'none',
-                      borderRadius: '12px',
-                      fontSize: '16px',
-                      fontWeight: '800',
-                      cursor: isBeingDelivered ? 'not-allowed' : 'pointer',
-                      boxShadow: isBeingDelivered ? 'none' : '0 4px 14px rgba(16, 185, 129, 0.4)',
-                      transition: 'all 0.2s',
-                      letterSpacing: '0.3px'
-                    }}
-                  >
-                    {isBeingDelivered ? '⏳ Confirmando...' : 'Marcar como Entregado'}
-                  </button>
+                  {/* Botón Principal Entregar (Sólo en pendientes) */}
+                  {order.status !== 'delivered' && (
+                    <button
+                      className="deliver-btn"
+                      onClick={() => markAsDelivered(order.id)}
+                      disabled={isBeingDelivered}
+                      style={{
+                        width: '100%',
+                        padding: '16px',
+                        background: isBeingDelivered ? 'var(--surface-2)' : (order.status === 'open' ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)'),
+                        color: isBeingDelivered ? '#64748b' : 'white',
+                        border: 'none',
+                        borderRadius: '12px',
+                        fontSize: '16px',
+                        fontWeight: '800',
+                        cursor: isBeingDelivered ? 'not-allowed' : 'pointer',
+                        boxShadow: isBeingDelivered ? 'none' : '0 4px 14px rgba(16, 185, 129, 0.4)',
+                        transition: 'all 0.2s',
+                        letterSpacing: '0.3px'
+                      }}
+                    >
+                      {isBeingDelivered ? '⏳ Confirmando...' : 'Marcar como Entregado'}
+                    </button>
+                  )}
                 </div>
               </div>
             )

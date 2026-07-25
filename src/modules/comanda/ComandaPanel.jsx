@@ -8,6 +8,7 @@ import {
   dbGetZones, dbGetTables, dbGetOrder, dbDeductStockForOrder
 } from '../../lib/supabase'
 import Modal from '../../components/Modal'
+import { CategoryIconDisplay } from '../../lib/categoryIcons'
 
 export default function ComandaPanel() {
   const {
@@ -725,8 +726,10 @@ export default function ComandaPanel() {
           <div className="category-grid">
             {categories.map(c => (
               <button key={c.id} className="cat-btn" onClick={() => { setActiveCategory(c.id); setSearch('') }}>
-                <span className="cat-icon">{c.icon || '🍽️'}</span>
-                <span>{c.name}</span>
+                <span className="cat-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CategoryIconDisplay iconId={c.icon} size={36} />
+                </span>
+                <span style={{ marginTop: '4px' }}>{c.name}</span>
               </button>
             ))}
           </div>
