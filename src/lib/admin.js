@@ -151,7 +151,7 @@ export async function dbCreateTenantAndOwner(restaurantName, ownerEmail, ownerPa
     role: 'owner',
     first_name: ownerName,
     last_name: '',
-    roles: ['mesas', 'mostrador', 'delivery', 'cocina', 'ventas', 'caja', 'clientes', 'productos', 'empleados', 'historial', 'stock', 'configuracion'],
+    roles: ['mesas', 'mostrador', 'delivery', 'repartidor', 'cocina', 'ventas', 'caja', 'clientes', 'productos', 'empleados', 'historial', 'stock', 'configuracion'],
     is_active: true,
     hourly_rate: 0
   }).select().single()

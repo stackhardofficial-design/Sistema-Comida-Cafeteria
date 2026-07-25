@@ -30,11 +30,14 @@ function AppShell() {
         setUser(data.session.user)
         const userInfo = await dbGetUserInfo(data.session.user.id)
         if (userInfo) {
+          let allRoles = []
           if (userInfo.roles && userInfo.roles.length > 0) {
-            setUserRoles(userInfo.roles)
-          } else if (userInfo.role === 'owner' || userInfo.role === 'super_admin' || userInfo.role === 'admin') {
-            setUserRoles([userInfo.role])
+            allRoles = [...userInfo.roles]
           }
+          if (userInfo.role) {
+            allRoles.push(userInfo.role)
+          }
+          setUserRoles(allRoles)
           const tenant = await dbGetTenant(userInfo.tenant_id)
           if (tenant) setTenantId(tenant.id)
         }
