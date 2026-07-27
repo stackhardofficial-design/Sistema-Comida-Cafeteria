@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '../../lib/AppContext'
 import {
   dbGetDeliveryOrders, dbCreateDeliveryOrder, dbUpdateOrder, dbGetOrder,
-  fmtMoney, fmtTimer, sb
+  fmtMoney, fmtTimer, sb, dbCreatePayment, dbUpdateKitchenStatus
 } from '../../lib/supabase'
 import Modal from '../../components/Modal'
 
@@ -19,8 +19,18 @@ const STATUS_GROUPS = [
     dotColor: '#f97316',
   },
   {
-    key: 'in_transit',
+    key: 'ready',
     label: 'Listo para Entregar',
+    headerColor: 'var(--text-primary)',
+    headerBg: 'var(--surface-2)',
+    badgeBg: 'var(--surface)',
+    badgeColor: 'var(--accent)',
+    icon: <Check size={16} />,
+    dotColor: '#10b981',
+  },
+  {
+    key: 'in_transit',
+    label: 'Enviados / En Camino',
     headerColor: 'var(--text-primary)',
     headerBg: 'var(--surface-2)',
     badgeBg: 'var(--surface)',
@@ -28,23 +38,13 @@ const STATUS_GROUPS = [
     icon: <Bike size={16} />,
     dotColor: '#3b82f6',
   },
-  {
-    key: 'delivered',
-    label: 'Enviados',
-    headerColor: 'var(--text-primary)',
-    headerBg: 'var(--surface-2)',
-    badgeBg: 'var(--surface)',
-    badgeColor: 'var(--accent)',
-    icon: '',
-    dotColor: '#eab308',
-  },
 ]
 
 export default function DeliveryModule() {
   const { tenantId, setCurrentContext, setCart, setDiscount } = useApp()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
-  const [visibleCounts, setVisibleCounts] = useState({ open: 5, in_transit: 5, delivered: 5 })
+  const [visibleCounts, setVisibleCounts] = useState({ open: 5, ready: 5, in_transit: 5 })
   const [newOrderModal, setNewOrderModal] = useState(false)
 
   // Form state for new delivery order
@@ -59,6 +59,10 @@ export default function DeliveryModule() {
   })
   const [creating, setCreating] = useState(false)
   const [formError, setFormError] = useState('')
+
+  // State for Payment Modal
+  const [orderToPay, setOrderToPay] = useState(null)
+  const [delivering, setDelivering] = useState(null)
 
   const loadOrders = useCallback(async () => {
     if (!tenantId) return
@@ -120,6 +124,31 @@ export default function DeliveryModule() {
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o))
     } catch (e) {
       alert('Error al actualizar estado: ' + e.message)
+    }
+  }
+
+  async function handleMarkReady(orderId) {
+    try {
+      await dbUpdateKitchenStatus(orderId, 'ready')
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, kitchen_status: 'ready' } : o))
+    } catch (e) {
+      alert('Error al actualizar estado de cocina: ' + e.message)
+    }
+  }
+
+  async function handleConfirmPayment(method) {
+    if (!orderToPay) return
+    const orderId = orderToPay.id
+    setDelivering(orderId)
+    try {
+      await dbCreatePayment(tenantId, orderId, [{ method, amount: orderToPay.total_amount }])
+      await dbUpdateOrder(orderId, { status: 'delivered' })
+      setOrders(prev => prev.filter(o => o.id !== orderId))
+      setOrderToPay(null)
+    } catch (e) {
+      alert('Error al procesar pago: ' + e.message)
+    } finally {
+      setDelivering(null)
     }
   }
 
@@ -266,7 +295,15 @@ export default function DeliveryModule() {
       {/* Status Groups */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {STATUS_GROUPS.map(group => {
-          const groupOrders = orders.filter(o => o.status === group.key)
+          let groupOrders = []
+          if (group.key === 'open') {
+            groupOrders = orders.filter(o => o.status === 'open' && o.kitchen_status !== 'ready')
+          } else if (group.key === 'ready') {
+            groupOrders = orders.filter(o => o.status === 'open' && o.kitchen_status === 'ready')
+          } else if (group.key === 'in_transit') {
+            groupOrders = orders.filter(o => o.status === 'in_transit')
+          }
+
           const visible = groupOrders.slice(0, visibleCounts[group.key])
           const hasMore = groupOrders.length > visibleCounts[group.key]
 
@@ -298,7 +335,7 @@ export default function DeliveryModule() {
                       <th style={{ padding: '8px 12px' }}>Dirección</th>
                       <th style={{ padding: '8px 12px' }}>Teléfono</th>
                       <th style={{ padding: '8px 12px' }}>Cliente</th>
-                      {group.key !== 'delivered' && <th style={{ padding: '8px 12px' }}>Tiempo</th>}
+                      {group.key !== 'in_transit' && <th style={{ padding: '8px 12px' }}>Tiempo</th>}
                       <th style={{ padding: '8px 12px', textAlign: 'right' }}>Total</th>
                       <th style={{ padding: '8px 12px' }}>Acción</th>
                     </tr>
@@ -333,7 +370,7 @@ export default function DeliveryModule() {
                             <td style={{ padding: '10px 12px', fontWeight: '600', color: 'var(--text-secondary)' }}>
                               {order.customer_name || 'Sin nombre'}
                             </td>
-                            {group.key !== 'delivered' && (
+                            {group.key !== 'in_transit' && (
                               <td style={{ padding: '10px 12px', color: '#f97316', fontWeight: '700', whiteSpace: 'nowrap' }}>
                                 {fmtTimer(order.created_at)}
                               </td>
@@ -343,6 +380,15 @@ export default function DeliveryModule() {
                             </td>
                             <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
                               {group.key === 'open' && (
+                                <button
+                                  className="del-btn-move"
+                                  style={{ background: '#dcfce7', color: '#166534' }}
+                                  onClick={e => { e.stopPropagation(); handleMarkReady(order.id) }}
+                                >
+                                  Marcar Listo
+                                </button>
+                              )}
+                              {group.key === 'ready' && (
                                 <button
                                   className="del-btn-move"
                                   style={{ background: '#dbeafe', color: '#1d4ed8' }}
@@ -355,13 +401,10 @@ export default function DeliveryModule() {
                                 <button
                                   className="del-btn-move"
                                   style={{ background: '#d1fae5', color: '#065f46' }}
-                                  onClick={e => { e.stopPropagation(); moveOrder(order.id, 'delivered') }}
+                                  onClick={e => { e.stopPropagation(); setOrderToPay(order) }}
                                 >
                                   Entregado
                                 </button>
-                              )}
-                              {group.key === 'delivered' && (
-                                <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>—</span>
                               )}
                             </td>
                           </tr>
@@ -483,6 +526,59 @@ export default function DeliveryModule() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal de Cobro (Entregado) */}
+      <Modal show={!!orderToPay} onClose={() => { if (!delivering) setOrderToPay(null) }} title={<><Banknote size={16} style={{marginRight:6}}/> Confirmar Entrega y Cobro</>}>
+        {orderToPay && (
+          <div>
+            <div style={{ marginBottom: '20px', textAlign: 'center', background: 'var(--surface-2)', padding: '20px', borderRadius: '12px' }}>
+              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Total a cobrar</div>
+              <div style={{ fontSize: '32px', fontWeight: '800', color: 'var(--text-primary)' }}>{fmtMoney(orderToPay.total_amount)}</div>
+              <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                {orderToPay.customer_name} • {orderToPay.delivery_addresses?.street_address || ''}
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button 
+                onClick={() => handleConfirmPayment('cash')}
+                disabled={delivering === orderToPay.id}
+                style={{ 
+                  padding: '16px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', 
+                  fontSize: '15px', fontWeight: '700', cursor: delivering === orderToPay.id ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'transform 0.1s' 
+                }}
+              >
+                <Banknote size={20} />
+                {delivering === orderToPay.id ? 'Procesando...' : 'Cobré en Efectivo'}
+              </button>
+              <button 
+                onClick={() => handleConfirmPayment('transfer')}
+                disabled={delivering === orderToPay.id}
+                style={{ 
+                  padding: '16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', 
+                  fontSize: '15px', fontWeight: '700', cursor: delivering === orderToPay.id ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'transform 0.1s' 
+                }}
+              >
+                <CreditCard size={20} />
+                {delivering === orderToPay.id ? 'Procesando...' : 'Recibí Transferencia'}
+              </button>
+              
+              <button 
+                onClick={() => { if (!delivering) setOrderToPay(null) }}
+                disabled={!!delivering}
+                style={{ 
+                  padding: '12px', background: 'transparent', color: 'var(--text-muted)', border: 'none', 
+                  fontSize: '14px', fontWeight: '600', cursor: delivering ? 'not-allowed' : 'pointer', marginTop: '8px'
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   )
