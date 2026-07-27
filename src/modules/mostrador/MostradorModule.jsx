@@ -5,7 +5,7 @@ import { dbGetOrders, dbGetOrder, dbCreateOrder, dbCreateDeliveryOrder, fmtMoney
 import Modal from '../../components/Modal'
 
 export default function MostradorModule() {
-  const { tenantId, setCurrentContext, setCart, setDiscount } = useApp()
+  const { tenantId, setCurrentContext, setCart, setDiscount, refreshTrigger } = useApp()
   const [openOrders, setOpenOrders] = useState([])
   const [closedOrders, setClosedOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -47,7 +47,7 @@ export default function MostradorModule() {
     }
   }
 
-  useEffect(() => { loadData() }, [tenantId])
+  useEffect(() => { loadData() }, [tenantId, refreshTrigger])
 
   useEffect(() => {
     if (!tenantId) return

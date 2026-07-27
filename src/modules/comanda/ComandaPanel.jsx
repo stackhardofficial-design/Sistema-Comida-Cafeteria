@@ -110,6 +110,17 @@ export default function ComandaPanel() {
   // true when this is a new order that hasn't been assigned yet
   const isNewOrder = currentContext?.type === 'mesa' && !currentContext?.hasOrder && !currentContext?.orderId
 
+  // Reset local states when context clears
+  useEffect(() => {
+    if (!currentContext) {
+      setIsDeliveryOrder(false)
+      setDelivExpanded(false)
+      setDelivStreet('')
+      setDelivDesc('')
+      setDelivMapsUrl('')
+    }
+  }, [currentContext])
+
   const refreshCats = useCallback(() => {
     if (tenantId) dbGetCategories(tenantId).then(setCategories)
   }, [tenantId])
