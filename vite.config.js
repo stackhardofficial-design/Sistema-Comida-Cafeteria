@@ -14,17 +14,18 @@ export default defineConfig({
         theme_color: '#FAFAFA',
         background_color: '#FAFAFA',
         display: 'standalone',
+        start_url: '/',
         icons: [
           {
-            src: '/logo-light.jpg',
+            src: '/pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/jpeg',
+            type: 'image/png',
             purpose: 'any maskable'
           },
           {
-            src: '/logo-light.jpg',
+            src: '/pwa-512x512.png',
             sizes: '512x512',
-            type: 'image/jpeg',
+            type: 'image/png',
             purpose: 'any maskable'
           }
         ]
