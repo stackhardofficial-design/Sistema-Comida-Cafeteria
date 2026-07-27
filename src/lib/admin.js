@@ -63,13 +63,19 @@ export async function dbUpdateUserPassword(userId, newPassword) {
 }
 
 export async function dbDeleteUser(userId) {
-  // Primero eliminamos de Auth
-  const { error: authError } = await adminSb.auth.admin.deleteUser(userId)
-  if (authError) throw authError
+  // Primero eliminamos de public.users para evitar errores de Foreign Key (si no hay CASCADE)
+  const { error: dbError } = await adminSb.from('users').delete().eq('id', userId)
+  if (dbError) {
+    console.error('Error eliminando de public.users:', dbError)
+    throw new Error(`Error en base de datos: ${dbError.message || JSON.stringify(dbError)}`)
+  }
   
-  // (La tabla 'users' se elimina automáticamente si hay una foreign key con ON DELETE CASCADE, 
-  // pero si no, forzamos el delete)
-  await adminSb.from('users').delete().eq('id', userId)
+  // Luego eliminamos de auth.users
+  const { error: authError } = await adminSb.auth.admin.deleteUser(userId)
+  if (authError) {
+    console.error('Error eliminando de auth.users:', authError)
+    throw new Error(authError.message || 'Error al eliminar usuario en Auth')
+  }
 }
 
 // â”€â”€ EMPLOYEE HOURS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
