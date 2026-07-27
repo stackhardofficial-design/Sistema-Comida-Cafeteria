@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
-import { dbGetTenants, dbCreateTenantAndOwner, dbToggleTenantStatus } from '../../lib/admin'
-import { fmtDate, dbLogout } from '../../lib/supabase'
+import { dbGetTenants, dbCreateTenantAndOwner, dbToggleTenantStatus, dbGetEmployees, dbUpdateUserPassword, dbDeleteUser } from '../../lib/admin'
+import { fmtDate } from '../../lib/supabase'
+import { useApp } from '../../lib/AppContext'
+import { KeyRound, LogIn, Users, Trash2 } from 'lucide-react'
 import Modal from '../../components/Modal'
 
 export default function SuperAdminModule() {
+  const { setTenantId, setCurrentModule } = useApp()
   const [tenants, setTenants] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -13,6 +16,15 @@ export default function SuperAdminModule() {
   const [ownerName, setOwnerName] = useState('')
   const [ownerEmail, setOwnerEmail] = useState('')
   const [ownerPassword, setOwnerPassword] = useState('')
+
+  // Users ABM state
+  const [usersModalTenant, setUsersModalTenant] = useState(null)
+  const [tenantUsers, setTenantUsers] = useState([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
+  
+  const [passwordModalUser, setPasswordModalUser] = useState(null)
+  const [newPassword, setNewPassword] = useState('')
+  const [savingPass, setSavingPass] = useState(false)
 
   async function loadData() {
     setLoading(true)
@@ -69,6 +81,56 @@ export default function SuperAdminModule() {
     }
   }
 
+  async function openUsersModal(tenant) {
+    setUsersModalTenant(tenant)
+    setLoadingUsers(true)
+    try {
+      const users = await dbGetEmployees(tenant.id)
+      setTenantUsers(users)
+    } catch (e) {
+      alert('Error cargando usuarios: ' + e.message)
+    } finally {
+      setLoadingUsers(false)
+    }
+  }
+
+  async function handleImpersonate(tenantId) {
+    if (!confirm('Vas a entrar como administrador de este restaurante. ¿Continuar?')) return
+    setTenantId(tenantId)
+    setCurrentModule('mesas')
+  }
+
+  async function handleChangePassword(e) {
+    e.preventDefault()
+    if (!newPassword || newPassword.length < 6) return alert('La contraseña debe tener al menos 6 caracteres')
+    setSavingPass(true)
+    try {
+      await dbUpdateUserPassword(passwordModalUser.id, newPassword)
+      alert('Contraseña actualizada correctamente')
+      setPasswordModalUser(null)
+      setNewPassword('')
+    } catch (e) {
+      alert('Error al actualizar contraseña: ' + e.message)
+    } finally {
+      setSavingPass(false)
+    }
+  }
+
+  async function handleDeleteUser(userId, role) {
+    if (role === 'owner') {
+      if (!confirm('ATENCIÓN: Estás a punto de eliminar un dueño. ¿Estás absolutamente seguro?')) return
+    } else {
+      if (!confirm('¿Seguro que deseas eliminar este usuario permanentemente?')) return
+    }
+    
+    try {
+      await dbDeleteUser(userId)
+      setTenantUsers(prev => prev.filter(u => u.id !== userId))
+    } catch (e) {
+      alert('Error al eliminar usuario: ' + e.message)
+    }
+  }
+
   return (
     <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}>
       <div className="module-header" style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -113,12 +175,29 @@ export default function SuperAdminModule() {
                     </td>
                     <td>{t.currency || 'USD'}</td>
                     <td>{t.created_at ? fmtDate(t.created_at) : '-'}</td>
-                    <td>
+                    <td style={{ display: 'flex', gap: '8px' }}>
                       <button 
                         className={`btn btn-sm ${t.is_active ? 'btn-danger' : 'btn-primary'}`}
                         onClick={() => toggleStatus(t.id, t.is_active)}
+                        title={t.is_active ? 'Deshabilitar' : 'Habilitar'}
                       >
                         {t.is_active ? 'Deshabilitar' : 'Habilitar'}
+                      </button>
+                      <button 
+                        className="btn btn-sm btn-secondary"
+                        onClick={() => openUsersModal(t)}
+                        title="Ver Usuarios"
+                        style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <Users size={14} /> ABM
+                      </button>
+                      <button 
+                        className="btn btn-sm"
+                        style={{ background: '#6366f1', color: 'white', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        onClick={() => handleImpersonate(t.id)}
+                        title="Entrar al Panel"
+                      >
+                        <LogIn size={14} /> Entrar
                       </button>
                     </td>
                   </tr>
@@ -174,6 +253,86 @@ export default function SuperAdminModule() {
               <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)} disabled={saving}>Cancelar</button>
               <button type="submit" className="btn btn-primary" disabled={saving}>
                 {saving ? 'Creando...' : 'Crear Restaurante y Dueño'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {usersModalTenant && (
+        <Modal show={true} onClose={() => setUsersModalTenant(null)} title={`Usuarios: ${usersModalTenant.name}`}>
+          <div style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+            {loadingUsers ? (
+              <div style={{ padding: '24px', textAlign: 'center' }}>Cargando usuarios...</div>
+            ) : (
+              <table className="data-table" style={{ width: '100%' }}>
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Rol</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tenantUsers.map(u => (
+                    <tr key={u.id}>
+                      <td>{u.first_name} {u.last_name}</td>
+                      <td>
+                        <span style={{
+                          padding: '2px 6px', borderRadius: '4px', fontSize: 12, fontWeight: 'bold',
+                          backgroundColor: u.role === 'owner' ? '#fef3c7' : '#e0e7ff',
+                          color: u.role === 'owner' ? '#d97706' : '#4338ca'
+                        }}>
+                          {u.role === 'owner' ? 'Dueño' : 'Empleado'}
+                        </span>
+                      </td>
+                      <td style={{ display: 'flex', gap: '8px' }}>
+                        <button 
+                          className="btn btn-sm btn-secondary" 
+                          onClick={() => setPasswordModalUser(u)}
+                          title="Cambiar Contraseña"
+                        >
+                          <KeyRound size={14} />
+                        </button>
+                        <button 
+                          className="btn btn-sm btn-danger" 
+                          onClick={() => handleDeleteUser(u.id, u.role)}
+                          title="Eliminar Usuario"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {tenantUsers.length === 0 && (
+                    <tr><td colSpan={3} style={{ textAlign: 'center', padding: '16px' }}>No hay usuarios</td></tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </Modal>
+      )}
+
+      {passwordModalUser && (
+        <Modal show={true} onClose={() => !savingPass && setPasswordModalUser(null)} title={`Cambiar contraseña de ${passwordModalUser.first_name}`}>
+          <form onSubmit={handleChangePassword}>
+            <div className="form-row">
+              <label>Nueva Contraseña</label>
+              <input 
+                type="text" 
+                value={newPassword} 
+                onChange={e => setNewPassword(e.target.value)} 
+                required 
+                minLength={6} 
+                placeholder="Mínimo 6 caracteres" 
+                disabled={savingPass}
+              />
+            </div>
+            <div className="form-actions" style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setPasswordModalUser(null)} disabled={savingPass}>Cancelar</button>
+              <button type="submit" className="btn btn-primary" disabled={savingPass}>
+                {savingPass ? 'Guardando...' : 'Actualizar'}
               </button>
             </div>
           </form>

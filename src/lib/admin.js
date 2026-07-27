@@ -56,6 +56,22 @@ export async function dbToggleEmployeeStatus(userId, isActive) {
   return dbUpdateEmployee(userId, { is_active: isActive })
 }
 
+export async function dbUpdateUserPassword(userId, newPassword) {
+  const { data, error } = await adminSb.auth.admin.updateUserById(userId, { password: newPassword })
+  if (error) throw error
+  return data
+}
+
+export async function dbDeleteUser(userId) {
+  // Primero eliminamos de Auth
+  const { error: authError } = await adminSb.auth.admin.deleteUser(userId)
+  if (authError) throw authError
+  
+  // (La tabla 'users' se elimina automáticamente si hay una foreign key con ON DELETE CASCADE, 
+  // pero si no, forzamos el delete)
+  await adminSb.from('users').delete().eq('id', userId)
+}
+
 // â”€â”€ EMPLOYEE HOURS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export async function dbGetEmployeeHours(tenantId, filters = {}) {
   let q = adminSb.from('employee_hours')
