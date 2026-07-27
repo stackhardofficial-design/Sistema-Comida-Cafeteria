@@ -15,7 +15,8 @@ export default function ComandaPanel() {
     tenantId, currentContext, setCurrentContext,
     cart, setCart, discount, setDiscount, clearCart,
     cartTotal, discountAmount, grandTotal, refreshTrigger,
-    currentModule, triggerRefresh
+    currentModule, triggerRefresh,
+    mobileComandaOpen, setMobileComandaOpen
   } = useApp()
 
   const [categories, setCategories] = useState([])
@@ -597,7 +598,16 @@ export default function ComandaPanel() {
   if ((currentModule === 'mostrador' || currentModule === 'delivery') && !currentContext) {
     const isMostrador = currentModule === 'mostrador'
     return (
-      <aside className="comanda-panel" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <aside className={`comanda-panel ${mobileComandaOpen ? 'comanda-panel-mobile' : 'comanda-panel-hidden'}`} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div className="comanda-header" style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+          <h2 style={{ fontSize: '16px', margin: 0 }}>{isMostrador ? 'Mostrador' : 'Delivery'}</h2>
+          <button 
+            onClick={() => setMobileComandaOpen(false)}
+            style={{ background: 'none', border: 'none', fontSize: '24px', color: 'var(--text-muted)' }}
+          >
+            ✕
+          </button>
+        </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '24px', textAlign: 'center', gap: '12px' }}>
           <span style={{ fontSize: '32px' }}>{isMostrador ? '' : '🛵'}</span>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
@@ -610,7 +620,7 @@ export default function ComandaPanel() {
   }
 
   return (
-    <aside className="comanda-panel">
+    <aside className={`comanda-panel ${mobileComandaOpen ? 'comanda-panel-mobile' : 'comanda-panel-hidden'}`}>
       {/* Header */}
       <div className="comanda-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
@@ -626,20 +636,32 @@ export default function ComandaPanel() {
             <User size={14} style={{marginRight:4}} /> {currentContext?.customerName || 'Consumidor Final'}
           </div>
         </div>
-        {currentContext && ['mostrador', 'delivery'].includes(currentModule) && (
+        {currentContext && ['mostrador', 'delivery'].includes(currentModule) ? (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+              onClick={() => {
+                setMobileComandaOpen(false)
+              }} 
+              style={{ background: 'none', border: 'none', fontSize: '24px', color: 'var(--text-primary)', cursor: 'pointer', display: 'none' }}
+              className="mobile-only-btn"
+            >
+              ↓
+            </button>
+            <button 
+              onClick={clearCart} 
+              style={{ background: 'none', border: 'none', fontSize: '20px', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+              title="Volver al mostrador (Guardar)"
+            >
+              ✕
+            </button>
+          </div>
+        ) : (
           <button 
-            onClick={clearCart} 
-            style={{ 
-              background: 'none', 
-              border: 'none', 
-              fontSize: '20px', 
-              color: 'var(--text-muted)', 
-              cursor: 'pointer',
-              padding: '4px'
-            }}
-            title="Volver al mostrador (Guardar)"
+            onClick={() => setMobileComandaOpen(false)}
+            style={{ background: 'none', border: 'none', fontSize: '24px', color: 'var(--text-muted)', cursor: 'pointer', display: 'none' }}
+            className="mobile-only-btn"
           >
-            ✕
+            ↓
           </button>
         )}
       </div>

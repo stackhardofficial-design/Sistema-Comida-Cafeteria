@@ -166,3 +166,16 @@ input, select, textarea { font-family: var(--font); }
 @media (max-width: 800px) {
   :root { --sidebar-w: 60px; --comanda-w: 280px; }
 }
+
+@media (max-width: 768px) {
+  .modal-box {
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    padding: 16px !important;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-box > div { flex: 1; overflow-y: auto; }
+}

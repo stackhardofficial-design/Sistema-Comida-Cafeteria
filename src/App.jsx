@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { AppProvider, useApp } from './lib/AppContext'
+import { ShoppingCart } from 'lucide-react'
 import { dbGetSession, dbGetTenant, dbGetUserInfo, dbLogout } from './lib/supabase'
 import Login from './components/Login'
 import Sidebar from './components/Sidebar'
@@ -20,7 +21,7 @@ import CocinaModule from './modules/cocina/CocinaModule'
 import './App.css'
 
 function AppShell() {
-  const { user, setUser, setUserRoles, setTenantId, currentModule } = useApp()
+  const { user, setUser, setUserRoles, setTenantId, currentModule, mobileComandaOpen, setMobileComandaOpen, cart } = useApp()
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -79,7 +80,57 @@ function AppShell() {
       <main className="workspace">
         {MODULE_MAP[currentModule] || <MesasModule />}
       </main>
-      {['mesas', 'mostrador', 'delivery'].includes(currentModule) && <ComandaPanel />}
+      
+      {/* Comanda Panel */}
+      {['mesas', 'mostrador', 'delivery'].includes(currentModule) && (
+        <>
+          <ComandaPanel />
+          {/* FAB on Mobile */}
+          {!mobileComandaOpen && (
+            <button
+              className="mobile-fab"
+              onClick={() => setMobileComandaOpen(true)}
+              style={{
+                position: 'fixed',
+                bottom: '80px',
+                right: '20px',
+                width: '60px',
+                height: '60px',
+                borderRadius: '30px',
+                background: 'var(--accent)',
+                color: 'white',
+                border: 'none',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                display: 'none', // Will be overridden in App.css for mobile
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 90
+              }}
+            >
+              <ShoppingCart size={24} />
+              {cart.length > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '0',
+                  right: '0',
+                  background: 'var(--text-primary)',
+                  color: 'var(--bg)',
+                  borderRadius: '50%',
+                  width: '24px',
+                  height: '24px',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {cart.length}
+                </span>
+              )}
+            </button>
+          )}
+        </>
+      )}
     </div>
   )
 }

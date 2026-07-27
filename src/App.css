@@ -422,3 +422,87 @@
 .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-secondary); font-weight: 600; }
 .stat-value { font-size: 22px; font-weight: 800; margin-top: 4px; }
 .stat-sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+/* =========================================
+   MOBILE RESPONSIVE (PWA)
+   ========================================= */
+@media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    height: 65px;
+    flex-direction: row;
+    order: 2;
+    border-top: 1px solid var(--border);
+    border-right: none;
+    z-index: 100;
+  }
+  
+  .sidebar-logo, .sidebar-user {
+    display: none !important;
+  }
+  
+  .sidebar-nav {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 0;
+    align-items: center;
+    justify-content: flex-start;
+  }
+  
+  .nav-item {
+    flex-direction: column;
+    padding: 8px 12px;
+    gap: 4px;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    justify-content: center;
+    min-width: 75px;
+    text-align: center;
+    align-items: center;
+  }
+  
+  .nav-item.active {
+    border-left: none;
+    border-bottom-color: var(--accent);
+  }
+  
+  .nav-icon {
+    font-size: 20px;
+    width: auto;
+  }
+  
+  .nav-label {
+    font-size: 10px;
+    white-space: nowrap;
+  }
+  
+  .workspace {
+    order: 1;
+    padding-bottom: 0;
+  }
+
+  .comanda-panel-mobile {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100% !important;
+    z-index: 200;
+    animation: slideUp 0.2s ease;
+  }
+}
+
+@media (max-width: 768px) {
+  .mobile-fab { display: flex !important; }
+  .comanda-panel-hidden { display: none !important; }
+}
+
+@media (max-width: 768px) {
+  .mobile-only-btn { display: flex !important; }
+}

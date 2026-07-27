@@ -15,6 +15,7 @@ export function AppProvider({ children }) {
   const [currentModule, _setCurrentModule] = useState(getInitialModule)
   const [cart, setCart] = useState([])
   const [discount, setDiscount] = useState({ type: 'none', value: 0 })
+  const [mobileComandaOpen, setMobileComandaOpen] = useState(false)
 
   const setCurrentModule = useCallback((mod) => {
     _setCurrentModule(mod)
@@ -60,7 +61,8 @@ export function AppProvider({ children }) {
       currentContext, setCurrentContext,
       clearCart,
       cartTotal, discountAmount, grandTotal,
-      refreshTrigger, triggerRefresh
+      refreshTrigger, triggerRefresh,
+      mobileComandaOpen, setMobileComandaOpen
     }}>
       {children}
     </AppContext.Provider>
