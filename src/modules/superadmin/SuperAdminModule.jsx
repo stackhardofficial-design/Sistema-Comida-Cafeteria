@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { dbGetTenants, dbCreateTenantAndOwner, dbToggleTenantStatus, dbGetEmployees, dbUpdateUserPassword, dbDeleteUser } from '../../lib/admin'
+import { dbGetTenants, dbCreateTenantAndOwner, dbToggleTenantStatus, dbGetEmployees, dbUpdateUserPassword, dbDeleteUser, dbDeactivateUser } from '../../lib/admin'
 import { fmtDate } from '../../lib/supabase'
 import { useApp } from '../../lib/AppContext'
 import { KeyRound, LogIn, Users, Trash2 } from 'lucide-react'
@@ -127,7 +127,21 @@ export default function SuperAdminModule() {
       await dbDeleteUser(userId)
       setTenantUsers(prev => prev.filter(u => u.id !== userId))
     } catch (e) {
-      alert('Error al eliminar usuario: ' + e.message)
+      if (e.message === 'CONSTRAINT_ERROR') {
+        if (confirm('Este usuario tiene registros históricos (ventas, horas, etc.) y la base de datos protege esa información impidiendo su borrado. ¿Deseas DESACTIVARLO permanentemente y bloquearle el acceso?')) {
+          try {
+            await dbDeactivateUser(userId)
+            alert('El usuario ha sido desactivado permanentemente.')
+            // Refrescar lista
+            const users = await dbGetEmployees(usersModalTenant.id)
+            setTenantUsers(users)
+          } catch (err) {
+            alert('Error al desactivar usuario: ' + err.message)
+          }
+        }
+      } else {
+        alert('Error al eliminar usuario: ' + e.message)
+      }
     }
   }
 

@@ -66,6 +66,9 @@ export async function dbDeleteUser(userId) {
   // Primero eliminamos de public.users para evitar errores de Foreign Key (si no hay CASCADE)
   const { error: dbError } = await adminSb.from('users').delete().eq('id', userId)
   if (dbError) {
+    if (dbError.code === '23503') {
+      throw new Error('CONSTRAINT_ERROR')
+    }
     console.error('Error eliminando de public.users:', dbError)
     throw new Error(`Error en base de datos: ${dbError.message || JSON.stringify(dbError)}`)
   }
@@ -76,6 +79,16 @@ export async function dbDeleteUser(userId) {
     console.error('Error eliminando de auth.users:', authError)
     throw new Error(authError.message || 'Error al eliminar usuario en Auth')
   }
+}
+
+export async function dbDeactivateUser(userId) {
+  // Desactivar en la tabla users
+  await adminSb.from('users').update({ is_active: false, first_name: '[Inactivo]', roles: [] }).eq('id', userId)
+  // Banear en auth y cambiar contraseña a algo aleatorio
+  await adminSb.auth.admin.updateUserById(userId, { 
+    ban_duration: '876000h',
+    password: Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10) 
+  })
 }
 
 // â”€â”€ EMPLOYEE HOURS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
