@@ -873,7 +873,6 @@ export const CATEGORY_ICONS = [
       </svg>
     )
   },
-,
   { id: 'milanesa', label: 'Milanesa', group: 'Regionales / Clásicos', svg: <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="20" cy="20" rx="14" ry="10" fill="#D97706" stroke="#92400E" strokeWidth="1.5"/><circle cx="16" cy="18" r="1.5" fill="#B45309"/><circle cx="24" cy="22" r="1.5" fill="#B45309"/><circle cx="12" cy="22" r="1" fill="#B45309"/></svg> },
   { id: 'choripan', label: 'Choripán', group: 'Regionales / Clásicos', svg: <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 20 Q20 10 32 20 Q20 30 8 20" fill="#FDE68A" stroke="#D97706" strokeWidth="1.5"/><ellipse cx="20" cy="20" rx="12" ry="4" fill="#991B1B" stroke="#7F1D1D" strokeWidth="1"/></svg> },
   { id: 'locro', label: 'Locro', group: 'Regionales / Clásicos', svg: <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 24 C6 32, 14 36, 20 36 C26 36, 34 32, 34 24" fill="#FBBF24" stroke="#D97706" strokeWidth="1.5"/><path d="M4 24 L36 24" stroke="#D97706" strokeWidth="2"/><circle cx="16" cy="22" r="2" fill="#EF4444"/><circle cx="24" cy="22" r="1.5" fill="#FDE68A"/></svg> },
