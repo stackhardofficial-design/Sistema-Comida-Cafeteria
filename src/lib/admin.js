@@ -159,10 +159,16 @@ export async function dbGetTenants() {
 export async function dbCreateTenantAndOwner(restaurantName, ownerEmail, ownerPassword, ownerName) {
   // 1. Crear el tenant
   const slug = restaurantName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+  
+  // Set paid_until to one month from now
+  const nextMonth = new Date()
+  nextMonth.setMonth(nextMonth.getMonth() + 1)
+  
   const { data: tenantData, error: tenantError } = await adminSb.from('tenants').insert({
     name: restaurantName,
     slug: slug + '-' + Math.floor(Math.random() * 1000),
-    is_active: true
+    is_active: true,
+    paid_until: nextMonth.toISOString().split('T')[0]
   }).select().single()
 
   if (tenantError) throw tenantError
@@ -199,6 +205,15 @@ export async function dbCreateTenantAndOwner(restaurantName, ownerEmail, ownerPa
 export async function dbToggleTenantStatus(tenantId, isActive) {
   const { data, error } = await adminSb.from('tenants')
     .update({ is_active: isActive })
+    .eq('id', tenantId)
+    .select().single()
+  if (error) throw error
+  return data
+}
+
+export async function dbUpdateTenantPaidUntil(tenantId, paidUntilDate) {
+  const { data, error } = await adminSb.from('tenants')
+    .update({ paid_until: paidUntilDate })
     .eq('id', tenantId)
     .select().single()
   if (error) throw error

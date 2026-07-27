@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { dbGetTenants, dbCreateTenantAndOwner, dbToggleTenantStatus, dbGetEmployees, dbUpdateUserPassword, dbDeleteUser, dbDeactivateUser } from '../../lib/admin'
+import { dbGetTenants, dbCreateTenantAndOwner, dbToggleTenantStatus, dbUpdateTenantPaidUntil, dbGetEmployees, dbUpdateUserPassword, dbDeleteUser, dbDeactivateUser } from '../../lib/admin'
 import { fmtDate } from '../../lib/supabase'
 import { useApp } from '../../lib/AppContext'
 import { KeyRound, LogIn, Users, Trash2 } from 'lucide-react'
@@ -25,6 +25,11 @@ export default function SuperAdminModule() {
   const [passwordModalUser, setPasswordModalUser] = useState(null)
   const [newPassword, setNewPassword] = useState('')
   const [savingPass, setSavingPass] = useState(false)
+  
+  // Renovar Mensualidad state
+  const [renewModalTenant, setRenewModalTenant] = useState(null)
+  const [renewDate, setRenewDate] = useState('')
+  const [savingRenew, setSavingRenew] = useState(false)
 
   async function loadData() {
     setLoading(true)
@@ -99,6 +104,22 @@ export default function SuperAdminModule() {
     setTenantId(tenantId)
     setCurrentModule('mesas')
   }
+  
+  async function handleRenewSubmit(e) {
+    e.preventDefault()
+    if (!renewDate) return
+    setSavingRenew(true)
+    try {
+      await dbUpdateTenantPaidUntil(renewModalTenant.id, renewDate)
+      alert('Mensualidad actualizada correctamente')
+      setRenewModalTenant(null)
+      await loadData()
+    } catch (e) {
+      alert('Error al actualizar: ' + e.message)
+    } finally {
+      setSavingRenew(false)
+    }
+  }
 
   async function handleChangePassword(e) {
     e.preventDefault()
@@ -164,7 +185,7 @@ export default function SuperAdminModule() {
               <tr>
                 <th>Restaurante</th>
                 <th>Estado</th>
-                <th>Moneda</th>
+                <th>Mensualidad</th>
                 <th>Registro</th>
                 <th>Acciones</th>
               </tr>
@@ -187,7 +208,15 @@ export default function SuperAdminModule() {
                         {t.is_active ? 'Activo' : 'Suspendido'}
                       </span>
                     </td>
-                    <td>{t.currency || 'USD'}</td>
+                    <td>
+                      {t.paid_until ? (
+                        <span style={{ color: new Date(t.paid_until) < new Date() ? '#ef4444' : '#22c55e', fontWeight: 'bold' }}>
+                          Hasta: {t.paid_until}
+                        </span>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>No registrado</span>
+                      )}
+                    </td>
                     <td>{t.created_at ? fmtDate(t.created_at) : '-'}</td>
                     <td style={{ display: 'flex', gap: '8px' }}>
                       <button 
@@ -204,6 +233,17 @@ export default function SuperAdminModule() {
                         style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
                       >
                         <Users size={14} /> ABM
+                      </button>
+                      <button 
+                        className="btn btn-sm"
+                        style={{ background: '#f59e0b', color: 'white', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        onClick={() => {
+                          setRenewModalTenant(t)
+                          setRenewDate(t.paid_until || new Date().toISOString().split('T')[0])
+                        }}
+                        title="Renovar Mensualidad"
+                      >
+                        <KeyRound size={14} /> Renovar
                       </button>
                       <button 
                         className="btn btn-sm"
@@ -347,6 +387,32 @@ export default function SuperAdminModule() {
               <button type="button" className="btn btn-secondary" onClick={() => setPasswordModalUser(null)} disabled={savingPass}>Cancelar</button>
               <button type="submit" className="btn btn-primary" disabled={savingPass}>
                 {savingPass ? 'Guardando...' : 'Actualizar'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {renewModalTenant && (
+        <Modal show={true} onClose={() => !savingRenew && setRenewModalTenant(null)} title={`Renovar Mensualidad: ${renewModalTenant.name}`}>
+          <form onSubmit={handleRenewSubmit}>
+            <div className="form-row">
+              <label>Pagado Hasta (Fecha de Vencimiento)</label>
+              <input 
+                type="date" 
+                value={renewDate} 
+                onChange={e => setRenewDate(e.target.value)} 
+                required 
+                disabled={savingRenew}
+              />
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                Si el restaurante no paga para esta fecha, se le otorgará un período de gracia hasta el día 10 del mes siguiente. Pasado el día 10, perderán acceso automáticamente.
+              </p>
+            </div>
+            <div className="form-actions" style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setRenewModalTenant(null)} disabled={savingRenew}>Cancelar</button>
+              <button type="submit" className="btn btn-primary" disabled={savingRenew}>
+                {savingRenew ? 'Guardando...' : 'Guardar Fecha'}
               </button>
             </div>
           </form>
