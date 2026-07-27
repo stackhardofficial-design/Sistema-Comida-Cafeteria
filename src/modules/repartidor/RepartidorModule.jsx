@@ -166,6 +166,11 @@ export default function RepartidorModule() {
     const order = orders.find(o => o.id === orderId)
     
     if (order.status === 'open') {
+      // Check if kitchen has marked it ready
+      if (order.kitchen_status !== 'ready') {
+        alert('El pedido aún no está listo en cocina. Esperá a que lo marquen como LISTO.')
+        return
+      }
       setDelivering(orderId)
       try {
         await dbUpdateOrder(orderId, { status: 'in_transit' })
@@ -457,29 +462,47 @@ export default function RepartidorModule() {
                   </div>
 
                   {/* Botón Principal Entregar (Sólo en pendientes) */}
-                  {order.status !== 'delivered' && (
-                    <button
-                      className="deliver-btn"
-                      onClick={() => markAsDelivered(order.id)}
-                      disabled={isBeingDelivered}
-                      style={{
-                        width: '100%',
-                        padding: '16px',
-                        background: isBeingDelivered ? 'var(--surface-2)' : (order.status === 'open' ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)'),
-                        color: isBeingDelivered ? '#64748b' : 'white',
-                        border: 'none',
-                        borderRadius: '12px',
-                        fontSize: '16px',
-                        fontWeight: '800',
-                        cursor: isBeingDelivered ? 'not-allowed' : 'pointer',
-                        boxShadow: isBeingDelivered ? 'none' : '0 4px 14px rgba(16, 185, 129, 0.4)',
-                        transition: 'all 0.2s',
-                        letterSpacing: '0.3px'
-                      }}
-                    >
-                      {isBeingDelivered ? '⏳ Confirmando...' : 'Marcar como Entregado'}
-                    </button>
-                  )}
+                  {order.status !== 'delivered' && (() => {
+                    const kitchenNotReady = order.status === 'open' && order.kitchen_status !== 'ready'
+                    const btnDisabled = isBeingDelivered || kitchenNotReady
+                    let btnText = 'Marcar como Entregado'
+                    let btnBg = 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                    if (kitchenNotReady) {
+                      const ks = order.kitchen_status
+                      btnText = ks === 'in_progress' ? '🔥 Cocinando...' : '⏳ Esperando cocina...'
+                      btnBg = 'var(--surface-2)'
+                    } else if (order.status === 'open') {
+                      btnText = '🚀 Salir a entregar'
+                      btnBg = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
+                    } else if (isBeingDelivered) {
+                      btnText = '⏳ Confirmando...'
+                      btnBg = 'var(--surface-2)'
+                    }
+                    return (
+                      <button
+                        className="deliver-btn"
+                        onClick={() => markAsDelivered(order.id)}
+                        disabled={btnDisabled}
+                        style={{
+                          width: '100%',
+                          padding: '16px',
+                          background: btnBg,
+                          color: btnDisabled ? 'var(--text-muted)' : 'white',
+                          border: 'none',
+                          borderRadius: '12px',
+                          fontSize: '16px',
+                          fontWeight: '800',
+                          cursor: btnDisabled ? 'not-allowed' : 'pointer',
+                          boxShadow: btnDisabled ? 'none' : '0 4px 14px rgba(16, 185, 129, 0.4)',
+                          transition: 'all 0.2s',
+                          letterSpacing: '0.3px',
+                          opacity: kitchenNotReady ? 0.7 : 1
+                        }}
+                      >
+                        {btnText}
+                      </button>
+                    )
+                  })()}
                 </div>
               </div>
             )

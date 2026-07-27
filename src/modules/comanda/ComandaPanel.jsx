@@ -5,7 +5,7 @@ import {
   dbGetCategories, dbGetProducts, dbAddItem, dbRemoveItem,
   dbCreateOrder, dbUpdateOrder, dbUpdateTable, dbCreatePayment,
   dbGetOpenSession, dbOpenSession, fmtMoney, dbRecalcOrder, sb, logActivity,
-  dbGetZones, dbGetTables, dbGetOrder, dbDeductStockForOrder
+  dbGetZones, dbGetTables, dbGetOrder, dbDeductStockForOrder, dbUpdateKitchenStatus
 } from '../../lib/supabase'
 import Modal from '../../components/Modal'
 import { CategoryIconDisplay } from '../../lib/categoryIcons'
@@ -479,6 +479,28 @@ export default function ComandaPanel() {
     }
   }
 
+  // Send order to kitchen and update table status
+  async function sendToKitchen() {
+    if (!currentContext?.orderId || cart.length === 0) return
+    setAssigning(true)
+    try {
+      // Recalcular la orden para asegurar que los totales estén correctos
+      await dbRecalcOrder(currentContext.orderId)
+      // Marcar kitchen_status como pending
+      await dbUpdateKitchenStatus(currentContext.orderId, 'pending')
+      // Asegurar que la mesa esté ocupada
+      if (currentContext.tableDbId) {
+        await dbUpdateTable(currentContext.tableDbId, { status: 'occupied', current_order_id: currentContext.orderId })
+      }
+      clearCart()
+      triggerRefresh()
+    } catch (e) {
+      alert('Error al enviar a cocina: ' + e.message)
+    } finally {
+      setAssigning(false)
+    }
+  }
+
   const contextLabel = currentContext
     ? currentContext.type === 'mesa'
       ? "<><Grid size={16} style={{marginRight: 6}}/> " + currentContext.tableName + "</>"
@@ -830,13 +852,14 @@ export default function ComandaPanel() {
                 disabled={cart.length === 0}
                 onClick={() => { setPayModal(true); setPayEfectivo(grandTotal.toString()); setPayTarjeta(''); setPayTransferencia(''); setExcesoComoPropina(false); }}
               ><CreditCard size={18} style={{marginRight:6}}/> COBRAR</button>
-              {true && (
+              {currentContext?.orderId && (
                 <button
                   className="btn-discount"
-                  style={{ background: 'var(--border)', color: 'var(--text-primary)', marginTop: '4px' }}
-                  onClick={clearCart}
+                  style={{ background: 'var(--green, #10b981)', color: 'white', marginTop: '4px', fontWeight: 700 }}
+                  onClick={sendToKitchen}
+                  disabled={cart.length === 0 || assigning}
                 >
-                  <><ChefHat size={18} style={{marginRight:6}}/> GUARDAR (ENVIAR A COCINA)</>
+                  {assigning ? 'Enviando...' : <><ChefHat size={18} style={{marginRight:6}}/> GUARDAR (ENVIAR A COCINA)</>}
                 </button>
               )}
             </>

@@ -155,12 +155,20 @@ export default function MesasModule() {
   }
 
   async function deleteZone(zoneId) {
-    if (!confirm('¿Eliminar esta zona? Las mesas quedarán sin zona.')) return
+    const tablesInZone = tables.filter(t => t.zone_id === zoneId)
+    const msg = tablesInZone.length > 0
+      ? `¿Eliminar esta zona? Se eliminarán también TODAS las ${tablesInZone.length} mesas dentro de esta zona.`
+      : '¿Eliminar esta zona vacía?'
+    if (!confirm(msg)) return
     try {
+      // Primero desactivar todas las mesas de la zona
+      for (const t of tablesInZone) {
+        await dbDeleteTable(t.id)
+      }
       await dbDeleteZone(zoneId)
       if (activeZone === zoneId) setActiveZone(null)
       await loadData()
-      showToast('Zona eliminada', 'success')
+      showToast('Zona y sus mesas eliminadas', 'success')
     } catch (e) {
       showToast('Error al eliminar zona', 'error')
     }
