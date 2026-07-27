@@ -16,6 +16,16 @@ export function AppProvider({ children }) {
   const [cart, setCart] = useState([])
   const [discount, setDiscount] = useState({ type: 'none', value: 0 })
   const [mobileComandaOpen, setMobileComandaOpen] = useState(false)
+  const [deferredPrompt, setDeferredPrompt] = useState(null)
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+    }
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+  }, [])
 
   const setCurrentModule = useCallback((mod) => {
     _setCurrentModule(mod)
@@ -62,7 +72,8 @@ export function AppProvider({ children }) {
       clearCart,
       cartTotal, discountAmount, grandTotal,
       refreshTrigger, triggerRefresh,
-      mobileComandaOpen, setMobileComandaOpen
+      mobileComandaOpen, setMobileComandaOpen,
+      deferredPrompt, setDeferredPrompt
     }}>
       {children}
     </AppContext.Provider>

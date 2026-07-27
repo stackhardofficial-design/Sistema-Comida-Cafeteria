@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useApp } from '../lib/AppContext'
 import { dbLogout } from '../lib/supabase'
-import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, Box, Contact, History, Database, ShieldAlert, LogOut, Sun, Moon } from 'lucide-react'
+import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, Box, Contact, History, Database, ShieldAlert, LogOut, Sun, Moon, Download } from 'lucide-react'
 
 const NAV_ITEMS = [
   { id: 'mesas', icon: <Grid size={18} />, label: 'Mesas' },
@@ -16,7 +16,7 @@ const NAV_ITEMS = [
 ]
 
 export default function Sidebar() {
-  const { user, userRoles, setUser, setTenantId, currentModule, setCurrentModule } = useApp()
+  const { user, userRoles, setUser, setTenantId, currentModule, setCurrentModule, deferredPrompt, setDeferredPrompt } = useApp()
   const [clock, setClock] = useState('')
   const [isDark, setIsDark] = useState(false)
 
@@ -112,6 +112,24 @@ export default function Sidebar() {
         ))}
       </nav>
       <div className="sidebar-user" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '12px' }}>
+        {deferredPrompt && (
+          <button 
+            onClick={async () => {
+              deferredPrompt.prompt();
+              const { outcome } = await deferredPrompt.userChoice;
+              if (outcome === 'accepted') {
+                setDeferredPrompt(null);
+              }
+            }}
+            style={{
+              width: '100%', padding: '8px', background: 'var(--accent)', color: 'white',
+              border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+            }}
+          >
+            <Download size={16} /> Instalar App
+          </button>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ background: 'var(--surface-2)', padding: '6px', borderRadius: '50%', color: 'var(--text-secondary)' }}>
             <Users size={20} />
