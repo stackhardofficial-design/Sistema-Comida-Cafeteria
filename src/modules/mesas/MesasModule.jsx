@@ -10,7 +10,7 @@ import { sb } from '../../lib/supabase'
 import Modal from '../../components/Modal'
 
 export default function MesasModule() {
-  const { tenantId, setCurrentContext, setCart, setDiscount, refreshTrigger } = useApp()
+  const { tenantId, setCurrentContext, setCart, setDiscount, refreshTrigger, setMobileComandaOpen } = useApp()
   const [zones, setZones] = useState([])
   const [tables, setTables] = useState([])
   const [activeZone, setActiveZone] = useState(null) // null = Todos
@@ -117,6 +117,7 @@ export default function MesasModule() {
       } else {
         setCart([])
       }
+      setMobileComandaOpen(true) // Open cart on mobile
     } else {
       // Mesa libre: pedir nombre del cliente antes de abrir
       setPendingTable(table)
@@ -138,6 +139,7 @@ export default function MesasModule() {
     setCart([])
     setDiscount({ type: 'none', value: 0 })
     setCustomerModal(false)
+    setMobileComandaOpen(true) // Open cart on mobile
     setPendingTable(null)
   }
 

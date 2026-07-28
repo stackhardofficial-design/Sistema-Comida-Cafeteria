@@ -41,11 +41,12 @@ const STATUS_GROUPS = [
 ]
 
 export default function DeliveryModule() {
-  const { tenantId, setCurrentContext, setCart, setDiscount, refreshTrigger } = useApp()
+  const { tenantId, setCurrentContext, setCart, setDiscount, refreshTrigger, setMobileComandaOpen } = useApp()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [visibleCounts, setVisibleCounts] = useState({ open: 5, ready: 5, in_transit: 5 })
   const [newOrderModal, setNewOrderModal] = useState(false)
+  const [showMoreInfo, setShowMoreInfo] = useState(false)
 
   // Form state for new delivery order
   const [formData, setFormData] = useState({
@@ -178,8 +179,10 @@ export default function DeliveryModule() {
       })
       setCart([])
       setDiscount({ type: 'none', value: 0 })
-      setNewOrderModal(false)
       setFormData({ customerName: '', customerPhone: '', streetAddress: '', city: '', state: '', postalCode: '', reference: '' })
+      setShowMoreInfo(false)
+      setNewOrderModal(false)
+      setMobileComandaOpen(true)
     } catch (e) {
       setFormError('Error al crear pedido: ' + e.message)
     } finally {
@@ -451,51 +454,70 @@ export default function DeliveryModule() {
                 autoFocus
               />
             </div>
-            <div className="del-form-field">
-              <label>Teléfono</label>
-              <input
-                type="text"
-                placeholder="Ej: 11-1234-5678"
-                value={formData.customerPhone}
-                onChange={e => setFormData(prev => ({ ...prev, customerPhone: e.target.value }))}
-              />
+            
+            <div style={{ gridColumn: '1 / -1', marginBottom: '8px' }}>
+              <button 
+                type="button" 
+                onClick={() => setShowMoreInfo(!showMoreInfo)}
+                style={{ 
+                  background: 'none', border: 'none', color: 'var(--accent)', 
+                  fontWeight: '600', cursor: 'pointer', padding: 0, fontSize: '14px',
+                  display: 'flex', alignItems: 'center', gap: '6px'
+                }}
+              >
+                {showMoreInfo ? 'Ocultar datos de envío' : '+ Agregar datos de envío (opcional)'}
+              </button>
             </div>
-            <div className="del-form-field">
-              <label>Ciudad</label>
-              <input
-                type="text"
-                placeholder="Ej: Buenos Aires"
-                value={formData.city}
-                onChange={e => setFormData(prev => ({ ...prev, city: e.target.value }))}
-              />
-            </div>
-            <div className="del-form-field" style={{ gridColumn: '1 / -1' }}>
-              <label>Dirección</label>
-              <input
-                type="text"
-                placeholder="Ej: Av. Corrientes 1234"
-                value={formData.streetAddress}
-                onChange={e => setFormData(prev => ({ ...prev, streetAddress: e.target.value }))}
-              />
-            </div>
-            <div className="del-form-field">
-              <label>Código Postal</label>
-              <input
-                type="text"
-                placeholder="Ej: 1043"
-                value={formData.postalCode}
-                onChange={e => setFormData(prev => ({ ...prev, postalCode: e.target.value }))}
-              />
-            </div>
-            <div className="del-form-field">
-              <label>Referencia / Piso / Dpto</label>
-              <input
-                type="text"
-                placeholder="Ej: 3° B, timbre García"
-                value={formData.reference}
-                onChange={e => setFormData(prev => ({ ...prev, reference: e.target.value }))}
-              />
-            </div>
+
+            {showMoreInfo && (
+              <>
+                <div className="del-form-field">
+                  <label>Teléfono</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: 11-1234-5678"
+                    value={formData.customerPhone}
+                    onChange={e => setFormData(prev => ({ ...prev, customerPhone: e.target.value }))}
+                  />
+                </div>
+                <div className="del-form-field">
+                  <label>Ciudad</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Buenos Aires"
+                    value={formData.city}
+                    onChange={e => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                  />
+                </div>
+                <div className="del-form-field" style={{ gridColumn: '1 / -1' }}>
+                  <label>Dirección</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Av. Corrientes 1234"
+                    value={formData.streetAddress}
+                    onChange={e => setFormData(prev => ({ ...prev, streetAddress: e.target.value }))}
+                  />
+                </div>
+                <div className="del-form-field">
+                  <label>Código Postal</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: 1043"
+                    value={formData.postalCode}
+                    onChange={e => setFormData(prev => ({ ...prev, postalCode: e.target.value }))}
+                  />
+                </div>
+                <div className="del-form-field">
+                  <label>Referencia / Piso / Dpto</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: 3° B, timbre García"
+                    value={formData.reference}
+                    onChange={e => setFormData(prev => ({ ...prev, reference: e.target.value }))}
+                  />
+                </div>
+              </>
+            )}
           </div>
 
           {formError && (
