@@ -63,6 +63,14 @@ export default function CocinaModule() {
   async function handleMarkReady(orderId) {
     try {
       await dbUpdateKitchenStatus(orderId, 'ready')
+      
+      const { data: items } = await sb.from('order_items').select('*').eq('order_id', orderId)
+      for (const item of (items || [])) {
+        if (!(item.notes || '').includes('[LISTO]')) {
+          await sb.from('order_items').update({ notes: (item.notes ? item.notes + ' [LISTO]' : '[LISTO]') }).eq('id', item.id)
+        }
+      }
+
       setOrders(prev => prev.filter(o => o.id !== orderId))
     } catch (e) {
       alert('Error: ' + e.message)
@@ -141,20 +149,23 @@ export default function CocinaModule() {
 
                 {/* Lista de Items */}
                 <div style={{ padding: '12px', flex: 1 }}>
-                  {o.order_items?.length > 0 ? (
-                    <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', gap: '12px' }}>
-                      {o.order_items.map(item => (
-                        <li key={item.id} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', fontSize: '15px', fontWeight: '600' }}>
-                          <span style={{ background: 'var(--bg)', border: '1px solid var(--border)', padding: '2px 8px', borderRadius: '6px', color: 'var(--accent)' }}>
-                            {item.quantity}x
-                          </span>
-                          <span>{item.products?.name}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '13px', fontStyle: 'italic' }}>Sin items registrados</div>
-                  )}
+                  {(() => {
+                    const visibleItems = (o.order_items || []).filter(item => !(item.notes || '').includes('[LISTO]'));
+                    return visibleItems.length > 0 ? (
+                      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', gap: '12px' }}>
+                        {visibleItems.map(item => (
+                          <li key={item.id} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', fontSize: '15px', fontWeight: '600' }}>
+                            <span style={{ background: 'var(--bg)', border: '1px solid var(--border)', padding: '2px 8px', borderRadius: '6px', color: 'var(--accent)' }}>
+                              {item.quantity}x
+                            </span>
+                            <span>{item.products?.name}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div style={{ color: 'var(--text-secondary)', fontSize: '13px', fontStyle: 'italic' }}>Items listos / Sin items pendientes</div>
+                    )
+                  })()}
                 </div>
 
                 {/* Pie Tarjeta */}

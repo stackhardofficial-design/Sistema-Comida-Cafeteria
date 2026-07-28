@@ -107,9 +107,13 @@ export default function MesasModule() {
         hasOrder: !!order
       })
       if (order?.order_items) {
-        setCart(order.order_items.map(oi => ({
-          id: oi.id, product: oi.products, qty: oi.quantity, notes: oi.notes || '', dbItemId: oi.id
-        })))
+        setCart(order.order_items.map(oi => {
+          const isReady = (oi.notes || '').includes('[LISTO]')
+          const cleanNotes = (oi.notes || '').replace('[LISTO]', '').trim()
+          return {
+            id: oi.id, product: oi.products, qty: oi.quantity, notes: cleanNotes, isReady, dbItemId: oi.id
+          }
+        }))
       } else {
         setCart([])
       }

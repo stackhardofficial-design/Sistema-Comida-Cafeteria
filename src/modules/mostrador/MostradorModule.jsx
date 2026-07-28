@@ -212,13 +212,18 @@ export default function MostradorModule() {
         tableDbId: fullOrder.table_db_id || null,
         address: fullOrder.delivery_addresses?.street_address || '',
       })
-      setCart((fullOrder.order_items || []).map(oi => ({
-        id: oi.id,
-        product: oi.products,
-        qty: oi.quantity,
-        notes: oi.notes || '',
-        dbItemId: oi.id
-      })))
+      setCart((fullOrder.order_items || []).map(oi => {
+        const isReady = (oi.notes || '').includes('[LISTO]')
+        const cleanNotes = (oi.notes || '').replace('[LISTO]', '').trim()
+        return {
+          id: oi.id,
+          product: oi.products,
+          qty: oi.quantity,
+          notes: cleanNotes,
+          isReady,
+          dbItemId: oi.id
+        }
+      }))
     } catch (e) {
       alert('Error al cargar pedido')
     }

@@ -317,9 +317,9 @@ export default function ComandaPanel() {
       setCurrentContext(ctx)
     }
     setCart(prev => {
-      const existing = prev.find(i => i.product?.id === product.id)
-      if (existing) return prev.map(i => i.product?.id === product.id ? { ...i, qty: i.qty + 1 } : i)
-      return [...prev, { product, qty: 1, notes: '' }]
+      const existing = prev.find(i => i.product?.id === product.id && !i.isReady)
+      if (existing) return prev.map(i => i === existing ? { ...i, qty: i.qty + 1 } : i)
+      return [...prev, { product, qty: 1, notes: '', isReady: false }]
     })
     try {
       let orderId = ctx.orderId
@@ -348,10 +348,10 @@ export default function ComandaPanel() {
       }
     } catch (e) {
       setCart(prev => {
-        const existing = prev.find(i => i.product?.id === product.id)
+        const existing = prev.find(i => i.product?.id === product.id && !i.isReady)
         if (!existing) return prev
-        if (existing.qty <= 1) return prev.filter(i => i.product?.id !== product.id)
-        return prev.map(i => i.product?.id === product.id ? { ...i, qty: i.qty - 1 } : i)
+        if (existing.qty <= 1) return prev.filter(i => i !== existing)
+        return prev.map(i => i === existing ? { ...i, qty: i.qty - 1 } : i)
       })
       alert('Error al agregar al carrito: ' + e.message)
     }
@@ -360,9 +360,9 @@ export default function ComandaPanel() {
   async function changeQty(item, delta) {
     const newQty = item.qty + delta
     if (newQty <= 0) {
-      setCart(prev => prev.filter(i => i.product?.id !== item.product?.id))
+      setCart(prev => prev.filter(i => i !== item))
     } else {
-      setCart(prev => prev.map(i => i.product?.id === item.product?.id ? { ...i, qty: newQty } : i))
+      setCart(prev => prev.map(i => i === item ? { ...i, qty: newQty } : i))
     }
   }
 
@@ -809,7 +809,10 @@ export default function ComandaPanel() {
           cart.map((item, i) => (
             <div key={i} className="cart-item" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span className="cart-item-name">{item.product?.name || 'Producto eliminado'}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span className="cart-item-name">{item.product?.name || 'Producto eliminado'}</span>
+                  {item.isReady && <CheckCircle size={14} color="#10b981" title="Listo en cocina" />}
+                </div>
                 <div className="qty-controls">
                   <button className="qty-btn" onClick={() => changeQty(item, -1)}>−</button>
                   <span className="qty-display">{item.qty}</span>

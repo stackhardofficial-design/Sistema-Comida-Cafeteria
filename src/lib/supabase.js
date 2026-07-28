@@ -246,7 +246,7 @@ export async function dbSyncOrderItems(tenantId, orderId, items) {
     quantity: item.qty,
     unit_price: item.product.price,
     total_price: item.qty * item.product.price,
-    notes: item.notes || ''
+    notes: (item.notes || '') + (item.isReady ? ' [LISTO]' : '')
   }))
   const { error } = await sb.from('order_items').insert(payloads)
   if (error) throw error

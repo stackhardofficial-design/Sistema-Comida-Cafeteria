@@ -105,13 +105,18 @@ export default function DeliveryModule() {
         customerName: order.customer_name,
         address: order.delivery_addresses?.street_address || '',
       })
-      setCart((fullOrder.order_items || []).map(oi => ({
-        id: oi.id,
-        product: oi.products,
-        qty: oi.quantity,
-        notes: oi.notes || '',
-        dbItemId: oi.id
-      })))
+      setCart((fullOrder.order_items || []).map(oi => {
+        const isReady = (oi.notes || '').includes('[LISTO]')
+        const cleanNotes = (oi.notes || '').replace('[LISTO]', '').trim()
+        return {
+          id: oi.id,
+          product: oi.products,
+          qty: oi.quantity,
+          notes: cleanNotes,
+          isReady,
+          dbItemId: oi.id
+        }
+      }))
       setDiscount({ type: 'none', value: 0 })
     } catch (e) {
       alert('Error al cargar pedido: ' + e.message)
