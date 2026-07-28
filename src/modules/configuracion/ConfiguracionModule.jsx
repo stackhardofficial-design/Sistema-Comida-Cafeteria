@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { dbLogout } from '../lib/supabase'
-import { useApp } from '../lib/AppContext'
+import { dbLogout } from '../../lib/supabase'
+import { useApp } from '../../lib/AppContext'
 import { Sun, Moon, LogOut, ArrowLeft } from 'lucide-react'
 
 export default function ConfiguracionModule() {
