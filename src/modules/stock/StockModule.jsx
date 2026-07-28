@@ -7,7 +7,7 @@ import {
   dbGetStockMovements, dbGetProducts, dbGetCategories,
   dbAdjustIngredientStock, dbAdjustProductStock, dbUpdateProduct,
   dbGetFixedCosts, dbCreateFixedCost, dbUpdateFixedCost, dbDeleteFixedCost,
-  fmtMoney
+  fmtMoney, sb
 } from '../../lib/supabase'
 import Modal from '../../components/Modal'
 
@@ -149,6 +149,24 @@ function TabControl({ tenantId }) {
   }, [tenantId])
 
   useEffect(() => { load() }, [load])
+
+  // ===== REALTIME: Actualiza ingredientes al instante =====
+  useEffect(() => {
+    if (!tenantId) return
+    const ch = sb.channel(`realtime-stock-ingredientes-${tenantId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'ingredients', filter: `tenant_id=eq.${tenantId}` },
+        () => load()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'stock_movements', filter: `tenant_id=eq.${tenantId}` },
+        () => load()
+      )
+      .subscribe()
+    return () => sb.removeChannel(ch)
+  }, [tenantId, load])
 
   const filtered = ingredients.filter(i => {
     const matchSearch = i.name.toLowerCase().includes(search.toLowerCase())
@@ -293,6 +311,19 @@ function TabProductosStock({ tenantId }) {
   }, [tenantId])
 
   useEffect(() => { load() }, [load])
+
+  // ===== REALTIME: Actualiza stock de productos al instante =====
+  useEffect(() => {
+    if (!tenantId) return
+    const ch = sb.channel(`realtime-stock-productos-${tenantId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'products', filter: `tenant_id=eq.${tenantId}` },
+        () => load()
+      )
+      .subscribe()
+    return () => sb.removeChannel(ch)
+  }, [tenantId, load])
 
   const filtered = products.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || (p.sku || '').toLowerCase().includes(search.toLowerCase())

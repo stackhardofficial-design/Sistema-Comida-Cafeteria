@@ -1,5 +1,5 @@
 import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock } from 'lucide-react';
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Modal from '../../components/Modal'
 import { useApp } from '../../lib/AppContext'
 import { dbGetOrders, dbUpdateKitchenStatus, sb } from '../../lib/supabase'
@@ -10,7 +10,7 @@ export default function CocinaModule() {
   const [loading, setLoading] = useState(true)
   const [selectedOrder, setSelectedOrder] = useState(null)
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!tenantId) return
     setLoading(true)
     try {
@@ -26,18 +26,27 @@ export default function CocinaModule() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [tenantId])
 
-  useEffect(() => { loadData() }, [tenantId])
+  useEffect(() => { loadData() }, [loadData])
 
+  // ===== REALTIME: Actualización instantánea en la pantalla de Cocina =====
   useEffect(() => {
     if (!tenantId) return
-    const ch = sb.channel('realtime-cocina')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `tenant_id=eq.${tenantId}` }, loadData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' }, loadData)
+    const ch = sb.channel(`realtime-cocina-${tenantId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `tenant_id=eq.${tenantId}` },
+        () => loadData()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'order_items' },
+        () => loadData()
+      )
       .subscribe()
     return () => sb.removeChannel(ch)
-  }, [tenantId])
+  }, [tenantId, loadData])
 
   async function handleMarkInProgress(orderId) {
     try {

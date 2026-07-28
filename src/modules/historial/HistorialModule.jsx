@@ -1,7 +1,7 @@
 import {     Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock , TrendingDown , ArrowDown , Unlock , PenSquare } from 'lucide-react';
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '../../lib/AppContext'
-import { dbGetActivityLogs, dbGetCustomers, fmtDate } from '../../lib/supabase'
+import { dbGetActivityLogs, dbGetCustomers, fmtDate, sb } from '../../lib/supabase'
 
 const ACTION_LABELS = {
   CLOSE_SALE: { label: '💳 Venta Cerrada', color: '#10b981', bg: '#d1fae5' },
@@ -87,7 +87,7 @@ export default function HistorialModule() {
   const [filterFrom, setFilterFrom] = useState('')
   const [filterTo, setFilterTo] = useState('')
 
-  async function loadLogs() {
+  const loadLogs = useCallback(async () => {
     if (!tenantId) return
     setLoading(true)
     try {
@@ -108,13 +108,26 @@ export default function HistorialModule() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [tenantId, filterUser, filterAction, filterFrom, filterTo])
 
   useEffect(() => {
     if (!tenantId) return
     dbGetCustomers(tenantId).then(setUsers).catch(() => {})
     loadLogs()
-  }, [tenantId])
+  }, [tenantId, loadLogs])
+
+  // ===== REALTIME: Actualiza el historial instantáneamente =====
+  useEffect(() => {
+    if (!tenantId) return
+    const ch = sb.channel(`realtime-historial-${tenantId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'activity_logs', filter: `tenant_id=eq.${tenantId}` },
+        () => loadLogs()
+      )
+      .subscribe()
+    return () => sb.removeChannel(ch)
+  }, [tenantId, loadLogs])
 
   const uniqueUsers = [...new Map(logs.map(l => [l.user_id || l.user_name, { id: l.user_id, name: l.user_name }])).values()]
   const uniqueActions = [...new Set(logs.map(l => l.action))]

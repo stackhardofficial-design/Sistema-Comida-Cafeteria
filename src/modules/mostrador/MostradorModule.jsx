@@ -1,5 +1,5 @@
 import {     Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, User, History, ShieldAlert, ShoppingBag, FileText, ChevronDown, ChevronUp, Search, ArrowLeft, Minus, Plus, Send, Banknote, Check, CreditCard, Trash2, X, CheckCircle, Clock, ShoppingCart, Utensils, Box, Lock , TrendingDown , Unlock , ArrowDown , PenSquare } from 'lucide-react';
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '../../lib/AppContext'
 import { dbGetOrders, dbGetOrder, dbCreateOrder, dbCreateDeliveryOrder, fmtMoney, sb, dbGetZones, dbGetTables } from '../../lib/supabase'
 import Modal from '../../components/Modal'
@@ -30,7 +30,7 @@ export default function MostradorModule() {
   const [creating, setCreating] = useState(false)
   const [formError, setFormError] = useState('')
 
-  async function loadData() {
+  const loadData = useCallback(async () => {
     if (!tenantId) return
     try {
       setLoading(true)
@@ -45,17 +45,22 @@ export default function MostradorModule() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [tenantId])
 
-  useEffect(() => { loadData() }, [tenantId, refreshTrigger])
+  useEffect(() => { loadData() }, [loadData, refreshTrigger])
 
+  // ===== REALTIME =====
   useEffect(() => {
     if (!tenantId) return
-    const ch = sb.channel('realtime-mostrador')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `tenant_id=eq.${tenantId}` }, loadData)
+    const ch = sb.channel(`realtime-mostrador-${tenantId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `tenant_id=eq.${tenantId}` },
+        () => loadData()
+      )
       .subscribe()
     return () => sb.removeChannel(ch)
-  }, [tenantId])
+  }, [tenantId, loadData])
 
   async function openModal() {
     setCustomerName('')

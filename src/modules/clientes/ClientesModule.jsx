@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '../../lib/AppContext'
-import { dbGetCustomers, fmtDate } from '../../lib/supabase'
+import { dbGetCustomers, fmtDate, sb } from '../../lib/supabase'
 
 export default function ClientesModule() {
   const { tenantId } = useApp()
@@ -8,7 +8,7 @@ export default function ClientesModule() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
 
-  async function loadCustomers() {
+  const loadCustomers = useCallback(async () => {
     if (!tenantId) return
     try {
       setLoading(true)
@@ -19,11 +19,24 @@ export default function ClientesModule() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [tenantId])
 
   useEffect(() => {
     loadCustomers()
-  }, [tenantId])
+  }, [loadCustomers])
+
+  // ===== REALTIME: Actualiza la lista de clientes al llegar nuevos pedidos =====
+  useEffect(() => {
+    if (!tenantId) return
+    const ch = sb.channel(`realtime-clientes-${tenantId}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'orders', filter: `tenant_id=eq.${tenantId}` },
+        () => loadCustomers()
+      )
+      .subscribe()
+    return () => sb.removeChannel(ch)
+  }, [tenantId, loadCustomers])
 
   const filteredCustomers = customers.filter(c => {
     if (!search) return true
