@@ -17,6 +17,8 @@ export function AppProvider({ children }) {
   const [discount, setDiscount] = useState({ type: 'none', value: 0 })
   const [mobileComandaOpen, setMobileComandaOpen] = useState(false)
   const [deferredPrompt, setDeferredPrompt] = useState(null)
+  const [sidebarMobileOpen, setSidebarMobileOpen] = useState(false)
+  const [isDark, setIsDark] = useState(false)
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
@@ -60,6 +62,31 @@ export function AppProvider({ children }) {
     : discount.type === 'fixed' ? discount.value : 0
   const grandTotal = Math.max(0, cartTotal - discountAmount)
 
+  const toggleTheme = useCallback(() => {
+    setIsDark(prev => {
+      const next = !prev
+      if (next) {
+        document.body.classList.add('dark-mode')
+        document.body.classList.remove('light-mode')
+        localStorage.setItem('app-theme', 'dark')
+      } else {
+        document.body.classList.add('light-mode')
+        document.body.classList.remove('dark-mode')
+        localStorage.setItem('app-theme', 'light')
+      }
+      return next
+    })
+  }, [])
+
+  useEffect(() => {
+    const stored = localStorage.getItem('app-theme')
+    if (stored === 'dark') {
+      setIsDark(true)
+      document.body.classList.add('dark-mode')
+      document.body.classList.remove('light-mode')
+    }
+  }, [])
+
   return (
     <AppContext.Provider value={{
       user, setUser,
@@ -73,7 +100,9 @@ export function AppProvider({ children }) {
       cartTotal, discountAmount, grandTotal,
       refreshTrigger, triggerRefresh,
       mobileComandaOpen, setMobileComandaOpen,
-      deferredPrompt, setDeferredPrompt
+      deferredPrompt, setDeferredPrompt,
+      sidebarMobileOpen, setSidebarMobileOpen,
+      isDark, toggleTheme
     }}>
       {children}
     </AppContext.Provider>
