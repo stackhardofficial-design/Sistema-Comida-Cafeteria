@@ -10,13 +10,18 @@ import { fmtMoney, dbGetTenant } from '../../lib/supabase'
 import Modal from '../../components/Modal'
 
 const MODULE_OPTIONS = [
-  { id: 'mesas',      label: <><Grid size={16} style={{marginRight:6}}/> Mesas</> },
-  { id: 'mostrador',  label: <><MonitorSmartphone size={18} style={{marginRight:6}} /> Mostrador</> },
-  { id: 'delivery',   label: <><Package size={18} style={{marginRight:6}} /> Delivery</> },
-  { id: 'ventas',     label: '📊 Ventas' },
-  { id: 'caja',       label: '🏧 Caja' },
-  { id: 'clientes',   label: <><Users size={16} style={{marginRight:6}}/> Clientes</> },
-  { id: 'productos',  label: '🍽️ Productos' },
+  { id: 'mesas',       label: <><Grid size={16} style={{marginRight:6}}/> Mesas</> },
+  { id: 'configuracion', label: <><Settings size={16} style={{marginRight:6}}/> Configuración</> },
+  { id: 'mostrador',   label: <><MonitorSmartphone size={18} style={{marginRight:6}} /> Mostrador</> },
+  { id: 'cocina',      label: <><ChefHat size={16} style={{marginRight:6}}/> Cocina</> },
+  { id: 'delivery',    label: <><Package size={18} style={{marginRight:6}} /> Delivery</> },
+  { id: 'repartidor',  label: <><Bike size={18} style={{marginRight:6}} /> Repartidor</> },
+  { id: 'ventas',      label: '📊 Ventas' },
+  { id: 'caja',        label: '🏧 Caja' },
+  { id: 'clientes',    label: <><Users size={16} style={{marginRight:6}}/> Clientes</> },
+  { id: 'productos',   label: '🍽️ Productos' },
+  { id: 'historial',   label: <><History size={16} style={{marginRight:6}}/> Historial</> },
+  { id: 'stock',       label: <><Database size={16} style={{marginRight:6}}/> Stock</> },
 ]
 
 export default function EmpleadosModule() {

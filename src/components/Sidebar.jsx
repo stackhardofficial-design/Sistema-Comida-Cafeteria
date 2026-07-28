@@ -5,6 +5,7 @@ import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorChe
 
 const NAV_ITEMS = [
   { id: 'mesas', icon: <Grid size={18} />, label: 'Mesas' },
+  { id: 'configuracion', icon: <Settings size={18} />, label: 'Configuración' },
   { id: 'mostrador', icon: <MonitorSmartphone size={18} />, label: 'Mostrador' },
   { id: 'cocina', icon: <ChefHat size={18} />, label: 'Cocina' },
   { id: 'delivery', icon: <Package size={18} />, label: 'Delivery' },
@@ -13,7 +14,6 @@ const NAV_ITEMS = [
   { id: 'caja', icon: <MonitorCheck size={18} />, label: 'Caja' },
   { id: 'clientes', icon: <Users size={18} />, label: 'Clientes' },
   { id: 'productos', icon: <Box size={18} />, label: 'Productos' },
-  { id: 'configuracion', icon: <Settings size={18} />, label: 'Configuración' },
 ]
 
 export default function Sidebar() {
