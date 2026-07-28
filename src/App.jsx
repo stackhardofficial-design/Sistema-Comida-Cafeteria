@@ -27,21 +27,21 @@ function AppShell() {
   const [loading, setLoading] = useState(true)
   const [accessBlocked, setAccessBlocked] = useState(false)
 
-  function checkAccess(paidUntilStr) {
-    if (!paidUntilStr) return false; // Por defecto bloqueado si no hay registro
-    const paid = new Date(paidUntilStr + 'T00:00:00'); // Evitar problemas de timezone
-    const now = new Date();
-    
-    const paidMonth = new Date(paid.getFullYear(), paid.getMonth(), 1).getTime();
-    const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-    
-    if (currentMonth <= paidMonth) return true;
-    
-    const nextMonthAfterPaid = new Date(paid.getFullYear(), paid.getMonth() + 1, 1).getTime();
-    if (currentMonth === nextMonthAfterPaid && now.getDate() <= 10) return true;
-    
-    return false;
-  }
+   function checkAccess(paidUntilStr) {
+     if (!paidUntilStr) return true
+     const paid = new Date(paidUntilStr + 'T00:00:00')
+     const now = new Date()
+ 
+     const paidMonth = new Date(paid.getFullYear(), paid.getMonth(), 1).getTime()
+     const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime()
+ 
+     if (currentMonth <= paidMonth) return true
+ 
+     const nextMonthAfterPaid = new Date(paid.getFullYear(), paid.getMonth() + 1, 1).getTime()
+     if (currentMonth === nextMonthAfterPaid && now.getDate() <= 10) return true
+ 
+     return false
+   }
 
   useEffect(() => {
     async function init() {

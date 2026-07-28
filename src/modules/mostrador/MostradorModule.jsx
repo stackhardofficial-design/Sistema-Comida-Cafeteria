@@ -109,7 +109,7 @@ export default function MostradorModule() {
   async function handleCreateMostrador() {
     setCreating(true)
     try {
-      const order = await dbCreateOrder(tenantId, 'dine_in', null, customerName.trim(), customerPhone.trim() || null)
+      const order = await dbCreateOrder(tenantId, 'dine_in', null, customerName.trim(), customerPhone.trim() || null, 'draft')
       setCurrentContext({ type: 'mostrador', orderId: order.id, customerName: customerName.trim() })
       setCart([])
       setDiscount({ type: 'none', value: 0 })
@@ -157,7 +157,7 @@ export default function MostradorModule() {
     setCreating(true)
     setFormError('')
     try {
-      const order = await dbCreateOrder(tenantId, 'dine_in', selectedTable.id, customerName.trim(), customerPhone.trim() || null)
+      const order = await dbCreateOrder(tenantId, 'dine_in', selectedTable.id, customerName.trim(), customerPhone.trim() || null, 'draft')
 
       // Mark the table as occupied
       await sb.from('restaurant_tables').update({

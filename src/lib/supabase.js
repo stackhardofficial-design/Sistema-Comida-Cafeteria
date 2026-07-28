@@ -138,8 +138,8 @@ export async function dbDeleteProduct(id) {
 }
 
 // ===== ORDERS =====
-export async function dbCreateOrder(tenantId, type, tableDbId = null, customerName = null, phone = null) {
-  const payload = { tenant_id: tenantId, order_type: type, status: 'open', total_amount: 0, discount_amount: 0 }
+export async function dbCreateOrder(tenantId, type, tableDbId = null, customerName = null, phone = null, kitchenStatus = 'draft') {
+  const payload = { tenant_id: tenantId, order_type: type, status: 'open', total_amount: 0, discount_amount: 0, kitchen_status: kitchenStatus }
   if (tableDbId) payload.table_db_id = tableDbId
   if (customerName) payload.customer_name = customerName
   if (phone) payload.customer_phone = phone
@@ -232,6 +232,27 @@ export async function dbRemoveItem(itemId, orderId) {
   await dbRecalcOrder(orderId)
 }
 
+export async function dbSyncOrderItems(tenantId, orderId, items) {
+  if (!orderId) return
+  await sb.from('order_items').delete().eq('order_id', orderId)
+  if (!items || items.length === 0) {
+    await dbRecalcOrder(orderId)
+    return
+  }
+  const payloads = items.map(item => ({
+    tenant_id: tenantId,
+    order_id: orderId,
+    product_id: item.product.id,
+    quantity: item.qty,
+    unit_price: item.product.price,
+    total_price: item.qty * item.product.price,
+    notes: item.notes || ''
+  }))
+  const { error } = await sb.from('order_items').insert(payloads)
+  if (error) throw error
+  await dbRecalcOrder(orderId)
+}
+
 export async function dbRecalcOrder(orderId) {
   const { data: items } = await sb.from('order_items').select('total_price').eq('order_id', orderId)
   const total = (items || []).reduce((s, i) => s + parseFloat(i.total_price), 0)
@@ -315,6 +336,7 @@ export async function dbCreateDeliveryOrder(tenantId, { customerName, customerPh
     status: 'open',
     total_amount: 0,
     discount_amount: 0,
+    kitchen_status: 'draft',
     customer_name: customerName,
     customer_phone: customerPhone || null,
     delivery_address_id: addr.id

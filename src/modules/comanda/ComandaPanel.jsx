@@ -2,10 +2,11 @@ import {     Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, Monito
 import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '../../lib/AppContext'
 import {
-  dbGetCategories, dbGetProducts, dbAddItem, dbRemoveItem,
+  dbGetCategories, dbGetProducts, dbRemoveItem,
   dbCreateOrder, dbUpdateOrder, dbUpdateTable, dbCreatePayment,
   dbGetOpenSession, dbOpenSession, fmtMoney, dbRecalcOrder, sb, logActivity,
-  dbGetZones, dbGetTables, dbGetOrder, dbDeductStockForOrder, dbUpdateKitchenStatus
+  dbGetZones, dbGetTables, dbGetOrder, dbDeductStockForOrder, dbUpdateKitchenStatus,
+  dbSyncOrderItems
 } from '../../lib/supabase'
 import Modal from '../../components/Modal'
 import { CategoryIconDisplay } from '../../lib/categoryIcons'
@@ -316,7 +317,7 @@ export default function ComandaPanel() {
       if (existing) return prev.map(i => i.product?.id === product.id ? { ...i, qty: i.qty + 1 } : i)
       return [...prev, { product, qty: 1, notes: '' }]
     })
-    // --- SYNC TO DB IN BACKGROUND ---
+    // Only create order structure in background, don't persist items yet
     try {
       let orderId = currentContext.orderId
       if (!orderId) {
@@ -342,9 +343,7 @@ export default function ComandaPanel() {
           await dbUpdateTable(currentContext.tableDbId, { status: 'occupied', current_order_id: orderId })
         }
       }
-      await dbAddItem(tenantId, orderId, product)
     } catch (e) {
-      // Rollback optimistic update on failure
       setCart(prev => {
         const existing = prev.find(i => i.product?.id === product.id)
         if (!existing) return prev
@@ -358,14 +357,8 @@ export default function ComandaPanel() {
   async function changeQty(item, delta) {
     const newQty = item.qty + delta
     if (newQty <= 0) {
-      if (item.dbItemId) await dbRemoveItem(item.dbItemId, currentContext?.orderId)
       setCart(prev => prev.filter(i => i.product?.id !== item.product?.id))
     } else {
-      if (item.dbItemId && currentContext?.orderId) {
-        const { sb } = await import('../../lib/supabase')
-        await sb.from('order_items').update({ quantity: newQty, total_price: newQty * (item.product?.price || 0) }).eq('id', item.dbItemId)
-        await dbRecalcOrder(currentContext.orderId)
-      }
       setCart(prev => prev.map(i => i.product?.id === item.product?.id ? { ...i, qty: newQty } : i))
     }
   }
@@ -496,11 +489,9 @@ export default function ComandaPanel() {
     if (!currentContext?.orderId || cart.length === 0) return
     setAssigning(true)
     try {
-      // Recalcular la orden para asegurar que los totales estén correctos
+      await dbSyncOrderItems(tenantId, currentContext.orderId, cart)
       await dbRecalcOrder(currentContext.orderId)
-      // Marcar kitchen_status como pending
       await dbUpdateKitchenStatus(currentContext.orderId, 'pending')
-      // Asegurar que la mesa esté ocupada
       if (currentContext.tableDbId) {
         await dbUpdateTable(currentContext.tableDbId, { status: 'occupied', current_order_id: currentContext.orderId })
       }
@@ -838,14 +829,7 @@ export default function ComandaPanel() {
             defaultValue={cart.find(i => i.notes)?.notes || ''}
             onBlur={async (e) => {
               const val = e.target.value;
-              const firstItem = cart[0];
-              if (firstItem && firstItem.dbItemId) {
-                try {
-                  const { sb } = await import('../../lib/supabase');
-                  await sb.from('order_items').update({ notes: val }).eq('id', firstItem.dbItemId);
-                  setCart(prev => prev.map((it, idx) => idx === 0 ? { ...it, notes: val } : it));
-                } catch(err) { console.error(err); }
-              }
+              setCart(prev => prev.map((it, idx) => idx === 0 ? { ...it, notes: val } : it));
             }}
             style={{
               width: '100%', padding: '10px', fontSize: '13px', borderRadius: '6px',
