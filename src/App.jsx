@@ -19,6 +19,7 @@ import HistorialModule from './modules/historial/HistorialModule'
 import StockModule from './modules/stock/StockModule'
 import SuperAdminModule from './modules/superadmin/SuperAdminModule'
 import CocinaModule from './modules/cocina/CocinaModule'
+import ConfiguracionModule from './modules/configuracion/ConfiguracionModule'
 import './App.css'
 
 function AppShell() {
@@ -99,7 +100,8 @@ function AppShell() {
     historial: <HistorialModule />,
     stock: <StockModule />,
     superadmin: <SuperAdminModule />,
-    cocina: <CocinaModule />
+    cocina: <CocinaModule />,
+    configuracion: <ConfiguracionModule />
   }
 
   return (

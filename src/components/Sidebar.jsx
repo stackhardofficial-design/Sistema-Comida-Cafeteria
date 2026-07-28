@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useApp } from '../lib/AppContext'
 import { dbLogout } from '../lib/supabase'
-import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, Box, Contact, History, Database, ShieldAlert, LogOut, Sun, Moon, Download } from 'lucide-react'
+import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorCheck, Users, Box, Contact, History, Database, ShieldAlert, LogOut, Sun, Moon, Download, Settings } from 'lucide-react'
 
 const NAV_ITEMS = [
   { id: 'mesas', icon: <Grid size={18} />, label: 'Mesas' },
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { id: 'caja', icon: <MonitorCheck size={18} />, label: 'Caja' },
   { id: 'clientes', icon: <Users size={18} />, label: 'Clientes' },
   { id: 'productos', icon: <Box size={18} />, label: 'Productos' },
+  { id: 'configuracion', icon: <Settings size={18} />, label: 'Configuración' },
 ]
 
 export default function Sidebar() {
