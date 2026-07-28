@@ -114,7 +114,7 @@ function MapPreview({ address, mapsUrl }) {
 }
 
 export default function RepartidorModule() {
-  const { tenantId } = useApp()
+  const { tenantId, refreshTrigger } = useApp()
   const [activeTab, setActiveTab] = useState('pendientes') // 'pendientes' | 'entregados'
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -135,7 +135,7 @@ export default function RepartidorModule() {
     }
   }, [tenantId])
 
-  useEffect(() => { loadOrders() }, [loadOrders])
+  useEffect(() => { loadOrders() }, [loadOrders, refreshTrigger])
 
   useEffect(() => {
     if (!tenantId) return

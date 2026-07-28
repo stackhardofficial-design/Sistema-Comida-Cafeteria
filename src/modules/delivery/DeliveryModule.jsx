@@ -41,7 +41,7 @@ const STATUS_GROUPS = [
 ]
 
 export default function DeliveryModule() {
-  const { tenantId, setCurrentContext, setCart, setDiscount } = useApp()
+  const { tenantId, setCurrentContext, setCart, setDiscount, refreshTrigger } = useApp()
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [visibleCounts, setVisibleCounts] = useState({ open: 5, ready: 5, in_transit: 5 })
@@ -79,7 +79,7 @@ export default function DeliveryModule() {
 
   useEffect(() => {
     loadOrders()
-  }, [loadOrders])
+  }, [loadOrders, refreshTrigger])
 
   // Realtime subscription
   useEffect(() => {
