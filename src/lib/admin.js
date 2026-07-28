@@ -37,6 +37,20 @@ export async function dbGetEmployees(tenantId) {
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: true })
   if (error) throw error
+
+  if (!data || data.length === 0) return []
+
+  try {
+    const { data: authData, error: authError } = await adminSb.auth.admin.listUsers()
+    if (!authError && authData?.users) {
+      const emailMap = {}
+      authData.users.forEach(u => emailMap[u.id] = u.email)
+      return data.map(u => ({ ...u, email: emailMap[u.id] || 'Sin correo' }))
+    }
+  } catch (e) {
+    console.error('Error fetching emails', e)
+  }
+
   return data
 }
 
