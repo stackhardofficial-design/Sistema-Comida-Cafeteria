@@ -506,3 +506,7 @@
 @media (max-width: 768px) {
   .mobile-only-btn { display: flex !important; }
 }
+
+@media (min-width: 769px) {
+  .mobile-only-item { display: none !important; }
+}

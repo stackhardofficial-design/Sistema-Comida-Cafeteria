@@ -5,7 +5,7 @@ import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorChe
 
 const NAV_ITEMS = [
   { id: 'mesas', icon: <Grid size={18} />, label: 'Mesas' },
-  { id: 'configuracion', icon: <Settings size={18} />, label: 'Configuración' },
+  { id: 'configuracion', icon: <Settings size={18} />, label: 'Configuración', mobileOnly: true },
   { id: 'mostrador', icon: <MonitorSmartphone size={18} />, label: 'Mostrador' },
   { id: 'cocina', icon: <ChefHat size={18} />, label: 'Cocina' },
   { id: 'delivery', icon: <Package size={18} />, label: 'Delivery' },
@@ -104,7 +104,7 @@ export default function Sidebar() {
         {allowedItems.map(item => (
           <button
             key={item.id}
-            className={`nav-item${currentModule === item.id ? ' active' : ''}`}
+            className={`nav-item${currentModule === item.id ? ' active' : ''}${item.mobileOnly ? ' mobile-only-item' : ''}`}
             onClick={() => setCurrentModule(item.id)}
           >
             <span className="nav-icon" style={{ display: 'flex', alignItems: 'center', color: currentModule === item.id ? 'var(--accent)' : 'inherit' }}>{item.icon}</span>
