@@ -91,7 +91,7 @@ export default function Sidebar() {
     <aside className="sidebar">
       <div className="sidebar-logo" style={{ flexDirection: 'column', alignItems: 'flex-start', padding: '24px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-          <img src={isDark ? "/logo-dark.jpg" : "/logo-light.jpg"} alt="StackHard" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} />
+          <img src="/logo.png" alt="StackHard" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} />
           <span className="logo-text" style={{ fontSize: '20px', letterSpacing: '-0.5px' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Stack</span><span style={{ color: 'var(--accent)' }}>Hard</span>
           </span>
