@@ -311,36 +311,39 @@ export default function ComandaPanel() {
   }
 
   async function addToCart(product) {
-    if (!currentContext) return
+    let ctx = currentContext
+    if (!ctx) {
+      ctx = { type: currentModule === 'delivery' ? 'delivery' : 'mostrador' }
+      setCurrentContext(ctx)
+    }
     setCart(prev => {
       const existing = prev.find(i => i.product?.id === product.id)
       if (existing) return prev.map(i => i.product?.id === product.id ? { ...i, qty: i.qty + 1 } : i)
       return [...prev, { product, qty: 1, notes: '' }]
     })
-    // Only create order structure in background, don't persist items yet
     try {
-      let orderId = currentContext.orderId
+      let orderId = ctx.orderId
       if (!orderId) {
         let addressId = null
-        if (isDeliveryOrder) {
+        if (ctx.type === 'delivery') {
           const { data: addr } = await sb.from('delivery_addresses').insert({
             tenant_id: tenantId,
-            customer_name: currentContext.customerName || 'Cliente Delivery',
+            customer_name: ctx.customerName || 'Cliente Delivery',
             street_address: delivStreet || '',
             reference: `${delivDesc || ''} | ${delivMapsUrl || ''}`,
             country: 'AR'
           }).select().single()
           addressId = addr?.id
         }
-        const oType = isDeliveryOrder ? 'delivery' : 'dine_in'
-        const order = await dbCreateOrder(tenantId, oType, currentContext.tableDbId)
+        const oType = ctx.type === 'delivery' ? 'delivery' : 'dine_in'
+        const order = await dbCreateOrder(tenantId, oType, ctx.tableDbId)
         orderId = order.id
         if (addressId) {
           await sb.from('orders').update({ delivery_address_id: addressId }).eq('id', orderId)
         }
-        setCurrentContext(prev => ({ ...prev, orderId }))
-        if (currentContext.tableDbId) {
-          await dbUpdateTable(currentContext.tableDbId, { status: 'occupied', current_order_id: orderId })
+        setCurrentContext(prev => ({ ...(prev || ctx), orderId }))
+        if (ctx.tableDbId) {
+          await dbUpdateTable(ctx.tableDbId, { status: 'occupied', current_order_id: orderId })
         }
       }
     } catch (e) {
