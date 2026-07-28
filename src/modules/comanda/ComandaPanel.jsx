@@ -493,11 +493,14 @@ export default function ComandaPanel() {
     setAssigning(true)
     try {
       await dbSyncOrderItems(tenantId, currentContext.orderId, cart)
-      await dbRecalcOrder(currentContext.orderId)
-      await dbUpdateKitchenStatus(currentContext.orderId, 'pending')
+      const promises = [
+        dbUpdateKitchenStatus(currentContext.orderId, 'pending')
+      ]
       if (currentContext.tableDbId) {
-        await dbUpdateTable(currentContext.tableDbId, { status: 'occupied', current_order_id: currentContext.orderId })
+        promises.push(dbUpdateTable(currentContext.tableDbId, { status: 'occupied', current_order_id: currentContext.orderId }))
       }
+      await Promise.all(promises)
+      
       clearCart()
       triggerRefresh()
     } catch (e) {

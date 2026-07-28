@@ -164,7 +164,7 @@ export async function dbUpdateKitchenStatus(orderId, status) {
 
 export async function dbGetOrders(tenantId, filters = {}) {
   let q = sb.from('orders')
-    .select('*, order_items(id, quantity, unit_price, total_price, products(name)), payments(payment_method, amount, change_amount), restaurant_tables(name)')
+    .select('*, order_items(id, quantity, unit_price, total_price, notes, created_at, products(name)), payments(payment_method, amount, change_amount), restaurant_tables(name)')
     .eq('tenant_id', tenantId).order('created_at', { ascending: false })
   
   if (filters.status) {
@@ -234,23 +234,47 @@ export async function dbRemoveItem(itemId, orderId) {
 
 export async function dbSyncOrderItems(tenantId, orderId, items) {
   if (!orderId) return
-  await sb.from('order_items').delete().eq('order_id', orderId)
+  
   if (!items || items.length === 0) {
-    await dbRecalcOrder(orderId)
+    await sb.from('order_items').delete().eq('order_id', orderId)
+    await sb.from('orders').update({ total_amount: 0 }).eq('id', orderId)
     return
   }
-  const payloads = items.map(item => ({
-    tenant_id: tenantId,
-    order_id: orderId,
-    product_id: item.product.id,
-    quantity: item.qty,
-    unit_price: item.product.price,
-    total_price: item.qty * item.product.price,
+
+  // Get existing items to know what to delete
+  const { data: existing } = await sb.from('order_items').select('id').eq('order_id', orderId)
+  const existingIds = (existing || []).map(e => e.id)
+  const incomingIds = items.map(i => i.id).filter(Boolean)
+  
+  const toDelete = existingIds.filter(id => !incomingIds.includes(id))
+  if (toDelete.length > 0) {
+    await sb.from('order_items').delete().in('id', toDelete)
+  }
+
+  const toInsert = items.filter(i => !i.id).map(item => ({
+    tenant_id: tenantId, order_id: orderId, product_id: item.product.id,
+    quantity: item.qty, unit_price: item.product.price, total_price: item.qty * item.product.price,
     notes: (item.notes || '') + (item.isReady ? ' [LISTO]' : '')
   }))
-  const { error } = await sb.from('order_items').insert(payloads)
-  if (error) throw error
-  await dbRecalcOrder(orderId)
+  
+  const toUpsert = items.filter(i => i.id).map(item => ({
+    id: item.id,
+    tenant_id: tenantId, order_id: orderId, product_id: item.product.id,
+    quantity: item.qty, unit_price: item.product.price, total_price: item.qty * item.product.price,
+    notes: (item.notes || '') + (item.isReady ? ' [LISTO]' : '')
+  }))
+
+  if (toInsert.length > 0) {
+    const { error } = await sb.from('order_items').insert(toInsert)
+    if (error) throw error
+  }
+  if (toUpsert.length > 0) {
+    const { error } = await sb.from('order_items').upsert(toUpsert)
+    if (error) throw error
+  }
+
+  const total = items.reduce((sum, item) => sum + (item.qty * item.product.price), 0)
+  await sb.from('orders').update({ total_amount: total }).eq('id', orderId)
 }
 
 export async function dbRecalcOrder(orderId) {

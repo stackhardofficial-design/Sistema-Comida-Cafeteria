@@ -150,7 +150,9 @@ export default function CocinaModule() {
                 {/* Lista de Items */}
                 <div style={{ padding: '12px', flex: 1 }}>
                   {(() => {
-                    const visibleItems = (o.order_items || []).filter(item => !(item.notes || '').includes('[LISTO]'));
+                    const visibleItems = (o.order_items || [])
+                      .filter(item => !(item.notes || '').includes('[LISTO]'))
+                      .sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
                     return visibleItems.length > 0 ? (
                       <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', gap: '12px' }}>
                         {visibleItems.map(item => (
