@@ -7,28 +7,31 @@ import { dbGetOrders, dbUpdateKitchenStatus, sb } from '../../lib/supabase'
 export default function CocinaModule() {
   const { tenantId } = useApp()
   const [orders, setOrders] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [initialLoading, setInitialLoading] = useState(true)
   const [selectedOrder, setSelectedOrder] = useState(null)
+  const [tick, setTick] = useState(0)
+
+  useEffect(() => {
+    if (!tenantId) return
+    const id = setInterval(() => setTick(t => t + 1), 3000)
+    return () => clearInterval(id)
+  }, [tenantId])
 
   const loadData = useCallback(async () => {
     if (!tenantId) return
-    setLoading(true)
     try {
-      // Cargamos solo las órdenes abiertas (que no han sido pagadas/cerradas)
       const data = await dbGetOrders(tenantId, { status: 'open' })
-      // Filtramos las que aún no están listas (pending o nulo)
       const pendingOrders = data.filter(o => !o.kitchen_status || o.kitchen_status === 'pending' || o.kitchen_status === 'in_progress')
-      // Ordenamos de más antiguas a más nuevas para que Cocina haga primero lo que entró primero
       pendingOrders.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
       setOrders(pendingOrders)
     } catch (e) {
       console.error(e)
     } finally {
-      setLoading(false)
+      setInitialLoading(false)
     }
   }, [tenantId])
 
-  useEffect(() => { loadData() }, [loadData])
+  useEffect(() => { loadData() }, [loadData, tick])
 
   // ===== REALTIME: Actualización instantánea en la pantalla de Cocina =====
   useEffect(() => {
@@ -93,7 +96,7 @@ export default function CocinaModule() {
         </div>
       </div>
 
-      {loading ? (
+      {initialLoading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Cargando pedidos...</div>
       ) : orders.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-secondary)', background: 'var(--surface)', borderRadius: '12px', border: '1px dashed var(--border)' }}>
