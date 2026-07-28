@@ -8,8 +8,8 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'StackHard POS',
-        short_name: 'StackHard',
+        name: 'Stack Hard Sistema comidas',
+        short_name: 'Stack Hard Sistema comidas',
         description: 'Sistema completo de punto de venta para restaurantes y cafeterías',
         theme_color: '#FAFAFA',
         background_color: '#FAFAFA',
