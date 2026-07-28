@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
+import { sb } from './supabase'
 
 const AppContext = createContext(null)
 
@@ -52,8 +53,30 @@ export function AppProvider({ children }) {
   }, [])
 
   const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const syncChannelRef = useRef(null)
+
+  useEffect(() => {
+    if (!tenantId) return
+    const channel = sb.channel(`global-sync-${tenantId}`)
+    channel.on('broadcast', { event: 'force-refresh' }, () => {
+      setRefreshTrigger(prev => prev + 1)
+    }).subscribe()
+    
+    syncChannelRef.current = channel
+    return () => {
+      sb.removeChannel(channel)
+      syncChannelRef.current = null
+    }
+  }, [tenantId])
+
   const triggerRefresh = useCallback(() => {
     setRefreshTrigger(prev => prev + 1)
+    if (syncChannelRef.current) {
+      syncChannelRef.current.send({
+        type: 'broadcast',
+        event: 'force-refresh',
+      }).catch(e => console.error('Broadcast error:', e))
+    }
   }, [])
 
   const cartTotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0)
