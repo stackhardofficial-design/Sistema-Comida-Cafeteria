@@ -125,7 +125,7 @@ export default function CocinaModule() {
           <p>La cocina está al día.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px', overflowY: 'auto', alignContent: 'start', alignItems: 'start' }}>
+        <div style={{ display: 'grid', flex: 1, minHeight: 0, gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gridAutoRows: 'max-content', gap: '16px', overflowY: 'auto', alignContent: 'start', alignItems: 'start', paddingBottom: '24px' }}>
           {orders.map(o => {
             const displayTime = getOrderDisplayTime(o)
             const typeInfo = getOrderTypeInfo(o)
