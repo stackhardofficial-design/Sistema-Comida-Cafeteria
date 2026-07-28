@@ -22,7 +22,7 @@ export default function CocinaModule() {
     try {
       const data = await dbGetOrders(tenantId, { status: 'open' })
       const pendingOrders = data.filter(o => !o.kitchen_status || o.kitchen_status === 'pending' || o.kitchen_status === 'in_progress')
-      pendingOrders.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+      pendingOrders.sort((a, b) => new Date(getOrderDisplayTime(a)) - new Date(getOrderDisplayTime(b)))
       setOrders(pendingOrders)
     } catch (e) {
       console.error(e)
@@ -83,6 +83,18 @@ export default function CocinaModule() {
     return { label: 'MOSTRADOR', color: '#f59e0b', icon: <ShoppingBag size={16} /> }
   }
 
+  function getOrderDisplayTime(o) {
+    const pendingItems = (o.order_items || []).filter(item => !(item.notes || '').includes('[LISTO]'))
+    if (pendingItems.length === 0) return o.created_at
+    let maxTime = pendingItems[0].created_at || o.created_at
+    for (const item of pendingItems) {
+      if (item.created_at && new Date(item.created_at) > new Date(maxTime)) {
+        maxTime = item.created_at
+      }
+    }
+    return maxTime
+  }
+
   function formatTime(isoStr) {
     if (!isoStr) return ''
     const d = new Date(isoStr)
@@ -115,8 +127,9 @@ export default function CocinaModule() {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px', overflowY: 'auto', alignContent: 'start', alignItems: 'start' }}>
           {orders.map(o => {
+            const displayTime = getOrderDisplayTime(o)
             const typeInfo = getOrderTypeInfo(o)
-            const waitTime = getWaitTimeMinutes(o.created_at)
+            const waitTime = getWaitTimeMinutes(displayTime)
             let waitColor = 'var(--text-secondary)'
             if (waitTime >= 15) waitColor = '#ef4444' // red if > 15m
             else if (waitTime >= 10) waitColor = '#f59e0b' // yellow if > 10m
@@ -135,7 +148,7 @@ export default function CocinaModule() {
                     <span>{typeInfo.icon}</span> {typeInfo.label}
                   </div>
                   <div style={{ fontWeight: '700', fontSize: '18px', background: 'rgba(0,0,0,0.2)', padding: '4px 10px', borderRadius: '6px' }}>
-                    {formatTime(o.created_at)}
+                    {formatTime(displayTime)}
                   </div>
                 </div>
 
