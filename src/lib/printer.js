@@ -33,6 +33,9 @@ function printHtmlContent(htmlContent) {
   }, 250);
 }
 
+  // Determinar ancho basado en configuración local
+  const widthStr = localStorage.getItem('printer_width') || '58mm';
+  
 const TICKET_STYLES = `
   <style>
     @page { margin: 0; }
@@ -40,7 +43,7 @@ const TICKET_STYLES = `
       font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
       margin: 0;
       padding: 10px;
-      width: 58mm; /* Ajustado para impresora térmica pequeña */
+      width: ${widthStr};
       color: #000;
       font-size: 12px;
       position: relative;
@@ -265,6 +268,46 @@ export function printChargeTicket(orderData, items, totals, payments) {
           <p>¡Gracias por su compra!</p>
           <p style="font-size: 9px; margin-top: 10px; color: #555;">Software por Stack Hard</p>
         </div>
+      </body>
+    </html>
+  \`;
+
+  printHtmlContent(html);
+}
+
+export function printTestTicket() {
+  const widthStr = localStorage.getItem('printer_width') || '58mm';
+  
+  const html = \`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <style>
+          @page { margin: 0; }
+          body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            width: \${widthStr};
+            color: #000;
+            font-size: 12px;
+            position: relative;
+            text-align: center;
+          }
+          .divider { border-top: 1px dashed #000; margin: 8px 0; }
+        </style>
+      </head>
+      <body>
+        <h1 style="margin:0; font-size: 18px; text-transform: uppercase;">STACK HARD</h1>
+        <p>TICKET DE PRUEBA</p>
+        <div class="divider"></div>
+        <p>Configuración actual:</p>
+        <p><strong>Ancho:</strong> \${widthStr}</p>
+        <p><strong>Impresión Auto:</strong> \${localStorage.getItem('printer_enabled') === 'true' ? 'Activada' : 'Desactivada'}</p>
+        <div class="divider"></div>
+        <p>Si este ticket se imprimió correctamente, tu impresora está lista para funcionar.</p>
+        <p>Asegúrate de marcarla como "Predeterminada" en Windows.</p>
+        <br/><br/>
       </body>
     </html>
   \`;

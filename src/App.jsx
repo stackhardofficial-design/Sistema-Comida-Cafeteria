@@ -80,8 +80,8 @@ function AppShell() {
     if (!tenantId) return
     const channel = sb.channel(`print_jobs_${tenantId}`)
       .on('broadcast', { event: 'print_kitchen' }, async (payload) => {
-        // Asumimos que si el dispositivo tiene más de 768px de ancho, es la computadora principal o tablet (mostrador)
-        if (window.innerWidth > 768) {
+        // Imprime solo si esta PC tiene activada la opción en Configuración
+        if (localStorage.getItem('printer_enabled') === 'true') {
           try {
             const { printKitchenTicket } = await import('./lib/printer.js')
             const { orderData, items } = payload.payload
@@ -90,7 +90,7 @@ function AppShell() {
         }
       })
       .on('broadcast', { event: 'print_charge' }, async (payload) => {
-        if (window.innerWidth > 768) {
+        if (localStorage.getItem('printer_enabled') === 'true') {
           try {
             const { printChargeTicket } = await import('./lib/printer.js')
             const { orderData, items, totals, payments } = payload.payload

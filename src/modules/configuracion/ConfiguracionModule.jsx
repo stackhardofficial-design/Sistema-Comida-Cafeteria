@@ -32,6 +32,61 @@ export default function ConfiguracionModule() {
         <h2 style={{ margin: 0, fontSize: 22 }}>Configuración</h2>
       </div>
 
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', marginBottom: 24 }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', background: 'var(--bg)' }}>
+          <h3 style={{ margin: 0, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 20 }}>🖨️</span> Configuración de Impresora Local
+          </h3>
+          <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-secondary)' }}>
+            Ajustes exclusivos para esta computadora/navegador.
+          </p>
+        </div>
+        
+        <div style={{ padding: '20px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', marginBottom: 16 }}>
+            <input 
+              type="checkbox" 
+              checked={localStorage.getItem('printer_enabled') === 'true'}
+              onChange={(e) => {
+                localStorage.setItem('printer_enabled', e.target.checked ? 'true' : 'false')
+                // Force a re-render
+                window.dispatchEvent(new Event('storage'))
+              }}
+              style={{ width: 18, height: 18 }}
+            />
+            <div>
+              <div style={{ fontWeight: 600 }}>Habilitar impresión automática en esta PC</div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Si está activo, esta PC imprimirá tickets de cocina y cobro que lleguen por red.</div>
+            </div>
+          </label>
+
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>Tamaño de papel</div>
+            <select 
+              value={localStorage.getItem('printer_width') || '58mm'}
+              onChange={(e) => {
+                localStorage.setItem('printer_width', e.target.value)
+                window.dispatchEvent(new Event('storage'))
+              }}
+              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)', outline: 'none' }}
+            >
+              <option value="58mm">58mm (Impresoras chicas)</option>
+              <option value="80mm">80mm (Impresoras estándar)</option>
+            </select>
+          </div>
+
+          <button
+            onClick={async () => {
+              const { printTestTicket } = await import('../../lib/printer.js')
+              printTestTicket()
+            }}
+            style={{ padding: '10px 16px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, cursor: 'pointer', fontWeight: 600, color: 'var(--text-primary)' }}
+          >
+            Imprimir Ticket de Prueba
+          </button>
+        </div>
+      </div>
+
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
         <button
           onClick={toggleTheme}
