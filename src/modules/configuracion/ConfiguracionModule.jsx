@@ -21,7 +21,7 @@ export default function ConfiguracionModule() {
         { qty: 2, product: { name: 'Hamburguesa Doble', price: 8500 }, notes: 'Sin cebolla' },
         { qty: 1, product: { name: 'Papas Fritas Grandes', price: 3000 } }
       ]
-      const dummyTotals = { subtotal: 20000, discountAmount: 0, grandTotal: 20000 }
+      const dummyTotals = { subtotal: 20000, discountAmount: 2000, grandTotal: 18000 }
       
       setKitchenHtml(getKitchenTicketHtml(dummyOrder, dummyItems))
       setChargeHtml(getChargeTicketHtml(dummyOrder, dummyItems, dummyTotals, []))
