@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { AppProvider, useApp } from './lib/AppContext'
 import { ShoppingCart } from 'lucide-react'
-import { dbGetSession, dbGetTenant, dbGetUserInfo, dbLogout } from './lib/supabase'
+import { dbGetSession, dbGetTenant, dbGetUserInfo, dbLogout, sb } from './lib/supabase'
 import Login from './components/Login'
 import PaymentScreen from './components/PaymentScreen'
 import Sidebar from './components/Sidebar'
@@ -74,6 +74,36 @@ function AppShell() {
     }
     init()
   }, [])
+
+  // Escuchador de impresión global (solo se ejecutará en la PC principal)
+  useEffect(() => {
+    if (!tenantId) return
+    const channel = sb.channel(`print_jobs_${tenantId}`)
+      .on('broadcast', { event: 'print_kitchen' }, async (payload) => {
+        // Asumimos que si el dispositivo tiene más de 768px de ancho, es la computadora principal o tablet (mostrador)
+        if (window.innerWidth > 768) {
+          try {
+            const { printKitchenTicket } = await import('./lib/printer.js')
+            const { orderData, items } = payload.payload
+            printKitchenTicket(orderData, items)
+          } catch (e) { console.error('Error imprimiendo ticket cocina:', e) }
+        }
+      })
+      .on('broadcast', { event: 'print_charge' }, async (payload) => {
+        if (window.innerWidth > 768) {
+          try {
+            const { printChargeTicket } = await import('./lib/printer.js')
+            const { orderData, items, totals, payments } = payload.payload
+            printChargeTicket(orderData, items, totals, payments)
+          } catch (e) { console.error('Error imprimiendo ticket cobro:', e) }
+        }
+      })
+      .subscribe()
+      
+    return () => {
+      sb.removeChannel(channel)
+    }
+  }, [tenantId])
 
   if (loading) return (
     <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a1d23', color: 'white', fontSize: 16, fontFamily: 'Inter, sans-serif' }}>

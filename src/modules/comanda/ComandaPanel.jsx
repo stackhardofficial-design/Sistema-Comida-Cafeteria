@@ -446,6 +446,18 @@ export default function ComandaPanel() {
         )
       }).catch(() => {})
 
+      // Emitir evento de impresión de ticket de cobro
+      sb.channel(`print_jobs_${tenantId}`).send({
+        type: 'broadcast',
+        event: 'print_charge',
+        payload: {
+          orderData: _ctx,
+          items: cart,
+          totals: { subtotal: cartTotal, discountAmount, grandTotal },
+          payments: finalPayments
+        }
+      })
+
       clearCart()
       setPayModal(false)
       setPayEfectivo('')
@@ -501,6 +513,16 @@ export default function ComandaPanel() {
       }
       await Promise.all(promises)
       
+      // Emitir evento de impresión de ticket de cocina
+      sb.channel(`print_jobs_${tenantId}`).send({
+        type: 'broadcast',
+        event: 'print_kitchen',
+        payload: {
+          orderData: currentContext,
+          items: cart
+        }
+      })
+
       clearCart()
       triggerRefresh()
     } catch (e) {
@@ -1011,6 +1033,35 @@ export default function ComandaPanel() {
                 </button>
               )
             })()}
+            
+            <button 
+              className="btn-print-manual" 
+              onClick={() => {
+                const amtEf = parseFloat(payEfectivo) || 0;
+                const amtTa = parseFloat(payTarjeta) || 0;
+                const amtTr = parseFloat(payTransferencia) || 0;
+                const finalPayments = [];
+                if (amtEf > 0) finalPayments.push({ method: 'cash', amount: amtEf, change: 0 })
+                if (amtTa > 0) finalPayments.push({ method: 'card', amount: amtTa, change: 0 })
+                if (amtTr > 0) finalPayments.push({ method: 'transfer', amount: amtTr, change: 0 })
+                if (finalPayments.length === 0) finalPayments.push({ method: 'cash', amount: 0, change: 0 })
+                
+                sb.channel(`print_jobs_${tenantId}`).send({
+                  type: 'broadcast',
+                  event: 'print_charge',
+                  payload: {
+                    orderData: currentContext,
+                    items: cart,
+                    totals: { subtotal: cartTotal, discountAmount, grandTotal },
+                    payments: finalPayments
+                  }
+                })
+              }}
+              style={{ padding: '12px', background: 'var(--surface)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '8px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+            >
+              <FileText size={16} /> IMPRIMIR TICKET PREVIO
+            </button>
+
             <button 
               className="btn-cancel-modal" 
               onClick={() => { setPayModal(false); setPayEfectivo(''); setPayTarjeta(''); setPayTransferencia(''); setExcesoComoPropina(false); }}
