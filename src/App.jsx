@@ -23,7 +23,7 @@ import ConfiguracionModule from './modules/configuracion/ConfiguracionModule'
 import './App.css'
 
 function AppShell() {
-  const { user, setUser, userRoles, setUserRoles, setTenantId, currentModule, mobileComandaOpen, setMobileComandaOpen, cart } = useApp()
+  const { user, setUser, userRoles, setUserRoles, tenantId, setTenantId, currentModule, mobileComandaOpen, setMobileComandaOpen, cart } = useApp()
   const [loading, setLoading] = useState(true)
   const [accessBlocked, setAccessBlocked] = useState(false)
 
