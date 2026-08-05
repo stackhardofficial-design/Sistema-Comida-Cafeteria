@@ -218,12 +218,25 @@ export function getChargeTicketHtml(orderData, items, totals, payments) {
     `;
   }).join('');
 
+  const showTip = localStorage.getItem('printer_show_tip') !== 'false';
+  const tipPercent = Number(localStorage.getItem('printer_tip_percent') || 10);
+
   let discountHtml = '';
   if (totals.discountAmount > 0) {
     discountHtml = `
       <div class="totals-row">
         <span>Descuento:</span>
         <span>-${fmtMoney(totals.discountAmount)}</span>
+      </div>
+    `;
+  }
+
+  let tipHtml = '';
+  if (showTip && tipPercent > 0) {
+    tipHtml = `
+      <div class="totals-row" style="font-size: 12px; margin-top: 8px; color: #555;">
+        <span>Propina Sugerida (${tipPercent}%):</span>
+        <span>${fmtMoney(totals.grandTotal * (tipPercent / 100))}</span>
       </div>
     `;
   }
@@ -263,10 +276,7 @@ export function getChargeTicketHtml(orderData, items, totals, payments) {
             <span>TOTAL:</span>
             <span>${fmtMoney(totals.grandTotal)}</span>
           </div>
-          <div class="totals-row" style="font-size: 12px; margin-top: 8px; color: #555;">
-            <span>Propina Sugerida (10%):</span>
-            <span>${fmtMoney(totals.grandTotal * 0.10)}</span>
-          </div>
+          ${tipHtml}
         </div>
         
         <div class="divider"></div>

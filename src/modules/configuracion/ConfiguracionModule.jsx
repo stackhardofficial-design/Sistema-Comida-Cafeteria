@@ -11,6 +11,8 @@ export default function ConfiguracionModule() {
   const [chargeHtml, setChargeHtml] = useState('')
   const [printerWidth, setPrinterWidth] = useState(localStorage.getItem('printer_width') || '58mm')
   const [printerEnabled, setPrinterEnabled] = useState(localStorage.getItem('printer_enabled') === 'true')
+  const [printerShowTip, setPrinterShowTip] = useState(localStorage.getItem('printer_show_tip') !== 'false')
+  const [printerTipPercent, setPrinterTipPercent] = useState(localStorage.getItem('printer_tip_percent') || '10')
 
   useEffect(() => {
     import('../../lib/printer.js').then(({ getKitchenTicketHtml, getChargeTicketHtml }) => {
@@ -24,7 +26,7 @@ export default function ConfiguracionModule() {
       setKitchenHtml(getKitchenTicketHtml(dummyOrder, dummyItems))
       setChargeHtml(getChargeTicketHtml(dummyOrder, dummyItems, dummyTotals, []))
     })
-  }, [printerWidth, printerEnabled])
+  }, [printerWidth, printerEnabled, printerShowTip, printerTipPercent])
 
   async function handleLogout() {
     setLoading(true)
@@ -96,6 +98,43 @@ export default function ConfiguracionModule() {
                 <option value="58mm">58mm (Impresoras chicas)</option>
                 <option value="80mm">80mm (Impresoras estándar)</option>
               </select>
+            </div>
+
+            <div style={{ background: 'var(--bg)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', marginBottom: 20 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginBottom: printerShowTip ? 12 : 0 }}>
+                <input 
+                  type="checkbox" 
+                  checked={printerShowTip}
+                  onChange={(e) => {
+                    const checked = e.target.checked
+                    localStorage.setItem('printer_show_tip', checked ? 'true' : 'false')
+                    setPrinterShowTip(checked)
+                    window.dispatchEvent(new Event('storage'))
+                  }}
+                  style={{ width: 16, height: 16 }}
+                />
+                <span style={{ fontWeight: 600, fontSize: 14 }}>Mostrar propina sugerida en ticket</span>
+              </label>
+
+              {printerShowTip && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Porcentaje:</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={printerTipPercent}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      localStorage.setItem('printer_tip_percent', val)
+                      setPrinterTipPercent(val)
+                      window.dispatchEvent(new Event('storage'))
+                    }}
+                    style={{ width: '60px', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', textAlign: 'center' }}
+                  />
+                  <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>%</span>
+                </div>
+              )}
             </div>
 
             <button
