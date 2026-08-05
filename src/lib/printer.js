@@ -142,43 +142,43 @@ export function printKitchenTicket(orderData, items) {
   
   let orderInfo = '';
   if (isMesa) {
-    orderInfo = \`<p>MESA: <strong>\${orderData.tableName || 'N/A'}</strong></p>\`;
+    orderInfo = `<p>MESA: <strong>${orderData.tableName || 'N/A'}</strong></p>`;
   } else if (isDelivery) {
-    orderInfo = \`<p>DELIVERY: <strong>\${orderData.customerName || 'N/A'}</strong></p>\`;
+    orderInfo = `<p>DELIVERY: <strong>${orderData.customerName || 'N/A'}</strong></p>`;
   } else {
-    orderInfo = \`<p>MOSTRADOR: <strong>\${orderData.customerName || 'Final'}</strong></p>\`;
+    orderInfo = `<p>MOSTRADOR: <strong>${orderData.customerName || 'Final'}</strong></p>`;
   }
 
   let itemsHtml = items.map(i => {
-    let html = \`
+    let html = `
       <div class="item-row">
-        <span class="item-qty">\${i.qty}x</span>
-        <span class="item-name">\${i.product?.name || 'Producto'}</span>
+        <span class="item-qty">${i.qty}x</span>
+        <span class="item-name">${i.product?.name || 'Producto'}</span>
       </div>
-    \`;
+    `;
     if (i.notes) {
-      html += \`<span class="item-notes">NOTA: \${i.notes}</span>\`;
+      html += `<span class="item-notes">NOTA: ${i.notes}</span>`;
     }
     return html;
   }).join('');
 
-  const html = \`
+  const html = `
     <!DOCTYPE html>
     <html>
       <head>
-        \${TICKET_STYLES}
+        ${TICKET_STYLES}
       </head>
       <body>
         <div class="watermark">STACK HARD</div>
         <div class="header">
           <div class="ticket-type">COMANDA - COCINA</div>
-          <h2>Pedido #\${(orderData.orderId || '').toString().slice(-4).toUpperCase()}</h2>
-          <p>Fecha: \${new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</p>
-          \${orderInfo}
+          <h2>Pedido #${(orderData.orderId || '').toString().slice(-4).toUpperCase()}</h2>
+          <p>Fecha: ${new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</p>
+          ${orderInfo}
         </div>
         <div class="divider"></div>
         <div class="items">
-          \${itemsHtml}
+          ${itemsHtml}
         </div>
         <div class="divider"></div>
         <div class="footer">
@@ -186,7 +186,7 @@ export function printKitchenTicket(orderData, items) {
         </div>
       </body>
     </html>
-  \`;
+  `;
 
   printHtmlContent(html);
 }
@@ -197,39 +197,39 @@ export function printChargeTicket(orderData, items, totals, payments) {
   
   let orderInfo = '';
   if (isMesa) {
-    orderInfo = \`<p>Mesa: \${orderData.tableName || 'N/A'}</p>\`;
+    orderInfo = `<p>Mesa: ${orderData.tableName || 'N/A'}</p>`;
   } else if (isDelivery) {
-    orderInfo = \`<p>Delivery: \${orderData.customerName || 'N/A'}</p>\`;
+    orderInfo = `<p>Delivery: ${orderData.customerName || 'N/A'}</p>`;
   } else {
-    orderInfo = \`<p>Cliente: \${orderData.customerName || 'Consumidor Final'}</p>\`;
+    orderInfo = `<p>Cliente: ${orderData.customerName || 'Consumidor Final'}</p>`;
   }
 
   let itemsHtml = items.map(i => {
     const totalItem = (i.product?.price || 0) * i.qty;
-    return \`
+    return `
       <div class="item-row">
-        <span class="item-qty">\${i.qty}x</span>
-        <span class="item-name">\${i.product?.name || 'Producto'}</span>
-        <span>\${fmtMoney(totalItem)}</span>
+        <span class="item-qty">${i.qty}x</span>
+        <span class="item-name">${i.product?.name || 'Producto'}</span>
+        <span>${fmtMoney(totalItem)}</span>
       </div>
-    \`;
+    `;
   }).join('');
 
   let discountHtml = '';
   if (totals.discountAmount > 0) {
-    discountHtml = \`
+    discountHtml = `
       <div class="totals-row">
         <span>Descuento:</span>
-        <span>-\${fmtMoney(totals.discountAmount)}</span>
+        <span>-${fmtMoney(totals.discountAmount)}</span>
       </div>
-    \`;
+    `;
   }
 
-  const html = \`
+  const html = `
     <!DOCTYPE html>
     <html>
       <head>
-        \${TICKET_STYLES}
+        ${TICKET_STYLES}
       </head>
       <body>
         <div class="watermark">STACK HARD</div>
@@ -237,15 +237,15 @@ export function printChargeTicket(orderData, items, totals, payments) {
           <h1>STACK HARD</h1>
           <p>Comprobante de Venta</p>
           <div class="divider"></div>
-          <p>Pedido #\${(orderData.orderId || '').toString().slice(-4).toUpperCase()}</p>
-          <p>Fecha: \${new Date().toLocaleDateString('es-AR')} \${new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</p>
-          \${orderInfo}
+          <p>Pedido #${(orderData.orderId || '').toString().slice(-4).toUpperCase()}</p>
+          <p>Fecha: ${new Date().toLocaleDateString('es-AR')} ${new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</p>
+          ${orderInfo}
         </div>
         
         <div class="divider"></div>
         
         <div class="items">
-          \${itemsHtml}
+          ${itemsHtml}
         </div>
         
         <div class="divider"></div>
@@ -253,12 +253,12 @@ export function printChargeTicket(orderData, items, totals, payments) {
         <div class="totals">
           <div class="totals-row">
             <span>Subtotal:</span>
-            <span>\${fmtMoney(totals.subtotal)}</span>
+            <span>${fmtMoney(totals.subtotal)}</span>
           </div>
-          \${discountHtml}
+          ${discountHtml}
           <div class="totals-row grand">
             <span>TOTAL:</span>
-            <span>\${fmtMoney(totals.grandTotal)}</span>
+            <span>${fmtMoney(totals.grandTotal)}</span>
           </div>
         </div>
         
@@ -270,7 +270,7 @@ export function printChargeTicket(orderData, items, totals, payments) {
         </div>
       </body>
     </html>
-  \`;
+  `;
 
   printHtmlContent(html);
 }
@@ -278,7 +278,7 @@ export function printChargeTicket(orderData, items, totals, payments) {
 export function printTestTicket() {
   const widthStr = localStorage.getItem('printer_width') || '58mm';
   
-  const html = \`
+  const html = `
     <!DOCTYPE html>
     <html>
       <head>
@@ -288,7 +288,7 @@ export function printTestTicket() {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             margin: 0;
             padding: 10px;
-            width: \${widthStr};
+            width: ${widthStr};
             color: #000;
             font-size: 12px;
             position: relative;
@@ -302,15 +302,15 @@ export function printTestTicket() {
         <p>TICKET DE PRUEBA</p>
         <div class="divider"></div>
         <p>Configuración actual:</p>
-        <p><strong>Ancho:</strong> \${widthStr}</p>
-        <p><strong>Impresión Auto:</strong> \${localStorage.getItem('printer_enabled') === 'true' ? 'Activada' : 'Desactivada'}</p>
+        <p><strong>Ancho:</strong> ${widthStr}</p>
+        <p><strong>Impresión Auto:</strong> ${localStorage.getItem('printer_enabled') === 'true' ? 'Activada' : 'Desactivada'}</p>
         <div class="divider"></div>
         <p>Si este ticket se imprimió correctamente, tu impresora está lista para funcionar.</p>
         <p>Asegúrate de marcarla como "Predeterminada" en Windows.</p>
         <br/><br/>
       </body>
     </html>
-  \`;
+  `;
 
   printHtmlContent(html);
 }
