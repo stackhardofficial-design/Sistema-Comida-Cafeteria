@@ -5,7 +5,6 @@ import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorChe
 
 const NAV_ITEMS = [
   { id: 'mesas', icon: <Grid size={18} />, label: 'Mesas' },
-  { id: 'configuracion', icon: <Settings size={18} />, label: 'Configuración' },
   { id: 'mostrador', icon: <MonitorSmartphone size={18} />, label: 'Mostrador' },
   { id: 'cocina', icon: <ChefHat size={18} />, label: 'Cocina' },
   { id: 'delivery', icon: <Package size={18} />, label: 'Delivery' },
@@ -81,6 +80,9 @@ export default function Sidebar() {
     allowedItems.push({ id: 'historial', icon: <History size={18} />, label: 'Historial' })
     allowedItems.push({ id: 'stock', icon: <Database size={18} />, label: 'Stock' })
   }
+
+  // Todos pueden ver configuración, va al final
+  allowedItems.push({ id: 'configuracion', icon: <Settings size={18} />, label: 'Configuración' })
 
   // SuperAdmin gets the Admin panel
   if (user?.email === 'superadmin@stackhard.com' || userRoles.includes('super_admin')) {

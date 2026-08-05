@@ -275,10 +275,10 @@ export function printChargeTicket(orderData, items, totals, payments) {
   printHtmlContent(html);
 }
 
-export function printTestTicket() {
+export function getTestTicketHtml() {
   const widthStr = localStorage.getItem('printer_width') || '58mm';
   
-  const html = `
+  return `
     <!DOCTYPE html>
     <html>
       <head>
@@ -311,6 +311,9 @@ export function printTestTicket() {
       </body>
     </html>
   `;
-
-  printHtmlContent(html);
 }
+
+export function printTestTicket() {
+  printHtmlContent(getTestTicketHtml());
+}
+

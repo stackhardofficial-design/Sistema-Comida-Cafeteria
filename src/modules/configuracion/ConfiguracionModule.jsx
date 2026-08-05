@@ -1,11 +1,20 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { dbLogout } from '../../lib/supabase'
 import { useApp } from '../../lib/AppContext'
-import { Sun, Moon, LogOut, ArrowLeft } from 'lucide-react'
+import { Sun, Moon, LogOut, ArrowLeft, Printer } from 'lucide-react'
 
 export default function ConfiguracionModule() {
   const { setCurrentModule, isDark, toggleTheme } = useApp()
   const [loading, setLoading] = useState(false)
+  const [previewHtml, setPreviewHtml] = useState('')
+  const [printerWidth, setPrinterWidth] = useState(localStorage.getItem('printer_width') || '58mm')
+  const [printerEnabled, setPrinterEnabled] = useState(localStorage.getItem('printer_enabled') === 'true')
+
+  useEffect(() => {
+    import('../../lib/printer.js').then(({ getTestTicketHtml }) => {
+      setPreviewHtml(getTestTicketHtml())
+    })
+  }, [printerWidth, printerEnabled])
 
   async function handleLogout() {
     setLoading(true)
@@ -42,48 +51,70 @@ export default function ConfiguracionModule() {
           </p>
         </div>
         
-        <div style={{ padding: '20px' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', marginBottom: 16 }}>
-            <input 
-              type="checkbox" 
-              checked={localStorage.getItem('printer_enabled') === 'true'}
-              onChange={(e) => {
-                localStorage.setItem('printer_enabled', e.target.checked ? 'true' : 'false')
-                // Force a re-render
-                window.dispatchEvent(new Event('storage'))
-              }}
-              style={{ width: 18, height: 18 }}
-            />
-            <div>
-              <div style={{ fontWeight: 600 }}>Habilitar impresión automática en esta PC</div>
-              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Si está activo, esta PC imprimirá tickets de cocina y cobro que lleguen por red.</div>
-            </div>
-          </label>
+        <div style={{ padding: '20px', display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 250px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', marginBottom: 16 }}>
+              <input 
+                type="checkbox" 
+                checked={printerEnabled}
+                onChange={(e) => {
+                  const checked = e.target.checked
+                  localStorage.setItem('printer_enabled', checked ? 'true' : 'false')
+                  setPrinterEnabled(checked)
+                  window.dispatchEvent(new Event('storage'))
+                }}
+                style={{ width: 18, height: 18 }}
+              />
+              <div>
+                <div style={{ fontWeight: 600 }}>Habilitar impresión automática en esta PC</div>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Si está activo, esta PC imprimirá tickets de cocina y cobro que lleguen por red.</div>
+              </div>
+            </label>
 
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>Tamaño de papel</div>
-            <select 
-              value={localStorage.getItem('printer_width') || '58mm'}
-              onChange={(e) => {
-                localStorage.setItem('printer_width', e.target.value)
-                window.dispatchEvent(new Event('storage'))
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontWeight: 600, marginBottom: 8 }}>Tamaño de papel</div>
+              <select 
+                value={printerWidth}
+                onChange={(e) => {
+                  const w = e.target.value
+                  localStorage.setItem('printer_width', w)
+                  setPrinterWidth(w)
+                  window.dispatchEvent(new Event('storage'))
+                }}
+                style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)', outline: 'none', width: '100%' }}
+              >
+                <option value="58mm">58mm (Impresoras chicas)</option>
+                <option value="80mm">80mm (Impresoras estándar)</option>
+              </select>
+            </div>
+
+            <button
+              onClick={async () => {
+                const { printTestTicket } = await import('../../lib/printer.js')
+                printTestTicket()
               }}
-              style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-primary)', outline: 'none' }}
+              style={{ padding: '10px 16px', width: '100%', background: 'var(--accent)', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             >
-              <option value="58mm">58mm (Impresoras chicas)</option>
-              <option value="80mm">80mm (Impresoras estándar)</option>
-            </select>
+              <Printer size={16} /> Imprimir Ticket de Prueba
+            </button>
           </div>
 
-          <button
-            onClick={async () => {
-              const { printTestTicket } = await import('../../lib/printer.js')
-              printTestTicket()
-            }}
-            style={{ padding: '10px 16px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, cursor: 'pointer', fontWeight: 600, color: 'var(--text-primary)' }}
-          >
-            Imprimir Ticket de Prueba
-          </button>
+          {/* PREVIEW PANEL */}
+          <div style={{ flex: '1 1 250px', background: 'var(--bg)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 12 }}>VISTA PREVIA DEL TICKET</div>
+            <div style={{ background: 'white', padding: '10px', borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+              <iframe 
+                srcDoc={previewHtml} 
+                style={{ 
+                  width: printerWidth === '58mm' ? '220px' : '300px', 
+                  height: '400px', 
+                  border: 'none', 
+                  background: 'white',
+                  pointerEvents: 'none'
+                }} 
+              />
+            </div>
+          </div>
         </div>
       </div>
 
