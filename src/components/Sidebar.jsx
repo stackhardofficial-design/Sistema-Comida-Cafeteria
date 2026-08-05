@@ -5,7 +5,7 @@ import { Grid, MonitorSmartphone, ChefHat, Package, Bike, TrendingUp, MonitorChe
 
 const NAV_ITEMS = [
   { id: 'mesas', icon: <Grid size={18} />, label: 'Mesas' },
-  { id: 'configuracion', icon: <Settings size={18} />, label: 'Configuración', mobileOnly: true },
+  { id: 'configuracion', icon: <Settings size={18} />, label: 'Configuración' },
   { id: 'mostrador', icon: <MonitorSmartphone size={18} />, label: 'Mostrador' },
   { id: 'cocina', icon: <ChefHat size={18} />, label: 'Cocina' },
   { id: 'delivery', icon: <Package size={18} />, label: 'Delivery' },
