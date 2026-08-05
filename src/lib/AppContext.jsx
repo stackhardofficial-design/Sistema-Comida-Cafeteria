@@ -79,6 +79,16 @@ export function AppProvider({ children }) {
     }
   }, [])
 
+  const broadcastPrint = useCallback((event, payload) => {
+    if (syncChannelRef.current) {
+      syncChannelRef.current.send({
+        type: 'broadcast',
+        event,
+        payload
+      }).catch(e => console.error('Print broadcast error:', e))
+    }
+  }, [])
+
   const cartTotal = cart.reduce((s, i) => s + i.product.price * i.qty, 0)
   const discountAmount = discount.type === 'percent'
     ? cartTotal * (discount.value / 100)
@@ -125,7 +135,8 @@ export function AppProvider({ children }) {
       mobileComandaOpen, setMobileComandaOpen,
       deferredPrompt, setDeferredPrompt,
       sidebarMobileOpen, setSidebarMobileOpen,
-      isDark, toggleTheme
+      isDark, toggleTheme,
+      broadcastPrint
     }}>
       {children}
     </AppContext.Provider>

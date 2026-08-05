@@ -260,6 +260,10 @@ export function printChargeTicket(orderData, items, totals, payments) {
             <span>TOTAL:</span>
             <span>${fmtMoney(totals.grandTotal)}</span>
           </div>
+          <div class="totals-row" style="font-size: 12px; margin-top: 8px; color: #555;">
+            <span>Propina Sugerida (10%):</span>
+            <span>${fmtMoney(totals.grandTotal * 0.10)}</span>
+          </div>
         </div>
         
         <div class="divider"></div>

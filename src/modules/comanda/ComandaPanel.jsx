@@ -17,7 +17,8 @@ export default function ComandaPanel() {
     cart, setCart, discount, setDiscount, clearCart,
     cartTotal, discountAmount, grandTotal, refreshTrigger,
     currentModule, triggerRefresh,
-    mobileComandaOpen, setMobileComandaOpen
+    mobileComandaOpen, setMobileComandaOpen,
+    broadcastPrint
   } = useApp()
 
   const [categories, setCategories] = useState([])
@@ -447,15 +448,11 @@ export default function ComandaPanel() {
       }).catch(() => {})
 
       // Emitir evento de impresión de ticket de cobro
-      sb.channel(`print_jobs_${tenantId}`).send({
-        type: 'broadcast',
-        event: 'print_charge',
-        payload: {
-          orderData: _ctx,
-          items: cart,
-          totals: { subtotal: cartTotal, discountAmount, grandTotal },
-          payments: finalPayments
-        }
+      broadcastPrint('print_charge', {
+        orderData: _ctx,
+        items: cart,
+        totals: { subtotal: cartTotal, discountAmount, grandTotal },
+        payments: finalPayments
       })
 
       clearCart()
@@ -513,14 +510,10 @@ export default function ComandaPanel() {
       }
       await Promise.all(promises)
       
-      // Emitir evento de impresión de ticket de cocina
-      sb.channel(`print_jobs_${tenantId}`).send({
-        type: 'broadcast',
-        event: 'print_kitchen',
-        payload: {
-          orderData: currentContext,
-          items: cart
-        }
+      // Emitir evento de impresión
+      broadcastPrint('print_kitchen', {
+        orderData: currentContext,
+        items: cart
       })
 
       clearCart()
@@ -1046,15 +1039,11 @@ export default function ComandaPanel() {
                 if (amtTr > 0) finalPayments.push({ method: 'transfer', amount: amtTr, change: 0 })
                 if (finalPayments.length === 0) finalPayments.push({ method: 'cash', amount: 0, change: 0 })
                 
-                sb.channel(`print_jobs_${tenantId}`).send({
-                  type: 'broadcast',
-                  event: 'print_charge',
-                  payload: {
-                    orderData: currentContext,
-                    items: cart,
-                    totals: { subtotal: cartTotal, discountAmount, grandTotal },
-                    payments: finalPayments
-                  }
+                broadcastPrint('print_charge', {
+                  orderData: currentContext,
+                  items: cart,
+                  totals: { subtotal: cartTotal, discountAmount, grandTotal },
+                  payments: finalPayments
                 })
               }}
               style={{ padding: '12px', background: 'var(--surface)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '8px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}

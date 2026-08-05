@@ -78,7 +78,7 @@ function AppShell() {
   // Escuchador de impresión global (solo se ejecutará en la PC principal)
   useEffect(() => {
     if (!tenantId) return
-    const channel = sb.channel(`print_jobs_${tenantId}`)
+    const channel = sb.channel(`global-sync-${tenantId}`)
       .on('broadcast', { event: 'print_kitchen' }, async (payload) => {
         // Imprime solo si esta PC tiene activada la opción en Configuración
         if (localStorage.getItem('printer_enabled') === 'true') {
