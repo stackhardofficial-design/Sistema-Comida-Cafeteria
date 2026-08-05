@@ -136,7 +136,7 @@ const TICKET_STYLES = `
   </style>
 `;
 
-export function printKitchenTicket(orderData, items) {
+export function getKitchenTicketHtml(orderData, items) {
   const isMesa = orderData.type === 'mesa';
   const isDelivery = orderData.type === 'delivery';
   
@@ -187,11 +187,14 @@ export function printKitchenTicket(orderData, items) {
       </body>
     </html>
   `;
-
-  printHtmlContent(html);
+  return html;
 }
 
-export function printChargeTicket(orderData, items, totals, payments) {
+export function printKitchenTicket(orderData, items) {
+  printHtmlContent(getKitchenTicketHtml(orderData, items));
+}
+
+export function getChargeTicketHtml(orderData, items, totals, payments) {
   const isMesa = orderData.type === 'mesa';
   const isDelivery = orderData.type === 'delivery';
   
@@ -270,13 +273,20 @@ export function printChargeTicket(orderData, items, totals, payments) {
         
         <div class="footer">
           <p>¡Gracias por su compra!</p>
-          <p style="font-size: 9px; margin-top: 10px; color: #555;">Software por Stack Hard</p>
+          <p style="font-size: 10px; margin-top: 5px; font-weight: bold; text-transform: uppercase;">Este ticket no es una factura</p>
+          <div style="margin-top: 10px;">
+            <p style="font-size: 10px; color: #555; margin: 0;">Stack Hard es el sistema</p>
+            <p style="font-size: 10px; color: #555; margin: 0;"><a href="https://stack-hard.vercel.app/" style="color: #000; text-decoration: none;">https://stack-hard.vercel.app/</a></p>
+          </div>
         </div>
       </body>
     </html>
   `;
+  return html;
+}
 
-  printHtmlContent(html);
+export function printChargeTicket(orderData, items, totals, payments) {
+  printHtmlContent(getChargeTicketHtml(orderData, items, totals, payments));
 }
 
 export function getTestTicketHtml() {

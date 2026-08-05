@@ -6,13 +6,23 @@ import { Sun, Moon, LogOut, ArrowLeft, Printer } from 'lucide-react'
 export default function ConfiguracionModule() {
   const { setCurrentModule, isDark, toggleTheme } = useApp()
   const [loading, setLoading] = useState(false)
-  const [previewHtml, setPreviewHtml] = useState('')
+  const [activePreview, setActivePreview] = useState('cocina')
+  const [kitchenHtml, setKitchenHtml] = useState('')
+  const [chargeHtml, setChargeHtml] = useState('')
   const [printerWidth, setPrinterWidth] = useState(localStorage.getItem('printer_width') || '58mm')
   const [printerEnabled, setPrinterEnabled] = useState(localStorage.getItem('printer_enabled') === 'true')
 
   useEffect(() => {
-    import('../../lib/printer.js').then(({ getTestTicketHtml }) => {
-      setPreviewHtml(getTestTicketHtml())
+    import('../../lib/printer.js').then(({ getKitchenTicketHtml, getChargeTicketHtml }) => {
+      const dummyOrder = { orderId: 1234, type: 'mesa', tableName: 'Mesa 4' }
+      const dummyItems = [
+        { qty: 2, product: { name: 'Hamburguesa Doble', price: 8500 }, notes: 'Sin cebolla' },
+        { qty: 1, product: { name: 'Papas Fritas Grandes', price: 3000 } }
+      ]
+      const dummyTotals = { subtotal: 20000, discountAmount: 0, grandTotal: 20000 }
+      
+      setKitchenHtml(getKitchenTicketHtml(dummyOrder, dummyItems))
+      setChargeHtml(getChargeTicketHtml(dummyOrder, dummyItems, dummyTotals, []))
     })
   }, [printerWidth, printerEnabled])
 
@@ -101,10 +111,26 @@ export default function ConfiguracionModule() {
 
           {/* PREVIEW PANEL */}
           <div style={{ flex: '1 1 250px', background: 'var(--bg)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 12 }}>VISTA PREVIA DEL TICKET</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 12 }}>MODELOS DE TICKET</div>
+            
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              <button 
+                onClick={() => setActivePreview('cocina')}
+                style={{ padding: '4px 12px', borderRadius: 16, border: 'none', background: activePreview === 'cocina' ? 'var(--accent)' : 'var(--surface)', color: activePreview === 'cocina' ? 'white' : 'var(--text-secondary)', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}
+              >
+                Cocina
+              </button>
+              <button 
+                onClick={() => setActivePreview('cobro')}
+                style={{ padding: '4px 12px', borderRadius: 16, border: 'none', background: activePreview === 'cobro' ? 'var(--accent)' : 'var(--surface)', color: activePreview === 'cobro' ? 'white' : 'var(--text-secondary)', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}
+              >
+                Cobro (Mesas/Mostrador)
+              </button>
+            </div>
+
             <div style={{ background: 'white', padding: '10px', borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
               <iframe 
-                srcDoc={previewHtml} 
+                srcDoc={activePreview === 'cocina' ? kitchenHtml : chargeHtml} 
                 style={{ 
                   width: printerWidth === '58mm' ? '220px' : '300px', 
                   height: '400px', 
