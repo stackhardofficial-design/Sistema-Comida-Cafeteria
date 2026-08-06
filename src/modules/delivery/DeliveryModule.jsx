@@ -305,11 +305,12 @@ export default function DeliveryModule() {
         {STATUS_GROUPS.map(group => {
           let groupOrders = []
           if (group.key === 'open') {
-            groupOrders = orders.filter(o => o.status === 'open' && o.kitchen_status !== 'ready')
+            groupOrders = orders.filter(o => (o.status === 'open' || o.status === 'paid') && o.kitchen_status !== 'ready')
           } else if (group.key === 'ready') {
-            groupOrders = orders.filter(o => o.status === 'open' && o.kitchen_status === 'ready')
+            groupOrders = orders.filter(o => (o.status === 'open' || o.status === 'paid') && o.kitchen_status === 'ready')
           } else if (group.key === 'in_transit') {
-            groupOrders = orders.filter(o => o.status === 'in_transit')
+            groupOrders = orders.filter(o => o.status === 'in_transit' || (o.status === 'paid' && o.kitchen_status === 'ready')) 
+            // Si está pagado y listo, también debería poder enviarse
           }
 
           const visible = groupOrders.slice(0, visibleCounts[group.key])
@@ -364,9 +365,12 @@ export default function DeliveryModule() {
                             style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.1s' }}
                           >
                             <td style={{ padding: '10px 12px' }}>
-                              <button className="del-btn-open" onClick={() => openOrder(order)}>
-                                #{order.id.slice(-6).toUpperCase()}
-                              </button>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <button className="del-btn-open" onClick={() => openOrder(order)}>
+                                  #{order.id.slice(-6).toUpperCase()}
+                                </button>
+                                {order.status === 'paid' && <span style={{ background: '#dcfce7', color: '#166534', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>PAGADO</span>}
+                              </div>
                             </td>
                             <td style={{ padding: '10px 12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{orderTime}</td>
                             <td style={{ padding: '10px 12px', color: 'var(--text-secondary)', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -409,7 +413,20 @@ export default function DeliveryModule() {
                                 <button
                                   className="del-btn-move"
                                   style={{ background: '#d1fae5', color: '#065f46' }}
-                                  onClick={e => { e.stopPropagation(); setOrderToPay(order) }}
+                                  onClick={async e => { 
+                                    e.stopPropagation(); 
+                                    if (order.status === 'paid') {
+                                      if(window.confirm('¿Confirmar entrega completada?')) {
+                                        try {
+                                          const { dbUpdateOrder } = await import('../../lib/supabase')
+                                          await dbUpdateOrder(order.id, { status: 'delivered' })
+                                          setOrders(prev => prev.filter(o => o.id !== order.id))
+                                        } catch (err) { alert(err.message) }
+                                      }
+                                    } else {
+                                      setOrderToPay(order) 
+                                    }
+                                  }}
                                 >
                                   Entregado
                                 </button>

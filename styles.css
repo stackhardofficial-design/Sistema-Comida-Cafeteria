@@ -254,13 +254,15 @@ html, body { height: 100%; font-family: var(--font); font-size: 14px; background
   box-shadow: var(--shadow);
 }
 .table-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-.table-card.available { background: var(--green-light); border-color: var(--green-border); }
-.table-card.occupied { background: var(--red-light); border-color: var(--red-border); }
-.table-card.billing { background: var(--yellow-light); border-color: var(--yellow); }
+.table-card.free { background: var(--surface); border-color: var(--border); }
+.table-card.occupied { background: #fef2f2; border-color: #f87171; }
+.table-card.billing { background: #fffbeb; border-color: #fbbf24; }
+.table-card.paid { background: #dcfce7; border-color: #10b981; }
 .table-num { font-size: 24px; font-weight: 800; color: var(--text-primary); }
-.table-card.available .table-num { color: var(--green-border); }
-.table-card.occupied .table-num { color: var(--red-border); }
-.table-card.billing .table-num { color: var(--orange); }
+.table-card.free .table-num { color: var(--text-secondary); }
+.table-card.occupied .table-num { color: #b91c1c; }
+.table-card.billing .table-num { color: #b45309; }
+.table-card.paid .table-num { color: #047857; }
 .table-meta { font-size: 10px; color: var(--text-secondary); text-align: center; line-height: 1.4; }
 .table-diners { font-size: 11px; font-weight: 600; color: var(--red-border); }
 .table-amount { font-size: 11px; font-weight: 700; color: var(--text-primary); }

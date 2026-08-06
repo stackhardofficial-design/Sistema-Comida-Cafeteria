@@ -417,12 +417,20 @@ export default function ComandaPanel() {
         tip_amount: idx === 0 ? parseFloat(tip.toFixed(2)) : 0
       }))
 
-      await dbCreatePayment(tenantId, currentContext.orderId, paymentsWithTip, sessionId)
-      await dbUpdateOrder(currentContext.orderId, { status: isDeliveryOrder ? 'open' : 'paid', discount_amount: discountAmount })
-      if (currentContext.tableDbId) {
-        await dbUpdateTable(currentContext.tableDbId, { status: 'free', current_order_id: null })
+      const orderBefore = await dbGetOrder(currentContext.orderId)
+      if (!orderBefore.kitchen_status || orderBefore.kitchen_status === 'draft') {
+        // Auto-enviar a cocina
+        await dbSyncOrderItems(tenantId, currentContext.orderId, cart)
+        await dbUpdateKitchenStatus(currentContext.orderId, 'pending')
+        broadcastPrint('print_kitchen', {
+          orderData: currentContext,
+          items: cart
+        })
       }
 
+      await dbCreatePayment(tenantId, currentContext.orderId, paymentsWithTip, sessionId)
+      await dbUpdateOrder(currentContext.orderId, { status: 'paid', discount_amount: discountAmount })
+      
       const _orderId = currentContext.orderId
       const _ctx = { ...currentContext }
       dbDeductStockForOrder(tenantId, _orderId).catch(e =>

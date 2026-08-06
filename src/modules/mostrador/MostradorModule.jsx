@@ -35,8 +35,9 @@ export default function MostradorModule() {
     try {
       setLoading(true)
       const [open, closed] = await Promise.all([
-        dbGetOrders(tenantId, { status: 'open' }),
-        dbGetOrders(tenantId, { status: 'paid', limit: 5 })
+      const [open, closed] = await Promise.all([
+        dbGetOrders(tenantId, { status: 'open,paid' }),
+        dbGetOrders(tenantId, { status: 'completed', limit: 15 })
       ])
       setOpenOrders(open)
       setClosedOrders(closed)
@@ -489,7 +490,10 @@ export default function MostradorModule() {
 }
 
 function OrdersTable({ orders, emptyText, onSelect, isClosedTable }) {
-  const { tenantId } = useApp()
+  const { tenantId, openOrder } = useApp()
+  const { Banknote, Check } = require('lucide-react')
+  const { fmtMoney } = require('../../lib/utils')
+
   const handleMarkReady = async (e, orderId) => {
     e.stopPropagation()
     try {
@@ -500,6 +504,17 @@ function OrdersTable({ orders, emptyText, onSelect, isClosedTable }) {
     }
   }
 
+  const handleEntregarPedido = async (orderId) => {
+    try {
+      const { dbUpdateOrder } = await import('../../lib/supabase')
+      await dbUpdateOrder(orderId, { status: 'completed' })
+    } catch(err) {
+      alert(err.message)
+    }
+  }
+
+  const getOrderTime = (date) => new Date(date).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
+
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', overflowX: 'auto', WebkitOverflowScrolling: 'touch', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left', minWidth: '600px' }}>
@@ -507,56 +522,57 @@ function OrdersTable({ orders, emptyText, onSelect, isClosedTable }) {
           <tr style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>
             <th style={{ padding: '10px 16px' }}>ID / Etiqueta</th>
             <th style={{ padding: '10px 16px' }}>Hora</th>
-            <th style={{ padding: '10px 16px' }}>Tipo</th>
-            <th style={{ padding: '10px 16px' }}>Estado</th>
+            <th style={{ padding: '10px 16px' }}>Tipo / Estado</th>
             <th style={{ padding: '10px 16px' }}>Cliente</th>
             <th style={{ padding: '10px 16px', textAlign: 'right' }}>Total</th>
-            {!isClosedTable && <th style={{ padding: '10px 16px', textAlign: 'center' }}>Cocina</th>}
+            <th style={{ padding: '10px 16px', textAlign: 'center' }}>Acciones</th>
           </tr>
         </thead>
         <tbody>
           {orders.length > 0 ? orders.map(o => {
-            const orderTime = new Date(o.created_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false })
-            const isDelivOrd = o.order_type === 'delivery'
-            const isMesaOrd = !isDelivOrd && !!o.table_db_id
-            
             const isReady = o.kitchen_status === 'ready'
 
             return (
               <tr key={o.id} onClick={() => onSelect(o)} style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer', transition: 'background 0.15s' }} className="table-row-hover">
-                <td style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--accent)' }}>
-                  #{o.id.slice(-6).toUpperCase()}
-                </td>
-                <td style={{ padding: '12px 16px', color: 'var(--text-muted)' }}>{orderTime}</td>
+                <td style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--accent)' }}>#{o.id.slice(-6).toUpperCase()}</td>
+                <td style={{ padding: '12px 16px', color: 'var(--text-muted)' }}>{getOrderTime(o.created_at)}</td>
                 <td style={{ padding: '12px 16px' }}>
-                  <span style={{ fontSize: '14px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    {isDelivOrd ? '🛵' : (isMesaOrd ? (
-                      <>🪑 <span style={{ fontSize: '12px', fontWeight: 'bold' }}>{o.restaurant_tables?.name || 'Mesa'}</span></>
-                    ) : '')}
-                  </span>
-                </td>
-                <td style={{ padding: '12px 16px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
-                    <span style={{ display: 'inline-block', padding: '3px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: '700', background: isClosedTable ? '#f1f5f9' : '#d1fae5', color: isClosedTable ? '#475569' : '#065f46', textTransform: 'uppercase' }}>
-                      {isClosedTable ? 'Pagado' : 'En curso'}
-                    </span>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <span className="mos-badge">{o.order_type === 'delivery' ? '🛵 Delivery' : (o.order_type === 'dine_in' && o.table_db_id ? `🪑 ${o.restaurant_tables?.name || 'Mesa'}` : '🏪 Mostrador')}</span>
+                    {o.status === 'paid' && <span style={{ background: '#dcfce7', color: '#166534', padding: '4px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' }}>PAGADO</span>}
+                    {o.kitchen_status && o.kitchen_status !== 'draft' && (
+                      <span style={{ 
+                        background: o.kitchen_status === 'ready' ? '#dcfce7' : o.kitchen_status === 'pending' ? '#fef9c3' : '#e0f2fe',
+                        color: o.kitchen_status === 'ready' ? '#166534' : o.kitchen_status === 'pending' ? '#854d0e' : '#0369a1',
+                        padding: '4px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold'
+                      }}>
+                        {o.kitchen_status === 'ready' ? 'LISTO' : o.kitchen_status === 'pending' ? 'EN COCINA' : 'PREPARANDO'}
+                      </span>
+                    )}
                   </div>
                 </td>
                 <td style={{ padding: '12px 16px', color: 'var(--text-secondary)', fontWeight: '500' }}>{o.customer_name || 'Sin nombre'}</td>
                 <td style={{ padding: '12px 16px', fontWeight: '700', textAlign: 'right', color: 'var(--text-primary)' }}>{fmtMoney(o.total_amount)}</td>
-                {!isClosedTable && (
-                  <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                    {isReady ? (
-                      <span style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: '800', background: '#10b981', color: 'white' }}>
-                        <><Check size={16} style={{marginRight:4}} /> LISTO</>
-                      </span>
-                    ) : (
-                      <button onClick={(e) => handleMarkReady(e, o.id)} style={{ padding: '4px 10px', borderRadius: '12px', border: '1px solid #f59e0b', background: '#fffbeb', color: '#d97706', fontSize: '11px', fontWeight: '800', cursor: 'pointer' }}>
-                        ⏳ PENDIENTE
-                      </button>
-                    )}
-                  </td>
-                )}
+                <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                  {o.status === 'paid' ? (
+                    <button 
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        if(window.confirm('¿Marcar pedido como entregado y finalizado?')) {
+                          handleEntregarPedido(o.id);
+                        }
+                      }} 
+                      className="mos-btn-primary" 
+                      style={{ padding: '8px 16px', fontSize: '13px', background: '#22c55e', color: 'white' }}
+                    >
+                      <Check size={16} style={{marginRight:4}} /> Entregar
+                    </button>
+                  ) : (
+                    <button onClick={(e) => { e.stopPropagation(); openOrder(o) }} className="mos-btn-primary" style={{ padding: '8px 16px', fontSize: '13px' }}>
+                      <Banknote size={16} style={{marginRight:4}} /> Cobrar
+                    </button>
+                  )}
+                </td>
               </tr>
             )
           }) : (

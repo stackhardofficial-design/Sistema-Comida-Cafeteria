@@ -296,6 +296,22 @@ export default function MesasModule() {
             setTableModal(true)
             setCtxMenu(null)
           }}><PenSquare size={16} style={{marginRight:6}}/> Editar Mesa</button>
+          
+          {ctxMenu.table.status !== 'free' && (
+            <button className="ctx-item" style={{ color: '#059669' }} onClick={async () => {
+              if(!confirm('¿Liberar mesa y finalizar pedido actual?')) return;
+              try {
+                const { dbUpdateTable, dbUpdateOrder } = await import('../../lib/supabase')
+                await dbUpdateTable(ctxMenu.table.id, { status: 'free', current_order_id: null })
+                if (ctxMenu.table.current_order_id) {
+                  await dbUpdateOrder(ctxMenu.table.current_order_id, { status: 'completed' })
+                }
+                setCtxMenu(null)
+                loadData()
+              } catch(e) { alert(e.message) }
+            }}><CheckCircle size={16} style={{marginRight:6}}/> Liberar Mesa</button>
+          )}
+
           <button className="ctx-item danger" onClick={() => deleteTable(ctxMenu.table.id)}><Trash2 size={16} style={{marginRight:6}}/> Eliminar
           </button>
         </div>
@@ -362,14 +378,15 @@ export default function MesasModule() {
 // ===== TABLE CARD =====
 function TableCard({ table, onSelect, onContextMenu }) {
   const status = table.status || 'free'
-  const order = status === 'free' ? null : table.orders?.find(o => o.status === 'open' || o.status === 'billing')
+  const order = status === 'free' ? null : table.orders?.find(o => o.status === 'open' || o.status === 'paid' || o.status === 'billing')
   const shape = table.shape === 'circle' ? ' circle' : ''
   const num = table.name.replace(/[^0-9]/g, '') || table.name
-  const statusLabel = status === 'free' ? 'Libre' : status === 'billing' ? 'Cobrando' : 'Ocupada'
+  let statusLabel = status === 'free' ? 'Libre' : status === 'billing' ? 'Cobrando' : 'Ocupada'
+  if (order?.status === 'paid') statusLabel = 'Pagada'
 
   return (
     <div
-      className={`table-card ${status}${shape}`}
+      className={`table-card ${status}${shape}${order?.status === 'paid' ? ' paid' : ''}`}
       onClick={onSelect}
       onContextMenu={onContextMenu}
       title={`${table.name} — ${statusLabel}`}
@@ -387,7 +404,7 @@ function TableCard({ table, onSelect, onContextMenu }) {
         </>
       )}
       <div className="table-meta">
-        {status === 'free' ? '✓ Libre' : status === 'billing' ? '💳' : '🍽️'}
+        {status === 'free' ? '✓ Libre' : order?.status === 'paid' ? 'PAGADO' : status === 'billing' ? '💳' : '🍽️'}
       </div>
     </div>
   )

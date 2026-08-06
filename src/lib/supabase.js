@@ -333,7 +333,7 @@ export async function dbGetDeliveryOrders(tenantId) {
     .select('*, delivery_addresses(*), order_items(id), payments(id)')
     .eq('tenant_id', tenantId)
     .eq('order_type', 'delivery')
-    .in('status', ['open', 'in_transit', 'delivered'])
+    .in('status', ['open', 'paid', 'in_transit', 'delivered'])
     .order('created_at', { ascending: false })
   return data || []
 }

@@ -20,7 +20,7 @@ export default function CocinaModule() {
   const loadData = useCallback(async () => {
     if (!tenantId) return
     try {
-      const data = await dbGetOrders(tenantId, { status: 'open' })
+      const data = await dbGetOrders(tenantId, { status: 'open,paid' })
       const pendingOrders = data.filter(o => !o.kitchen_status || o.kitchen_status === 'pending' || o.kitchen_status === 'in_progress')
       pendingOrders.sort((a, b) => new Date(getOrderDisplayTime(a)) - new Date(getOrderDisplayTime(b)))
       setOrders(pendingOrders)
